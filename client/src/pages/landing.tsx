@@ -589,7 +589,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
           <h2 className="text-3xl font-bold text-white mb-4">
             Ready to Make a Difference?
           </h2>
-          <p className="text-xl text-green-100 mb-8">
+          <p className="text-xl text-black mb-8">
             Join thousands of citizens already using our platform to improve their communities
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
