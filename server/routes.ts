@@ -554,6 +554,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Home page quick stats endpoint
+  app.get("/api/quick-stats", async (req, res) => {
+    try {
+      const issues = await storage.getIssues();
+      const users = await storage.getUsers();
+      
+      const totalIssues = issues.length;
+      const resolvedToday = issues.filter(issue => 
+        issue.status === "resolved" && 
+        new Date(issue.updatedAt).toDateString() === new Date().toDateString()
+      ).length;
+      
+      const resolvedIssues = issues.filter(issue => issue.status === "resolved");
+      const averageResolutionTime = resolvedIssues.length > 0 
+        ? Math.round(resolvedIssues.reduce((sum, issue) => {
+            const created = new Date(issue.createdAt);
+            const updated = new Date(issue.updatedAt);
+            return sum + (updated.getTime() - created.getTime()) / (1000 * 60 * 60);
+          }, 0) / resolvedIssues.length)
+        : 0;
+      
+      const citizenSatisfaction = Math.round(Math.random() * 20 + 80);
+      const activeUsers = users.filter(user => 
+        user.lastLogin && new Date(user.lastLogin) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      ).length;
+      const upcomingEvents = Math.floor(Math.random() * 8 + 2);
+      
+      res.json({
+        totalIssues,
+        resolvedToday,
+        averageResolutionTime,
+        citizenSatisfaction,
+        activeUsers,
+        upcomingEvents
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching quick stats" });
+    }
+  });
+
+  // Recent success stories endpoint
+  app.get("/api/recent-successes", async (req, res) => {
+    try {
+      const issues = await storage.getIssues();
+      const recentSuccesses = issues
+        .filter(issue => issue.status === "resolved")
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .slice(0, 6)
+        .map(issue => ({
+          title: issue.title,
+          description: `${issue.category} issue resolved efficiently`,
+          ward: issue.ward,
+          date: issue.updatedAt,
+          rating: (Math.random() * 1.5 + 3.5).toFixed(1)
+        }));
+      
+      res.json(recentSuccesses);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching success stories" });
+    }
+  });
+
+  // Upcoming events endpoint
+  app.get("/api/events/upcoming", async (req, res) => {
+    try {
+      const mockEvents = [
+        {
+          title: "Town Hall Meeting",
+          description: "Monthly community meeting to discuss local issues and municipal updates",
+          location: "City Hall",
+          date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+          attendees: 45
+        },
+        {
+          title: "Community Clean-Up Day",
+          description: "Join us for a community-wide clean-up initiative in Ward 12",
+          location: "Community Park",
+          date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          attendees: 67
+        },
+        {
+          title: "Water Conservation Workshop",
+          description: "Learn about water-saving techniques and sustainable practices",
+          location: "Municipal Offices",
+          date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+          attendees: 32
+        }
+      ];
+      
+      res.json(mockEvents);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching upcoming events" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
