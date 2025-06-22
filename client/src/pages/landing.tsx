@@ -656,48 +656,53 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
               <h4 className="font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-gray-300">
                 <li>
-                  <button 
-                    onClick={() => {
-                      // Navigate to citizen dashboard with report issue form open
+                  <a 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      console.log('Report Issue clicked');
                       setLocation('/citizen-dashboard?report=true');
                     }}
-                    className="hover:text-sa-gold transition-colors text-left"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block"
                   >
                     Report Issue
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button 
-                    onClick={() => {
-                      // Navigate to citizen dashboard payments tab
+                  <a 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
                       setLocation('/citizen-dashboard?tab=payments');
                     }}
-                    className="hover:text-sa-gold transition-colors text-left"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block"
                   >
                     Pay Bills
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button 
-                    onClick={() => {
-                      // Navigate to citizen dashboard to track issues
+                  <a 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
                       setLocation('/citizen-dashboard?tab=my-issues');
                     }}
-                    className="hover:text-sa-gold transition-colors text-left"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block"
                   >
                     Track Progress
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button 
-                    onClick={() => {
-                      // Navigate to citizen dashboard community tab
+                  <a 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
                       setLocation('/citizen-dashboard?tab=community');
                     }}
-                    className="hover:text-sa-gold transition-colors text-left"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block"
                   >
                     Community Forum
-                  </button>
+                  </a>
                 </li>
               </ul>
             </div>
@@ -706,42 +711,52 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
               <h4 className="font-semibold mb-4">Support</h4>
               <ul className="space-y-2 text-gray-300">
                 <li>
-                  <button 
-                    onClick={() => {
-                      // Navigate to citizen dashboard communication tab for help
+                  <a 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
                       setLocation('/citizen-dashboard?tab=communication');
                     }}
-                    className="hover:text-sa-gold transition-colors text-left"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block"
                   >
                     Help Center
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button 
-                    onClick={() => setShowContactForm(true)}
-                    className="hover:text-sa-gold transition-colors text-left"
-                  >
-                    Contact Us
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => setShowContactForm(true)}
-                    className="hover:text-sa-gold transition-colors text-left"
-                  >
-                    Privacy Policy
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => {
-                      // Show accessibility information in contact form
+                  <a 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
                       setShowContactForm(true);
                     }}
-                    className="hover:text-sa-gold transition-colors text-left"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block"
+                  >
+                    Contact Us
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowContactForm(true);
+                    }}
+                    className="hover:text-sa-gold transition-colors cursor-pointer block"
+                  >
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowContactForm(true);
+                    }}
+                    className="hover:text-sa-gold transition-colors cursor-pointer block"
                   >
                     Accessibility
-                  </button>
+                  </a>
                 </li>
               </ul>
             </div>
