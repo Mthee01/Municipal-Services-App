@@ -7,6 +7,7 @@ import { IssueForm } from "@/components/issue-form";
 import { IssueCard } from "@/components/issue-card";
 import { PaymentSection } from "@/components/payment-section";
 import { CommunityFeatures } from "@/components/community-features";
+import { VoucherSection } from "@/components/voucher-section";
 import type { Issue } from "@shared/schema";
 
 const categories = [
@@ -139,6 +140,13 @@ export default function CitizenDashboard() {
               </Button>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Voucher Section */}
+      <section className="py-12 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4">
+          <VoucherSection />
         </div>
       </section>
 

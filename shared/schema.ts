@@ -94,6 +94,18 @@ export const issueUpdates = pgTable("issue_updates", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const vouchers = pgTable("vouchers", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // water, electricity
+  amount: integer("amount").notNull(), // in cents
+  voucherCode: text("voucher_code").notNull().unique(),
+  status: text("status").notNull().default("active"), // active, used, expired
+  purchasedBy: text("purchased_by"),
+  purchaseDate: timestamp("purchase_date").notNull().defaultNow(),
+  expiryDate: timestamp("expiry_date").notNull(),
+  usedDate: timestamp("used_date"),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
 });
@@ -128,6 +140,11 @@ export const insertIssueUpdateSchema = createInsertSchema(issueUpdates).omit({
   createdAt: true,
 });
 
+export const insertVoucherSchema = createInsertSchema(vouchers).omit({
+  id: true,
+  purchaseDate: true,
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Issue = typeof issues.$inferSelect;
@@ -142,3 +159,5 @@ export type Ward = typeof wards.$inferSelect;
 export type InsertWard = z.infer<typeof insertWardSchema>;
 export type IssueUpdate = typeof issueUpdates.$inferSelect;
 export type InsertIssueUpdate = z.infer<typeof insertIssueUpdateSchema>;
+export type Voucher = typeof vouchers.$inferSelect;
+export type InsertVoucher = z.infer<typeof insertVoucherSchema>;

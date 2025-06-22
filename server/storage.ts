@@ -1,9 +1,9 @@
 import { 
-  users, issues, payments, teams, technicians, wards, issueUpdates,
+  users, issues, payments, teams, technicians, wards, issueUpdates, vouchers,
   type User, type InsertUser, type Issue, type InsertIssue, 
   type Payment, type InsertPayment, type Team, type InsertTeam,
   type Technician, type InsertTechnician, type Ward, type InsertWard,
-  type IssueUpdate, type InsertIssueUpdate
+  type IssueUpdate, type InsertIssueUpdate, type Voucher, type InsertVoucher
 } from "@shared/schema";
 
 export interface IStorage {
@@ -56,6 +56,15 @@ export interface IStorage {
   getIssueUpdates(issueId: number): Promise<IssueUpdate[]>;
   createIssueUpdate(update: InsertIssueUpdate): Promise<IssueUpdate>;
 
+  // Voucher operations
+  getVouchers(): Promise<Voucher[]>;
+  getVoucher(id: number): Promise<Voucher | undefined>;
+  getVouchersByType(type: string): Promise<Voucher[]>;
+  getVoucherByCode(code: string): Promise<Voucher | undefined>;
+  createVoucher(voucher: InsertVoucher): Promise<Voucher>;
+  updateVoucher(id: number, updates: Partial<Voucher>): Promise<Voucher | undefined>;
+  useVoucher(voucherCode: string): Promise<boolean>;
+
   // Analytics operations
   getWardStats(wardNumber?: string): Promise<any>;
   getTechnicianPerformance(): Promise<any>;
@@ -71,6 +80,7 @@ export class MemStorage implements IStorage {
   private technicians: Map<number, Technician>;
   private wards: Map<number, Ward>;
   private issueUpdates: Map<number, IssueUpdate>;
+  private vouchers: Map<number, Voucher>;
   private currentUserId: number;
   private currentIssueId: number;
   private currentPaymentId: number;
@@ -78,6 +88,7 @@ export class MemStorage implements IStorage {
   private currentTechnicianId: number;
   private currentWardId: number;
   private currentIssueUpdateId: number;
+  private currentVoucherId: number;
 
   constructor() {
     this.users = new Map();
@@ -87,6 +98,7 @@ export class MemStorage implements IStorage {
     this.technicians = new Map();
     this.wards = new Map();
     this.issueUpdates = new Map();
+    this.vouchers = new Map();
     this.currentUserId = 1;
     this.currentIssueId = 1;
     this.currentPaymentId = 1;
@@ -94,6 +106,7 @@ export class MemStorage implements IStorage {
     this.currentTechnicianId = 1;
     this.currentWardId = 1;
     this.currentIssueUpdateId = 1;
+    this.currentVoucherId = 1;
 
     this.seedData();
   }
@@ -860,6 +873,54 @@ export class MemStorage implements IStorage {
         ? departmentTechnicians.reduce((acc, t) => acc + t.avgResolutionTime, 0) / departmentTechnicians.length
         : 0,
     };
+  }
+
+  // Voucher operations
+  async getVouchers(): Promise<Voucher[]> {
+    return Array.from(this.vouchers.values());
+  }
+
+  async getVoucher(id: number): Promise<Voucher | undefined> {
+    return this.vouchers.get(id);
+  }
+
+  async getVouchersByType(type: string): Promise<Voucher[]> {
+    return Array.from(this.vouchers.values()).filter(v => v.type === type);
+  }
+
+  async getVoucherByCode(code: string): Promise<Voucher | undefined> {
+    return Array.from(this.vouchers.values()).find(v => v.voucherCode === code);
+  }
+
+  async createVoucher(insertVoucher: InsertVoucher): Promise<Voucher> {
+    const id = this.currentVoucherId++;
+    const voucher: Voucher = {
+      ...insertVoucher,
+      id,
+      purchaseDate: new Date(),
+    };
+    this.vouchers.set(id, voucher);
+    return voucher;
+  }
+
+  async updateVoucher(id: number, updates: Partial<Voucher>): Promise<Voucher | undefined> {
+    const voucher = this.vouchers.get(id);
+    if (!voucher) return undefined;
+    
+    const updatedVoucher: Voucher = { ...voucher, ...updates };
+    this.vouchers.set(id, updatedVoucher);
+    return updatedVoucher;
+  }
+
+  async useVoucher(voucherCode: string): Promise<boolean> {
+    const voucher = await this.getVoucherByCode(voucherCode);
+    if (!voucher || voucher.status !== 'active') return false;
+    
+    await this.updateVoucher(voucher.id, {
+      status: 'used',
+      usedDate: new Date(),
+    });
+    return true;
   }
 }
 

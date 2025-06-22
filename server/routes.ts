@@ -360,6 +360,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Voucher endpoints
+  app.get("/api/vouchers", async (req, res) => {
+    try {
+      const { type } = req.query;
+      let vouchers;
+      
+      if (type) {
+        vouchers = await storage.getVouchersByType(type as string);
+      } else {
+        vouchers = await storage.getVouchers();
+      }
+      
+      res.json(vouchers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch vouchers" });
+    }
+  });
+
+  app.post("/api/vouchers", async (req, res) => {
+    try {
+      const { type, amount } = req.body;
+      
+      if (!type || !amount) {
+        return res.status(400).json({ message: "Type and amount are required" });
+      }
+
+      // Generate unique voucher code
+      const voucherCode = `${type.toUpperCase()}-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      
+      // Set expiry date (30 days from now)
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + 30);
+
+      const voucher = await storage.createVoucher({
+        type,
+        amount: Math.round(amount * 100), // Convert to cents
+        voucherCode,
+        status: 'active',
+        expiryDate,
+      });
+
+      res.json(voucher);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create voucher" });
+    }
+  });
+
+  app.post("/api/vouchers/use", async (req, res) => {
+    try {
+      const { voucherCode } = req.body;
+      
+      if (!voucherCode) {
+        return res.status(400).json({ message: "Voucher code is required" });
+      }
+
+      const success = await storage.useVoucher(voucherCode);
+      
+      if (success) {
+        res.json({ message: "Voucher used successfully" });
+      } else {
+        res.status(400).json({ message: "Invalid or expired voucher code" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to use voucher" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

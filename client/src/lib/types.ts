@@ -17,6 +17,10 @@ export type PaymentType = "water" | "electricity" | "rates" | "fine";
 
 export type PaymentStatus = "pending" | "paid" | "overdue" | "cancelled";
 
+export type VoucherType = "water" | "electricity";
+
+export type VoucherStatus = "active" | "used" | "expired";
+
 export type TeamStatus = "available" | "on_job" | "maintenance" | "offline";
 
 export interface CreateIssueData {
@@ -45,4 +49,16 @@ export interface Statistics {
   inProgress: number;
   resolvedToday: number;
   avgResolution: number;
+}
+
+export interface VoucherData {
+  id: number;
+  type: VoucherType;
+  amount: number;
+  voucherCode: string;
+  status: VoucherStatus;
+  purchasedBy?: string;
+  purchaseDate: string;
+  expiryDate: string;
+  usedDate?: string;
 }
