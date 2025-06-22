@@ -213,7 +213,7 @@ export const translations: Record<string, TranslationKey> = {
     filter: "Filter",
     
     // Messages
-    welcome: "Welcome to ADA Smart Munic Services",
+    welcome: "Welcome to Municipal Services",
     welcomeMessage: "Welcome to our Muni smart app. We are pleased to have you here.",
     yourVoiceMatters: "Your voice matters in building better municipal services",
     reportIn60Seconds: "⚡ Report in under 60 seconds",

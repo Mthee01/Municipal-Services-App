@@ -49,7 +49,7 @@ export function CommunityFeatures() {
       issueTitle: "Pothole on Main Street",
       type: "progress",
       message: "Road crew has arrived and started work. Expected completion by 3 PM today.",
-      author: "ADA Smart Munic Works Team",
+      author: "Municipal Works Team",
       timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
       ward: "Ward 1"
     },

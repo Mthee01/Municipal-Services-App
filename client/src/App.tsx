@@ -182,7 +182,7 @@ function App() {
                     <span className="text-white text-lg">🏢</span>
                   </div>
                   <div>
-                    <h1 className="text-xl font-bold text-gray-900">ADA Smart Munic</h1>
+                    <h1 className="text-xl font-bold text-gray-900">Municipal Services</h1>
                     <p className="text-sm text-gray-600">Citizen Engagement Platform</p>
                   </div>
                 </div>

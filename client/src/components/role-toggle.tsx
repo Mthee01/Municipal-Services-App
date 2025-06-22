@@ -16,7 +16,7 @@ const roleConfig: Record<UserRole, { label: string; icon: any; color: string; de
     description: "Report issues and track services"
   },
   official: {
-    label: "ADA Smart Munic Official",
+    label: "Municipal Official",
     icon: UserCheck,
     color: "bg-green-50 text-green-700 border-green-200",
     description: "Manage issues and oversee operations"
@@ -31,7 +31,7 @@ const roleConfig: Record<UserRole, { label: string; icon: any; color: string; de
     label: "Mayor",
     icon: Building2,
     color: "bg-red-50 text-red-700 border-red-200",
-    description: "ADA Smart Munic-wide oversight"
+    description: "Municipality-wide oversight"
   },
   ward_councillor: {
     label: "Ward Councillor",
