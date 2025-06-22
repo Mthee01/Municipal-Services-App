@@ -653,17 +653,67 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
             <div>
               <h4 className="font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-gray-300">
-                <li><a href="#" className="hover:text-sa-gold transition-colors">Report Issue</a></li>
-                <li><a href="#" className="hover:text-sa-gold transition-colors">Pay Bills</a></li>
-                <li><a href="#" className="hover:text-sa-gold transition-colors">Track Progress</a></li>
-                <li><a href="#" className="hover:text-sa-gold transition-colors">Community Forum</a></li>
+                <li>
+                  <button 
+                    onClick={() => {
+                      const loginSection = document.querySelector('.auth-section');
+                      loginSection?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="hover:text-sa-gold transition-colors text-left"
+                  >
+                    Report Issue
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => {
+                      const loginSection = document.querySelector('.auth-section');
+                      loginSection?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="hover:text-sa-gold transition-colors text-left"
+                  >
+                    Pay Bills
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => {
+                      const loginSection = document.querySelector('.auth-section');
+                      loginSection?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="hover:text-sa-gold transition-colors text-left"
+                  >
+                    Track Progress
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => {
+                      const loginSection = document.querySelector('.auth-section');
+                      loginSection?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="hover:text-sa-gold transition-colors text-left"
+                  >
+                    Community Forum
+                  </button>
+                </li>
               </ul>
             </div>
             
             <div>
               <h4 className="font-semibold mb-4">Support</h4>
               <ul className="space-y-2 text-gray-300">
-                <li><a href="#" className="hover:text-sa-gold transition-colors">Help Center</a></li>
+                <li>
+                  <button 
+                    onClick={() => {
+                      const loginSection = document.querySelector('.auth-section');
+                      loginSection?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="hover:text-sa-gold transition-colors text-left"
+                  >
+                    Help Center
+                  </button>
+                </li>
                 <li>
                   <button 
                     onClick={() => setShowContactForm(true)}
@@ -672,8 +722,25 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                     Contact Us
                   </button>
                 </li>
-                <li><a href="#" className="hover:text-sa-gold transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-sa-gold transition-colors">Accessibility</a></li>
+                <li>
+                  <button 
+                    onClick={() => setShowContactForm(true)}
+                    className="hover:text-sa-gold transition-colors text-left"
+                  >
+                    Privacy Policy
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => {
+                      const loginSection = document.querySelector('.auth-section');
+                      loginSection?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="hover:text-sa-gold transition-colors text-left"
+                  >
+                    Accessibility
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
