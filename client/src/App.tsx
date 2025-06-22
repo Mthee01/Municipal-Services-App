@@ -264,6 +264,7 @@ function App() {
                 {currentRole === "mayor" && <MayorDashboard />}
                 {currentRole === "ward_councillor" && <WardCouncillorDashboard />}
                 {currentRole === "tech_manager" && <TechManagerDashboard />}
+                {currentRole === "field_technician" && <FieldTechnicianDashboard />}
               </Route>
               
               <Route component={NotFound} />
