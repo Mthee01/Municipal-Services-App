@@ -186,46 +186,64 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 </Badge>
                 <h1 className="text-5xl font-bold mb-6 leading-tight">
                   {t.welcome}
-                  <span className="block text-sa-gold">{t.dashboard}</span>
+                  <span className="block text-sa-gold bg-gradient-to-r from-yellow-300 to-yellow-500 bg-clip-text text-transparent">
+                    {t.dashboard}
+                  </span>
                 </h1>
-                <p className="text-xl text-gray-800 mb-8 leading-relaxed font-semibold">
+                <p className="text-xl text-green-50 mb-8 leading-relaxed font-medium">
                   {t.yourVoiceMatters}
                 </p>
               </div>
 
               {/* Features Grid */}
               <div className="grid sm:grid-cols-2 gap-4">
-                <div className="flex items-center gap-3">
-                  <Droplets className="h-5 w-5 text-yellow-400" />
-                  <span className="text-gray-800 font-semibold">{t.buyVoucher}</span>
+                <div className="flex items-center gap-4 p-4 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-200">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center">
+                    <Droplets className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="text-white font-semibold">{t.buyVoucher}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-5 w-5 text-yellow-400" />
-                  <span className="text-gray-800 font-semibold">{t.reportIssue}</span>
+                <div className="flex items-center gap-4 p-4 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-200">
+                  <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-pink-500 rounded-lg flex items-center justify-center">
+                    <MapPin className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="text-white font-semibold">{t.reportIssue}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Users className="h-5 w-5 text-yellow-400" />
-                  <span className="text-gray-800 font-semibold">Community Engagement</span>
+                <div className="flex items-center gap-4 p-4 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-200">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-lg flex items-center justify-center">
+                    <Users className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="text-white font-semibold">Community Engagement</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="h-5 w-5 text-yellow-400" />
-                  <span className="text-gray-800 font-semibold">Real-time Tracking</span>
+                <div className="flex items-center gap-4 p-4 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-200">
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-yellow-500 rounded-lg flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="text-white font-semibold">Real-time Tracking</span>
                 </div>
               </div>
 
               {/* Quick Action Callout */}
-              <div className="bg-yellow-100 border-l-4 border-red-500 p-4 rounded-r-lg">
-                <p className="text-red-700 font-bold text-lg">
-                  ⚡ {t.reportIn60Seconds}
-                </p>
+              <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 p-6 rounded-2xl shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xl">⚡</span>
+                  </div>
+                  <div>
+                    <p className="text-red-700 font-bold text-xl">
+                      {t.reportIn60Seconds}
+                    </p>
+                    <p className="text-red-600 text-sm mt-1">Fast-track your service requests</p>
+                  </div>
+                </div>
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-4 gap-4 pt-8 border-t border-yellow-400">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-8 border-t border-white/30">
                 {stats.map((stat, index) => (
-                  <div key={index} className="text-center">
-                    <div className="text-2xl font-bold text-sa-gold">{stat.number}</div>
-                    <div className="text-sm text-gray-800 font-semibold">{stat.label}</div>
+                  <div key={index} className="text-center p-4 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30">
+                    <div className="text-3xl font-bold text-sa-gold mb-2">{stat.number}</div>
+                    <div className="text-sm text-green-50 font-medium">{stat.label}</div>
                   </div>
                 ))}
               </div>
@@ -233,26 +251,26 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
 
             {/* Right Content - Auth Forms */}
             <div className="flex justify-center">
-              <Card className="w-full max-w-md shadow-2xl">
+              <Card className="w-full max-w-md shadow-2xl bg-white/95 backdrop-blur-sm border-0">
                 <CardHeader className="text-center pb-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <CardTitle className="text-2xl font-bold" style={{ color: 'hsl(220, 85%, 15%)' }}>
-                      {t.welcome}
+                  <div className="flex justify-between items-center mb-6">
+                    <CardTitle className="text-3xl font-bold bg-gradient-to-r from-sa-green to-green-600 bg-clip-text text-transparent">
+                      Get Started
                     </CardTitle>
                     <LanguageSelector />
                   </div>
-                  <p className="text-gray-700 font-medium">Access your municipal services</p>
+                  <p className="text-gray-600 font-medium text-lg">Access your municipal services</p>
                 </CardHeader>
                 <CardContent>
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-2 mb-6">
-                      <TabsTrigger value="login">{t.login}</TabsTrigger>
-                      <TabsTrigger value="register">{t.register}</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 mb-8 h-12 bg-gray-100 rounded-xl p-1">
+                      <TabsTrigger value="login" className="rounded-lg font-semibold text-base">{t.login}</TabsTrigger>
+                      <TabsTrigger value="register" className="rounded-lg font-semibold text-base">{t.register}</TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="login">
+                    <TabsContent value="login" className="mt-8">
                       <Form {...loginForm}>
-                        <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                        <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6">
                           <FormField
                             control={loginForm.control}
                             name="username"
@@ -322,7 +340,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
 
                           <Button
                             type="submit"
-                            className="w-full bg-sa-green hover:bg-green-700"
+                            className="w-full bg-gradient-to-r from-sa-green to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                             disabled={loginMutation.isPending}
                           >
                             {loginMutation.isPending ? (
@@ -337,16 +355,18 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                         </form>
                       </Form>
 
-                      <div className="mt-4 text-center">
-                        <p className="text-sm text-gray-600">
-                          Demo credentials available for testing all roles
-                        </p>
+                      <div className="mt-6 text-center">
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                          <p className="text-sm text-blue-700 font-medium">
+                            🚀 Demo credentials available for testing all roles
+                          </p>
+                        </div>
                       </div>
                     </TabsContent>
 
-                    <TabsContent value="register">
+                    <TabsContent value="register" className="mt-8">
                       <Form {...registerForm}>
-                        <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                        <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-6">
                           <FormField
                             control={registerForm.control}
                             name="name"
@@ -478,7 +498,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
 
                           <Button
                             type="submit"
-                            className="w-full bg-sa-green hover:bg-green-700"
+                            className="w-full bg-gradient-to-r from-sa-green to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                             disabled={registerMutation.isPending}
                           >
                             {registerMutation.isPending ? (
@@ -487,7 +507,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                                 Creating Account...
                               </>
                             ) : (
-                              "Create Account"
+                              t.createAccount
                             )}
                           </Button>
                         </form>
