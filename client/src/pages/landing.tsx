@@ -630,6 +630,61 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
         </div>
       </div>
 
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="col-span-1 md:col-span-2">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 bg-sa-green rounded-full flex items-center justify-center">
+                  <span className="text-white text-lg">🏢</span>
+                </div>
+                <h3 className="text-xl font-bold">ADA Smart Munic</h3>
+              </div>
+              <p className="text-gray-300 mb-4">
+                Connecting citizens with their local government for better service delivery and community engagement.
+              </p>
+              <div className="flex space-x-4">
+                <span className="text-sa-gold">🇿🇦</span>
+                <span className="text-gray-300">Proudly South African</span>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Quick Links</h4>
+              <ul className="space-y-2 text-gray-300">
+                <li><a href="#" className="hover:text-sa-gold transition-colors">Report Issue</a></li>
+                <li><a href="#" className="hover:text-sa-gold transition-colors">Pay Bills</a></li>
+                <li><a href="#" className="hover:text-sa-gold transition-colors">Track Progress</a></li>
+                <li><a href="#" className="hover:text-sa-gold transition-colors">Community Forum</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-gray-300">
+                <li><a href="#" className="hover:text-sa-gold transition-colors">Help Center</a></li>
+                <li>
+                  <button 
+                    onClick={() => setShowContactForm(true)}
+                    className="hover:text-sa-gold transition-colors text-left"
+                  >
+                    Contact Us
+                  </button>
+                </li>
+                <li><a href="#" className="hover:text-sa-gold transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-sa-gold transition-colors">Accessibility</a></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 Municipal Service Delivery Platform. All rights reserved.</p>
+            <p className="mt-2">Developed by Adacode - Empowering Local Government</p>
+          </div>
+        </div>
+      </footer>
+
       {/* Contact Form Modal */}
       <ContactForm 
         isOpen={showContactForm} 
