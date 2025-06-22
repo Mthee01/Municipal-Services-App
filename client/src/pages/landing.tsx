@@ -67,7 +67,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       email: "",
       phone: "",
       municipalityAccountNo: "",
-      role: "citizen",
+      role: undefined as any, // Force user to make a selection
     },
   });
 

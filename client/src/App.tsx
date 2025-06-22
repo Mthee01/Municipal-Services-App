@@ -191,8 +191,17 @@ function App() {
                   {/* Language Selector */}
                   <LanguageSelector />
                   
-                  {/* User Role Toggle */}
-                  <RoleToggle currentRole={currentRole} onRoleChange={handleRoleChange} />
+                  {/* User Role Toggle - Only show for admin users */}
+                  {currentRole === "admin" && (
+                    <RoleToggle currentRole={currentRole} onRoleChange={handleRoleChange} />
+                  )}
+                  
+                  {/* Current User Role Display */}
+                  <div className="bg-gray-100 px-3 py-1 rounded-full">
+                    <span className="text-sm font-medium text-gray-700 capitalize">
+                      {currentRole?.replace('_', ' ') || 'User'}
+                    </span>
+                  </div>
                   
                   {/* Sign Out Button */}
                   <Button
@@ -211,11 +220,40 @@ function App() {
           {/* Main Content */}
           <main>
             <Switch>
-              <Route path="/" component={CitizenDashboard} />
-              <Route path="/official" component={OfficialDashboard} />
-              <Route path="/mayor" component={MayorDashboard} />
-              <Route path="/ward-councillor" component={WardCouncillorDashboard} />
-              <Route path="/tech-manager" component={TechManagerDashboard} />
+              {/* Citizen Dashboard - Only for citizens */}
+              {currentRole === "citizen" && (
+                <Route path="/" component={CitizenDashboard} />
+              )}
+              
+              {/* Official Dashboard - Only for officials and admins */}
+              {(currentRole === "official" || currentRole === "admin") && (
+                <Route path="/official" component={OfficialDashboard} />
+              )}
+              
+              {/* Mayor Dashboard - Only for mayors and admins */}
+              {(currentRole === "mayor" || currentRole === "admin") && (
+                <Route path="/mayor" component={MayorDashboard} />
+              )}
+              
+              {/* Ward Councillor Dashboard - Only for ward councillors and admins */}
+              {(currentRole === "ward_councillor" || currentRole === "admin") && (
+                <Route path="/ward-councillor" component={WardCouncillorDashboard} />
+              )}
+              
+              {/* Tech Manager Dashboard - Only for tech managers and admins */}
+              {(currentRole === "tech_manager" || currentRole === "admin") && (
+                <Route path="/tech-manager" component={TechManagerDashboard} />
+              )}
+              
+              {/* Default route based on user role */}
+              <Route path="/">
+                {currentRole === "citizen" && <CitizenDashboard />}
+                {(currentRole === "official" || currentRole === "admin") && <OfficialDashboard />}
+                {currentRole === "mayor" && <MayorDashboard />}
+                {currentRole === "ward_councillor" && <WardCouncillorDashboard />}
+                {currentRole === "tech_manager" && <TechManagerDashboard />}
+              </Route>
+              
               <Route component={NotFound} />
             </Switch>
           </main>
