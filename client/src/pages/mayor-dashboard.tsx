@@ -80,7 +80,7 @@ export default function MayorDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Mayor Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-300">Municipality-wide performance overview</p>
+          <p className="text-gray-600 dark:text-gray-300">ADA Smart Munic-wide performance overview</p>
         </div>
         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
           <Building2 className="w-4 h-4 mr-1" />
@@ -143,7 +143,7 @@ export default function MayorDashboard() {
               {municipalityStats?.avgResolutionTime || 0}h
             </div>
             <p className="text-xs text-orange-600 dark:text-orange-300">
-              Municipality average
+              ADA Smart Munic average
             </p>
           </CardContent>
         </Card>
