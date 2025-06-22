@@ -15,6 +15,7 @@ import MayorDashboard from "@/pages/mayor-dashboard";
 import WardCouncillorDashboard from "@/pages/ward-councillor-dashboard";
 import TechManagerDashboard from "@/pages/tech-manager-dashboard";
 import SystemAdminDashboard from "@/pages/system-admin-dashboard";
+import { MasterDashboard } from "@/pages/master-dashboard";
 import NotFound from "@/pages/not-found";
 import type { UserRole } from "@/lib/types";
 
@@ -208,6 +209,7 @@ function App() {
           <main>
             <Switch>
               <Route path="/" component={CitizenDashboard} />
+              <Route path="/master" component={MasterDashboard} />
               <Route path="/official" component={OfficialDashboard} />
               <Route path="/mayor" component={MayorDashboard} />
               <Route path="/ward-councillor" component={WardCouncillorDashboard} />
