@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { IssueForm } from "@/components/issue-form";
 import { IssueCard } from "@/components/issue-card";
 import { PaymentSection } from "@/components/payment-section";
+import { CommunityFeatures } from "@/components/community-features";
 import type { Issue } from "@shared/schema";
 
 const categories = [
@@ -141,58 +142,10 @@ export default function CitizenDashboard() {
         </div>
       </section>
 
-      {/* Community Issues */}
-      <section className="py-12 bg-white">
+      {/* Community Hub */}
+      <section className="py-12 bg-blue-50">
         <div className="max-w-6xl mx-auto px-4">
-          <h3 className="text-2xl font-bold text-gray-900 mb-8">Community Issues in Your Area</h3>
-          
-          {communityIssuesLoading ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600">Loading community issues...</p>
-            </div>
-          ) : filteredCommunityIssues.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCommunityIssues.map((issue) => (
-                <div key={issue.id} className="bg-gray-50 rounded-xl p-6 hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`px-2 py-1 text-xs font-medium rounded ${
-                      issue.priority === "high" || issue.priority === "emergency" 
-                        ? "bg-red-100 text-red-800" 
-                        : issue.priority === "medium"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-green-100 text-green-800"
-                    }`}>
-                      {issue.priority} Priority
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {new Date(issue.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  
-                  {issue.photos && issue.photos.length > 0 && (
-                    <img 
-                      src={issue.photos[0]} 
-                      alt="Issue" 
-                      className="w-full h-32 object-cover rounded-lg mb-3" 
-                    />
-                  )}
-                  
-                  <h4 className="font-semibold text-gray-900 mb-2">{issue.title}</h4>
-                  <p className="text-sm text-gray-600 mb-3">{issue.location}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Community issue</span>
-                    <Button variant="ghost" size="sm" className="text-sa-green hover:text-green-700">
-                      Support Issue
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600">No community issues in your area at this time.</p>
-            </div>
-          )}
+          <CommunityFeatures />
         </div>
       </section>
 
