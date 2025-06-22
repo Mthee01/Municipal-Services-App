@@ -227,7 +227,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-black">MuniConnect</h1>
+                <h1 className="text-xl font-bold text-black">ADA Smart Munic</h1>
                 <p className="text-xs text-gray-600">Citizen Engagement Platform</p>
               </div>
             </div>
