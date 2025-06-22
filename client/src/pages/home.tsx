@@ -191,28 +191,28 @@ export function HomePage() {
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">{t.features || "Features"}</a>
               <a href="#stats" className="text-gray-600 hover:text-blue-600 transition-colors">{t.stats || "Statistics"}</a>
               <div className="flex items-center space-x-2">
-                <select 
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      localStorage.setItem('testRole', e.target.value);
-                      window.location.href = `/${e.target.value}`;
-                    }
-                  }}
-                  className="px-3 py-1 border rounded-md text-sm"
-                  defaultValue=""
-                >
-                  <option value="">Quick Test Access</option>
-                  <option value="citizen">Citizen Dashboard</option>
-                  <option value="mayor">Mayor Dashboard</option>
-                  <option value="official">Official Dashboard</option>
-                  <option value="ward-councillor">Ward Councillor</option>
-                  <option value="system-admin">System Admin</option>
-                  <option value="tech-manager">Tech Manager</option>
-                  <option value="master">Master Dashboard</option>
-                </select>
-                <Link href="/citizen">
-                  <Button>{t.getStarted || "Get Started"}</Button>
-                </Link>
+                <div className="flex flex-wrap gap-1">
+                  <Button size="sm" variant="outline" onClick={() => {
+                    localStorage.setItem('testRole', 'citizen');
+                    window.location.href = '/citizen';
+                  }}>Citizen</Button>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    localStorage.setItem('testRole', 'master');
+                    window.location.href = '/master';
+                  }}>Master</Button>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    localStorage.setItem('testRole', 'mayor');
+                    window.location.href = '/mayor';
+                  }}>Mayor</Button>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    localStorage.setItem('testRole', 'official');
+                    window.location.href = '/official';
+                  }}>Official</Button>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    localStorage.setItem('testRole', 'system-admin');
+                    window.location.href = '/system-admin';
+                  }}>Admin</Button>
+                </div>
               </div>
             </nav>
           </div>
