@@ -11,7 +11,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { IssueCard } from "@/components/issue-card";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { formatRelativeTime, getStatusColor } from "@/lib/utils";
+import { formatRelativeTime, getStatusColor, getPriorityColor } from "@/lib/utils";
 
 export default function TechManagerDashboard() {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
