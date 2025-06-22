@@ -86,16 +86,52 @@ export default function CitizenDashboard() {
       {/* Quick Actions */}
       <section className="relative z-10 py-12 bg-white/80 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-4">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Service Categories</h2>
+            {categoryFilter !== "all" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCategoryFilter("all")}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Clear Filter
+              </Button>
+            )}
+          </div>
+          
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6">
             {categories.map((category) => (
-              <div key={category.value} className="text-center group cursor-pointer">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-green-100 transition-colors">
+              <div 
+                key={category.value} 
+                className="text-center group cursor-pointer"
+                onClick={() => setCategoryFilter(category.value)}
+              >
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 transition-all duration-200 ${
+                  categoryFilter === category.value 
+                    ? 'bg-green-200 ring-2 ring-green-500 scale-110' 
+                    : 'bg-gray-100 group-hover:bg-green-100 group-hover:scale-105'
+                }`}>
                   <span className="text-2xl">{category.icon}</span>
                 </div>
-                <h3 className="font-medium text-gray-900 text-sm">{category.label}</h3>
+                <h3 className={`font-medium text-sm transition-colors ${
+                  categoryFilter === category.value 
+                    ? 'text-green-700 font-semibold' 
+                    : 'text-gray-900'
+                }`}>
+                  {category.label}
+                </h3>
               </div>
             ))}
           </div>
+          
+          {categoryFilter !== "all" && (
+            <div className="mt-6 text-center">
+              <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                Showing {categories.find(c => c.value === categoryFilter)?.label} issues
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
