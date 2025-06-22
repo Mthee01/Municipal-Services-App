@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/language-selector";
 import { RoleToggle } from "@/components/role-toggle";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ContactForm } from "@/components/contact-form";
 import LandingPage from "@/pages/landing";
 import CitizenDashboard from "@/pages/citizen-dashboard";
 import OfficialDashboard from "@/pages/official-dashboard";
@@ -22,6 +23,7 @@ function App() {
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [language, setLanguage] = useState("en");
+  const [showContactForm, setShowContactForm] = useState(false);
   const [location, setLocation] = useLocation();
 
   // Check for saved authentication on app load
@@ -305,7 +307,14 @@ function App() {
                   <h4 className="font-semibold mb-4">Support</h4>
                   <ul className="space-y-2 text-gray-300">
                     <li><a href="#" className="hover:text-sa-gold transition-colors">Help Center</a></li>
-                    <li><a href="#" className="hover:text-sa-gold transition-colors">Contact Us</a></li>
+                    <li>
+                      <button 
+                        onClick={() => setShowContactForm(true)}
+                        className="hover:text-sa-gold transition-colors text-left"
+                      >
+                        Contact Us
+                      </button>
+                    </li>
                     <li><a href="#" className="hover:text-sa-gold transition-colors">Privacy Policy</a></li>
                     <li><a href="#" className="hover:text-sa-gold transition-colors">Accessibility</a></li>
                   </ul>
@@ -320,6 +329,12 @@ function App() {
           </footer>
         </div>
         <Toaster />
+
+        {/* Contact Form Modal */}
+        <ContactForm 
+          isOpen={showContactForm} 
+          onClose={() => setShowContactForm(false)} 
+        />
       </TooltipProvider>
       </LanguageProvider>
     </QueryClientProvider>

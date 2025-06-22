@@ -244,12 +244,6 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 >
                   Login
                 </button>
-                <button 
-                  onClick={() => setShowContactForm(true)}
-                  className="text-black hover:text-sa-green transition-colors font-medium"
-                >
-                  Contact
-                </button>
               </div>
             </div>
           </div>
