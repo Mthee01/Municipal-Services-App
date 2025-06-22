@@ -204,7 +204,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 <Badge className="bg-sa-gold text-black mb-4">
                   Digital Municipal Services
                 </Badge>
-                <h1 className="text-5xl font-bold mb-6 leading-tight text-black">
+                <h1 className="text-4xl font-bold mb-6 leading-tight text-black">
                   {t.welcome}
                   <span className="block text-sa-gold bg-gradient-to-r from-yellow-300 to-yellow-500 bg-clip-text text-transparent">
                     {t.dashboard}
