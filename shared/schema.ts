@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   email: text("email"),
   phone: text("phone"),
+  municipalityAccountNo: text("municipality_account_no"),
 });
 
 export const issues = pgTable("issues", {

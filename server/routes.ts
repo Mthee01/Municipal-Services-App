@@ -2,7 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertIssueSchema, insertPaymentSchema } from "@shared/schema";
+import { insertIssueSchema, insertPaymentSchema, insertUserSchema } from "@shared/schema";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -430,7 +430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { username, password } = req.body;
+      const { username, password, rememberMe } = req.body;
       
       if (!username || !password) {
         return res.status(400).json({ message: "Username and password are required" });
@@ -443,53 +443,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json({ 
-        message: "Login successful", 
+        success: true,
         user: { 
           id: user.id, 
           username: user.username, 
           name: user.name, 
+          email: user.email,
+          phone: user.phone,
+          municipalityAccountNo: user.municipalityAccountNo,
           role: user.role 
-        } 
+        },
+        rememberMe: rememberMe || false
       });
     } catch (error) {
-      res.status(500).json({ message: "Login failed" });
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { username, password, name, email, phone, role } = req.body;
-      
-      if (!username || !password || !name) {
-        return res.status(400).json({ message: "Username, password, and name are required" });
+      const result = insertUserSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid input data", details: result.error.issues });
       }
 
+      const { username, password, name, email, phone, role, municipalityAccountNo } = result.data;
+      
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
-        return res.status(409).json({ message: "Username already exists" });
+        return res.status(409).json({ error: "Username already exists" });
       }
 
-      const user = await storage.createUser({
+      const newUser = await storage.createUser({
         username,
-        password,
+        password, // In production, hash this password
         name,
         email: email || null,
         phone: phone || null,
         role: role || "citizen",
+        municipalityAccountNo: municipalityAccountNo || null
       });
 
       res.json({ 
-        message: "Registration successful", 
+        success: true, 
         user: { 
-          id: user.id, 
-          username: user.username, 
-          name: user.name, 
-          role: user.role 
+          id: newUser.id, 
+          username: newUser.username, 
+          role: newUser.role,
+          name: newUser.name,
+          email: newUser.email,
+          phone: newUser.phone,
+          municipalityAccountNo: newUser.municipalityAccountNo
         } 
       });
     } catch (error) {
-      res.status(500).json({ message: "Registration failed" });
+      console.error("Registration error:", error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 

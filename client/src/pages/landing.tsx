@@ -12,12 +12,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { LanguageSelector } from "@/components/language-selector";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
+  rememberMe: z.boolean().default(false),
 });
 
 const registerSchema = z.object({
@@ -26,6 +30,7 @@ const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
   phone: z.string().min(10, "Phone number must be at least 10 digits").optional().or(z.literal("")),
+  municipalityAccountNo: z.string().min(5, "Municipality account number must be at least 5 characters").optional().or(z.literal("")),
   role: z.enum(["citizen", "official", "admin", "ward_councillor", "mayor", "tech_manager"]),
 });
 
@@ -40,12 +45,14 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       username: "",
       password: "",
+      rememberMe: false,
     },
   });
 
@@ -57,6 +64,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       name: "",
       email: "",
       phone: "",
+      municipalityAccountNo: "",
       role: "citizen",
     },
   });
@@ -66,7 +74,20 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       const response = await apiRequest("POST", "/api/auth/login", data);
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
+      // Store user session
+      const userData = {
+        user: data.user,
+        loginTime: new Date().toISOString(),
+        rememberMe: variables.rememberMe
+      };
+      
+      if (variables.rememberMe) {
+        localStorage.setItem("municipalAuth", JSON.stringify(userData));
+      } else {
+        sessionStorage.setItem("municipalAuth", JSON.stringify(userData));
+      }
+      
       toast({
         title: "Login Successful",
         description: "Welcome back to the municipal platform!",
@@ -271,6 +292,26 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                             )}
                           />
 
+                          <FormField
+                            control={loginForm.control}
+                            name="rememberMe"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel>
+                                    Keep me logged in
+                                  </FormLabel>
+                                </div>
+                              </FormItem>
+                            )}
+                          />
+
                           <Button
                             type="submit"
                             className="w-full bg-sa-green hover:bg-green-700"
@@ -348,6 +389,20 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                                 <FormLabel>Phone (Optional)</FormLabel>
                                 <FormControl>
                                   <Input placeholder="+27 XX XXX XXXX" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={registerForm.control}
+                            name="municipalityAccountNo"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Municipality Account Number (Optional)</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter your municipal account number" {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>

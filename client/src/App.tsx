@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/language-selector";
 import { RoleToggle } from "@/components/role-toggle";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import LandingPage from "@/pages/landing";
 import CitizenDashboard from "@/pages/citizen-dashboard";
 import OfficialDashboard from "@/pages/official-dashboard";
@@ -21,6 +22,68 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [language, setLanguage] = useState("en");
   const [location, setLocation] = useLocation();
+
+  // Check for saved authentication on app load
+  useEffect(() => {
+    const checkSavedAuth = () => {
+      // Check localStorage first (remember me)
+      let savedAuth = localStorage.getItem("municipalAuth");
+      if (!savedAuth) {
+        // Check sessionStorage (session-only)
+        savedAuth = sessionStorage.getItem("municipalAuth");
+      }
+      
+      if (savedAuth) {
+        try {
+          const authData = JSON.parse(savedAuth);
+          const loginTime = new Date(authData.loginTime).getTime();
+          const now = new Date().getTime();
+          const hoursPassed = (now - loginTime) / (1000 * 60 * 60);
+          
+          // For "remember me", allow longer sessions (30 days)
+          // For regular sessions, expire after 24 hours
+          const maxHours = authData.rememberMe ? 24 * 30 : 24;
+          
+          if (hoursPassed < maxHours && authData.user) {
+            setCurrentRole(authData.user.role as UserRole);
+            setIsAuthenticated(true);
+            
+            // Navigate to appropriate dashboard
+            switch (authData.user.role) {
+              case "citizen":
+                setLocation("/");
+                break;
+              case "official":
+              case "admin":
+                setLocation("/official");
+                break;
+              case "mayor":
+                setLocation("/mayor");
+                break;
+              case "ward_councillor":
+                setLocation("/ward-councillor");
+                break;
+              case "tech_manager":
+                setLocation("/tech-manager");
+                break;
+              default:
+                setLocation("/");
+            }
+          } else {
+            // Session expired, clear storage
+            localStorage.removeItem("municipalAuth");
+            sessionStorage.removeItem("municipalAuth");
+          }
+        } catch (error) {
+          console.error("Error parsing saved auth:", error);
+          localStorage.removeItem("municipalAuth");
+          sessionStorage.removeItem("municipalAuth");
+        }
+      }
+    };
+    
+    checkSavedAuth();
+  }, [setLocation]);
 
   const handleLogin = (userRole: string) => {
     setCurrentRole(userRole as UserRole);
@@ -74,6 +137,10 @@ function App() {
   };
 
   const handleLogout = () => {
+    // Clear saved authentication
+    localStorage.removeItem("municipalAuth");
+    sessionStorage.removeItem("municipalAuth");
+    
     setCurrentRole(null);
     setIsAuthenticated(false);
     setLocation("/");
@@ -83,17 +150,20 @@ function App() {
   if (!isAuthenticated || !currentRole) {
     return (
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <LandingPage onLogin={handleLogin} />
-          <Toaster />
-        </TooltipProvider>
+        <LanguageProvider>
+          <TooltipProvider>
+            <LandingPage onLogin={handleLogin} />
+            <Toaster />
+          </TooltipProvider>
+        </LanguageProvider>
       </QueryClientProvider>
     );
   }
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
+      <LanguageProvider>
+        <TooltipProvider>
         <div className="min-h-screen bg-gray-50">
           {/* Navigation Header */}
           <nav className="bg-white shadow-sm border-b-2 border-sa-green sticky top-0 z-50">
@@ -111,7 +181,7 @@ function App() {
                 
                 <div className="flex items-center space-x-4">
                   {/* Language Selector */}
-                  <LanguageSelector value={language} onValueChange={setLanguage} />
+                  <LanguageSelector />
                   
                   {/* User Role Toggle */}
                   <RoleToggle currentRole={currentRole} onRoleChange={handleRoleChange} />
@@ -192,6 +262,7 @@ function App() {
         </div>
         <Toaster />
       </TooltipProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
