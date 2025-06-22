@@ -312,9 +312,9 @@ export function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20">
+      <section className="relative overflow-hidden py-8 sm:py-16 lg:py-20">
         <div className="container mx-auto px-4">
-          <div className="relative h-96 rounded-3xl overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-green-600">
+          <div className="relative h-64 sm:h-80 lg:h-96 rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-green-600">
             {heroSlides.map((slide, index) => (
               <div
                 key={index}
@@ -322,29 +322,29 @@ export function HomePage() {
                   index === currentSlide ? "opacity-100" : "opacity-0"
                 }`}
               >
-                <div className="h-full flex items-center justify-between text-white p-12">
-                  <div className="flex-1 space-y-6">
-                    <h1 className="text-5xl font-bold leading-tight">{slide.title}</h1>
-                    <p className="text-xl opacity-90 max-w-2xl">{slide.subtitle}</p>
+                <div className="h-full flex flex-col sm:flex-row items-center justify-center sm:justify-between text-white p-4 sm:p-8 lg:p-12">
+                  <div className="flex-1 space-y-3 sm:space-y-4 lg:space-y-6 text-center sm:text-left">
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight">{slide.title}</h1>
+                    <p className="text-sm sm:text-lg lg:text-xl opacity-90 max-w-2xl mx-auto sm:mx-0">{slide.subtitle}</p>
                     <Link href={slide.link}>
-                      <Button size="lg" variant="secondary" className="bg-white text-gray-900 hover:bg-gray-100">
+                      <Button size="lg" variant="secondary" className="bg-white text-gray-900 hover:bg-gray-100 text-sm sm:text-base">
                         {slide.cta}
-                        <ArrowRight className="ml-2 h-5 w-5" />
+                        <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                       </Button>
                     </Link>
                   </div>
-                  <div className="text-8xl opacity-20">{slide.image}</div>
+                  <div className="text-4xl sm:text-6xl lg:text-8xl opacity-20 mt-4 sm:mt-0 hidden sm:block">{slide.image}</div>
                 </div>
               </div>
             ))}
             
             {/* Slide Indicators */}
-            <div className="absolute bottom-6 left-12 flex space-x-2">
+            <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 sm:left-4 sm:transform-none lg:left-12 flex space-x-2">
               {heroSlides.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`w-3 h-3 rounded-full transition-colors ${
+                  className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-colors ${
                     index === currentSlide ? "bg-white" : "bg-white/40"
                   }`}
                 />
@@ -402,21 +402,21 @@ export function HomePage() {
       </section>
 
       {/* Quick Actions */}
-      <section className="py-16">
+      <section className="py-8 sm:py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900 dark:text-white">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12 text-gray-900 dark:text-white">
             {t.quickActions || "Quick Actions"}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto">
             {quickActions.map((action, index) => (
               <Link key={index} href={action.link}>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-                  <CardContent className="p-6 text-center">
-                    <div className={`w-16 h-16 ${action.color} rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}>
+                <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group h-full">
+                  <CardContent className="p-4 sm:p-6 text-center flex flex-col items-center justify-center min-h-[120px] sm:min-h-[140px]">
+                    <div className={`w-12 h-12 sm:w-16 sm:h-16 ${action.color} rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform`}>
                       <div className="text-white">{action.icon}</div>
                     </div>
-                    <h3 className="font-semibold mb-2">{action.title}</h3>
-                    <p className="text-sm text-gray-600">{action.description}</p>
+                    <h3 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base leading-tight">{action.title}</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-tight">{action.description}</p>
                   </CardContent>
                 </Card>
               </Link>
