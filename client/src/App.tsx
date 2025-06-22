@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/language-selector";
 import { RoleToggle } from "@/components/role-toggle";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import LandingPage from "@/pages/landing";
+import { HomePage } from "@/pages/home";
 import CitizenDashboard from "@/pages/citizen-dashboard";
 import OfficialDashboard from "@/pages/official-dashboard";
 import MayorDashboard from "@/pages/mayor-dashboard";
@@ -151,13 +151,13 @@ function App() {
     setLocation("/");
   };
 
-  // Show landing page if not authenticated
-  if (!isAuthenticated || !currentRole) {
+  // Show home page if not authenticated or if explicitly accessing root
+  if (!isAuthenticated || !currentRole || location === "/") {
     return (
       <QueryClientProvider client={queryClient}>
         <LanguageProvider>
           <TooltipProvider>
-            <LandingPage onLogin={handleLogin} />
+            <HomePage />
             <Toaster />
           </TooltipProvider>
         </LanguageProvider>
