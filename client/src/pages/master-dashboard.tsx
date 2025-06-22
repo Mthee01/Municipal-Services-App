@@ -13,30 +13,12 @@ import {
   Clock,
   BarChart3,
   Settings,
-  Filter,
-  Menu,
-  ChevronDown,
-  Home,
-  FileText,
-  Download,
-  Phone,
-  Calendar,
-  Zap,
-  Shield,
-  DollarSign
+  Filter
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { SmartNotifications } from "@/components/smart-notifications";
 import { AdvancedSearch } from "@/components/advanced-search";
 import { InteractiveMaps } from "@/components/interactive-maps";
@@ -108,88 +90,15 @@ export function MasterDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto p-6 space-y-6">
-        {/* Header with Navigation */}
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {t.masterDashboard || "Master Dashboard"}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                {t.comprehensiveOverview || "Comprehensive municipality management overview"}</p>
-            </div>
-            
-            {/* Main Navigation Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center space-x-2">
-                  <Menu className="h-4 w-4" />
-                  <span>Navigation</span>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                <DropdownMenuLabel>Dashboard Sections</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => document.getElementById('overview')?.scrollIntoView({ behavior: 'smooth' })}>
-                  <LayoutDashboard className="mr-2 h-4 w-4" />
-                  Overview & Statistics
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => document.getElementById('search')?.scrollIntoView({ behavior: 'smooth' })}>
-                  <Search className="mr-2 h-4 w-4" />
-                  Advanced Search
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => document.getElementById('chat')?.scrollIntoView({ behavior: 'smooth' })}>
-                  <MessageCircle className="mr-2 h-4 w-4" />
-                  Real-Time Chat
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => document.getElementById('analytics')?.scrollIntoView({ behavior: 'smooth' })}>
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  Predictive Analytics
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => document.getElementById('maps')?.scrollIntoView({ behavior: 'smooth' })}>
-                  <Map className="mr-2 h-4 w-4" />
-                  Interactive Maps
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => document.getElementById('community')?.scrollIntoView({ behavior: 'smooth' })}>
-                  <Users className="mr-2 h-4 w-4" />
-                  Community Features
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => setShowIssueForm(true)}>
-                  <AlertTriangle className="mr-2 h-4 w-4" />
-                  Report New Issue
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => window.location.href = '/'}>
-                  <Home className="mr-2 h-4 w-4" />
-                  Return to Home
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Other Dashboards</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => {
-                  localStorage.setItem('testRole', 'citizen');
-                  window.location.href = '/citizen';
-                }}>
-                  <Users className="mr-2 h-4 w-4" />
-                  Citizen Dashboard
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  localStorage.setItem('testRole', 'mayor');
-                  window.location.href = '/mayor';
-                }}>
-                  <Shield className="mr-2 h-4 w-4" />
-                  Mayor Dashboard
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  localStorage.setItem('testRole', 'system-admin');
-                  window.location.href = '/system-admin';
-                }}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  System Admin
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              {t.masterDashboard || "Master Dashboard"}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              {t.comprehensiveOverview || "Comprehensive municipality management overview"}
+            </p>
           </div>
           <div className="flex items-center space-x-4">
             <Button onClick={() => setShowIssueForm(true)}>

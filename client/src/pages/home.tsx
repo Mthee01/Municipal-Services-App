@@ -190,30 +190,10 @@ export function HomePage() {
             <nav className="hidden md:flex items-center space-x-6">
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">{t.features || "Features"}</a>
               <a href="#stats" className="text-gray-600 hover:text-blue-600 transition-colors">{t.stats || "Statistics"}</a>
-              <div className="flex items-center space-x-2">
-                <div className="flex flex-wrap gap-1">
-                  <Button size="sm" variant="outline" onClick={() => {
-                    localStorage.setItem('testRole', 'citizen');
-                    window.location.href = '/citizen';
-                  }}>Citizen</Button>
-                  <Button size="sm" variant="outline" onClick={() => {
-                    localStorage.setItem('testRole', 'master');
-                    window.location.href = '/master';
-                  }}>Master</Button>
-                  <Button size="sm" variant="outline" onClick={() => {
-                    localStorage.setItem('testRole', 'mayor');
-                    window.location.href = '/mayor';
-                  }}>Mayor</Button>
-                  <Button size="sm" variant="outline" onClick={() => {
-                    localStorage.setItem('testRole', 'official');
-                    window.location.href = '/official';
-                  }}>Official</Button>
-                  <Button size="sm" variant="outline" onClick={() => {
-                    localStorage.setItem('testRole', 'system-admin');
-                    window.location.href = '/system-admin';
-                  }}>Admin</Button>
-                </div>
-              </div>
+              <a href="#about" className="text-gray-600 hover:text-blue-600 transition-colors">{t.about || "About"}</a>
+              <Link href="/citizen">
+                <Button>{t.getStarted || "Get Started"}</Button>
+              </Link>
             </nav>
           </div>
         </div>

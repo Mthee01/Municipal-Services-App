@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/language-selector";
 import { RoleToggle } from "@/components/role-toggle";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { HomeNavigation, MobileNavigation } from "@/components/home-navigation";
-import { HomePage } from "@/pages/home-redesigned";
+import { HomePage } from "@/pages/home";
 import CitizenDashboard from "@/pages/citizen-dashboard";
 import OfficialDashboard from "@/pages/official-dashboard";
 import MayorDashboard from "@/pages/mayor-dashboard";
@@ -17,7 +16,6 @@ import WardCouncillorDashboard from "@/pages/ward-councillor-dashboard";
 import TechManagerDashboard from "@/pages/tech-manager-dashboard";
 import SystemAdminDashboard from "@/pages/system-admin-dashboard";
 import { MasterDashboard } from "@/pages/master-dashboard";
-import FinancialManagement from "@/pages/financial-management";
 import NotFound from "@/pages/not-found";
 import type { UserRole } from "@/lib/types";
 
@@ -153,32 +151,8 @@ function App() {
     setLocation("/");
   };
 
-  // Show home page if not authenticated and on root path
-  if ((!isAuthenticated || !currentRole) && location === "/") {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <LanguageProvider>
-          <TooltipProvider>
-            <HomePage />
-            <Toaster />
-          </TooltipProvider>
-        </LanguageProvider>
-      </QueryClientProvider>
-    );
-  }
-
-  // Check for test role access
-  const testRole = localStorage.getItem('testRole');
-  if (!isAuthenticated && testRole) {
-    setIsAuthenticated(true);
-    setCurrentRole(testRole as UserRole);
-  }
-
-  // If not authenticated but trying to access other pages, redirect to home
-  if (!isAuthenticated || !currentRole) {
-    if (location !== "/") {
-      setLocation("/");
-    }
+  // Show home page if not authenticated or if explicitly accessing root
+  if (!isAuthenticated || !currentRole || location === "/") {
     return (
       <QueryClientProvider client={queryClient}>
         <LanguageProvider>
@@ -241,20 +215,9 @@ function App() {
               <Route path="/ward-councillor" component={WardCouncillorDashboard} />
               <Route path="/tech-manager" component={TechManagerDashboard} />
               <Route path="/system-admin" component={SystemAdminDashboard} />
-              <Route path="/financial" component={FinancialManagement} />
-              <Route path="/report-issue" component={CitizenDashboard} />
-              <Route path="/track-issues" component={CitizenDashboard} />
-              <Route path="/emergency" component={CitizenDashboard} />
-              <Route path="/book-service" component={CitizenDashboard} />
               <Route component={NotFound} />
             </Switch>
           </main>
-
-          {/* Home Navigation - Fixed position for easy access */}
-          <HomeNavigation />
-          
-          {/* Mobile Navigation - Bottom navigation for mobile */}
-          <MobileNavigation />
 
           {/* Footer */}
           <footer className="bg-gray-900 text-white py-12">
