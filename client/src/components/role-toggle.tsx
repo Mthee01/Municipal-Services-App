@@ -16,10 +16,10 @@ const roleConfig: Record<UserRole, { label: string; icon: any; color: string; de
     description: "Report issues and track services"
   },
   official: {
-    label: "Municipal Official",
+    label: "Call Centre Agent",
     icon: UserCheck,
     color: "bg-green-50 text-green-700 border-green-200",
-    description: "Manage issues and oversee operations"
+    description: "Handle calls and manage citizen requests"
   },
   admin: {
     label: "Administrator",
