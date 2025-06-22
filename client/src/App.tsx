@@ -16,6 +16,7 @@ import WardCouncillorDashboard from "@/pages/ward-councillor-dashboard";
 import TechManagerDashboard from "@/pages/tech-manager-dashboard";
 import SystemAdminDashboard from "@/pages/system-admin-dashboard";
 import { MasterDashboard } from "@/pages/master-dashboard";
+import FinancialManagement from "@/pages/financial-management";
 import NotFound from "@/pages/not-found";
 import type { UserRole } from "@/lib/types";
 
@@ -239,6 +240,7 @@ function App() {
               <Route path="/ward-councillor" component={WardCouncillorDashboard} />
               <Route path="/tech-manager" component={TechManagerDashboard} />
               <Route path="/system-admin" component={SystemAdminDashboard} />
+              <Route path="/financial" component={FinancialManagement} />
               <Route component={NotFound} />
             </Switch>
           </main>

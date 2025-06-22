@@ -649,6 +649,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Financial Management Routes
+  
+  // Billing Accounts
+  app.get("/api/billing-accounts", async (req, res) => {
+    try {
+      const accounts = await storage.getBillingAccounts();
+      res.json(accounts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch billing accounts" });
+    }
+  });
+
+  app.get("/api/billing-accounts/:id", async (req, res) => {
+    try {
+      const account = await storage.getBillingAccount(parseInt(req.params.id));
+      if (!account) {
+        return res.status(404).json({ error: "Account not found" });
+      }
+      res.json(account);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch account" });
+    }
+  });
+
+  app.post("/api/billing-accounts", async (req, res) => {
+    try {
+      const account = await storage.createBillingAccount(req.body);
+      res.status(201).json(account);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create billing account" });
+    }
+  });
+
+  // Bills Management
+  app.get("/api/bills", async (req, res) => {
+    try {
+      const { accountId, status, serviceType } = req.query;
+      let bills;
+      
+      if (accountId) {
+        bills = await storage.getBillsByAccount(parseInt(accountId as string));
+      } else if (status) {
+        bills = await storage.getBillsByStatus(status as string);
+      } else if (serviceType) {
+        bills = await storage.getBillsByServiceType(serviceType as string);
+      } else {
+        bills = await storage.getBills();
+      }
+      
+      res.json(bills);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch bills" });
+    }
+  });
+
+  app.post("/api/bills", async (req, res) => {
+    try {
+      const bill = await storage.createBill(req.body);
+      res.status(201).json(bill);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create bill" });
+    }
+  });
+
+  // Payments Processing
+  app.get("/api/municipal-payments", async (req, res) => {
+    try {
+      const { accountId, status, paymentMethod } = req.query;
+      let payments;
+      
+      if (accountId) {
+        payments = await storage.getPaymentsByAccount(parseInt(accountId as string));
+      } else if (status) {
+        payments = await storage.getPaymentsByStatus(status as string);
+      } else {
+        payments = await storage.getMunicipalPayments();
+      }
+      
+      res.json(payments);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch payments" });
+    }
+  });
+
+  app.post("/api/municipal-payments", async (req, res) => {
+    try {
+      const payment = await storage.createMunicipalPayment(req.body);
+      res.status(201).json(payment);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to process payment" });
+    }
+  });
+
+  // Revenue Analytics
+  app.get("/api/revenue/dashboard", async (req, res) => {
+    try {
+      const dashboard = await storage.getRevenueDashboard();
+      res.json(dashboard);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch revenue dashboard" });
+    }
+  });
+
+  app.get("/api/revenue/reports", async (req, res) => {
+    try {
+      const { reportType, period, serviceType } = req.query;
+      const reports = await storage.getRevenueReports({
+        reportType: reportType as string,
+        period: period as string,
+        serviceType: serviceType as string
+      });
+      res.json(reports);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch revenue reports" });
+    }
+  });
+
+  // Payment Plans
+  app.get("/api/payment-plans", async (req, res) => {
+    try {
+      const { accountId, status } = req.query;
+      const plans = await storage.getPaymentPlans(accountId ? parseInt(accountId as string) : undefined, status as string);
+      res.json(plans);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch payment plans" });
+    }
+  });
+
+  app.post("/api/payment-plans", async (req, res) => {
+    try {
+      const plan = await storage.createPaymentPlan(req.body);
+      res.status(201).json(plan);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create payment plan" });
+    }
+  });
+
+  // Tariff Structures
+  app.get("/api/tariffs", async (req, res) => {
+    try {
+      const { serviceType, customerCategory } = req.query;
+      const tariffs = await storage.getTariffStructures(serviceType as string, customerCategory as string);
+      res.json(tariffs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch tariff structures" });
+    }
+  });
+
+  // Collection Reports
+  app.get("/api/collections/summary", async (req, res) => {
+    try {
+      const { period = "month", serviceType } = req.query;
+      const summary = await storage.getCollectionSummary(period as string, serviceType as string);
+      res.json(summary);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch collection summary" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
