@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Filter } from "lucide-react";
+import { Plus, Filter, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IssueForm } from "@/components/issue-form";
 import { IssueCard } from "@/components/issue-card";
 import { PaymentSection } from "@/components/payment-section";
 import { CommunityFeatures } from "@/components/community-features";
 import { VoucherSection } from "@/components/voucher-section";
+import { RealTimeNotifications } from "@/components/real-time-notifications";
+import { GISMapIntegration } from "@/components/gis-map-integration";
 import type { Issue } from "@shared/schema";
 
 const categories = [
@@ -69,17 +72,24 @@ export default function CitizenDashboard() {
 
       {/* Hero Section */}
       <section className="relative z-10 bg-gradient-to-r from-sa-green to-green-600 text-white py-16">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-4" style={{ color: 'hsl(220, 85%, 15%)' }}>Report Issues. Track Progress. Build Community.</h2>
-          <p className="text-xl text-yellow-600 mb-8">Your voice matters in building better municipal services</p>
-          <Button 
-            onClick={() => setShowIssueForm(true)}
-            className="bg-sa-gold hover:bg-yellow-500 text-black font-semibold px-8 py-4 text-lg"
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            Report New Issue
-          </Button>
-          <p className="text-sm text-red-500 font-bold mt-2">⚡ Report in under 60 seconds</p>
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="flex justify-between items-center mb-8">
+            <div className="text-center flex-1">
+              <h2 className="text-4xl font-bold mb-4" style={{ color: 'hsl(220, 85%, 15%)' }}>Report Issues. Track Progress. Build Community.</h2>
+              <p className="text-xl text-yellow-600 mb-8">Your voice matters in building better municipal services</p>
+            </div>
+            <RealTimeNotifications userRole="citizen" />
+          </div>
+          <div className="text-center">
+            <Button 
+              onClick={() => setShowIssueForm(true)}
+              className="bg-sa-gold hover:bg-yellow-500 text-black font-semibold px-8 py-4 text-lg"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              Report New Issue
+            </Button>
+            <p className="text-sm text-red-500 font-bold mt-2">⚡ Report in under 60 seconds</p>
+          </div>
         </div>
       </section>
 
@@ -135,29 +145,42 @@ export default function CitizenDashboard() {
         </div>
       </section>
 
-      {/* My Issues Dashboard */}
+      {/* Tabbed Dashboard */}
       <section className="relative z-10 py-12">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
-            <h3 className="text-2xl font-bold text-gray-900">My Recent Issues</h3>
-            <div className="flex flex-wrap gap-4">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="assigned">Assigned</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
+          <Tabs defaultValue="my-issues" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="my-issues">My Issues</TabsTrigger>
+              <TabsTrigger value="community">Community</TabsTrigger>
+              <TabsTrigger value="map-view">
+                <MapPin className="w-4 h-4 mr-2" />
+                Map View
+              </TabsTrigger>
+              <TabsTrigger value="payments">Payments</TabsTrigger>
+              <TabsTrigger value="vouchers">Vouchers</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="my-issues" className="space-y-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
+                <h3 className="text-2xl font-bold text-gray-900">My Recent Issues</h3>
+                <div className="flex flex-wrap gap-4">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="assigned">Assigned</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.value} value={category.value}>
@@ -198,25 +221,30 @@ export default function CitizenDashboard() {
               </Button>
             </div>
           )}
+          </TabsContent>
+
+            <TabsContent value="community" className="space-y-6">
+              <CommunityFeatures />
+            </TabsContent>
+
+            <TabsContent value="map-view" className="space-y-6">
+              <GISMapIntegration 
+                issues={[...userIssues, ...communityIssues]} 
+                onIssueSelect={(issue) => console.log('Selected issue:', issue)}
+                height="600px"
+              />
+            </TabsContent>
+
+            <TabsContent value="payments" className="space-y-6">
+              <PaymentSection />
+            </TabsContent>
+
+            <TabsContent value="vouchers" className="space-y-6">
+              <VoucherSection />
+            </TabsContent>
+          </Tabs>
         </div>
       </section>
-
-      {/* Voucher Section */}
-      <section className="py-12 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4">
-          <VoucherSection />
-        </div>
-      </section>
-
-      {/* Community Hub */}
-      <section className="py-12 bg-blue-50">
-        <div className="max-w-6xl mx-auto px-4">
-          <CommunityFeatures />
-        </div>
-      </section>
-
-      {/* Payment Section */}
-      <PaymentSection />
 
       {/* Issue Form Modal */}
       <IssueForm 

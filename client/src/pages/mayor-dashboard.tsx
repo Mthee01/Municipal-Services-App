@@ -3,9 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Building2, Users, Wrench, TrendingUp, MapPin, Clock, Star, Target } from "lucide-react";
+import { Building2, Users, Wrench, TrendingUp, MapPin, Clock, Star, Target, Bell } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 import { formatCurrency } from "@/lib/utils";
+import { RealTimeNotifications } from "@/components/real-time-notifications";
+import { GISMapIntegration } from "@/components/gis-map-integration";
+import { AIAnalyticsDashboard } from "@/components/ai-analytics-dashboard";
 
 export default function MayorDashboard() {
   const { data: municipalityStats, isLoading: statsLoading } = useQuery({
@@ -80,12 +83,15 @@ export default function MayorDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Mayor Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-300">Municipality-wide performance overview</p>
+          <p className="text-gray-600 dark:text-gray-300">Municipality-wide performance overview with AI insights</p>
         </div>
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-          <Building2 className="w-4 h-4 mr-1" />
-          Executive View
-        </Badge>
+        <div className="flex items-center gap-4">
+          <RealTimeNotifications userRole="mayor" />
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <Building2 className="w-4 h-4 mr-1" />
+            Executive View
+          </Badge>
+        </div>
       </div>
 
       {/* Key Performance Indicators */}
@@ -150,11 +156,13 @@ export default function MayorDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="departments">Departments</TabsTrigger>
           <TabsTrigger value="wards">Ward Performance</TabsTrigger>
           <TabsTrigger value="technicians">Technician Analytics</TabsTrigger>
+          <TabsTrigger value="ai-insights">AI Insights</TabsTrigger>
+          <TabsTrigger value="gis-map">GIS Mapping</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -314,6 +322,19 @@ export default function MayorDashboard() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="ai-insights" className="space-y-4">
+          <AIAnalyticsDashboard userRole="mayor" />
+        </TabsContent>
+
+        <TabsContent value="gis-map" className="space-y-4">
+          {/* Get issues data for GIS mapping */}
+          <GISMapIntegration 
+            issues={[]} 
+            onIssueSelect={(issue) => console.log('Selected issue:', issue)}
+            height="600px"
+          />
         </TabsContent>
       </Tabs>
     </div>

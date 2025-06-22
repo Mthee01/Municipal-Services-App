@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertIssueSchema, insertPaymentSchema, insertUserSchema } from "@shared/schema";
 import multer from "multer";
@@ -504,6 +505,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Add WebSocket server for real-time notifications
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  wss.on('connection', (ws) => {
+    console.log('New WebSocket connection established');
+    
+    // Send welcome message
+    ws.send(JSON.stringify({
+      id: Date.now().toString(),
+      type: 'info',
+      title: 'Connected',
+      message: 'Real-time notifications enabled',
+      timestamp: new Date(),
+      read: false
+    }));
+    
+    ws.on('close', () => {
+      console.log('WebSocket connection closed');
+    });
+  });
+  
+  // Broadcast notification to all connected clients
+  const broadcastNotification = (notification: any) => {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify(notification));
+      }
+    });
+  };
+  
+  // Add notification broadcasting to issue updates
+  const originalCreateIssue = storage.createIssue.bind(storage);
+  storage.createIssue = async (issue) => {
+    const newIssue = await originalCreateIssue(issue);
+    broadcastNotification({
+      id: Date.now().toString(),
+      type: 'info',
+      title: 'New Issue Reported',
+      message: `${newIssue.title} reported in ${newIssue.location}`,
+      timestamp: new Date(),
+      read: false,
+      issueId: newIssue.id,
+      location: newIssue.ward
+    });
+    return newIssue;
+  };
+  
+  const originalUpdateIssue = storage.updateIssue.bind(storage);
+  storage.updateIssue = async (id, updates) => {
+    const updatedIssue = await originalUpdateIssue(id, updates);
+    if (updatedIssue) {
+      const notificationType = updatedIssue.status === 'resolved' ? 'success' : 
+                              updatedIssue.status === 'in_progress' ? 'warning' : 'info';
+      broadcastNotification({
+        id: Date.now().toString(),
+        type: notificationType,
+        title: 'Issue Updated',
+        message: `${updatedIssue.title} status changed to ${updatedIssue.status}`,
+        timestamp: new Date(),
+        read: false,
+        issueId: updatedIssue.id,
+        location: updatedIssue.ward
+      });
+    }
+    return updatedIssue;
+  };
+
   return httpServer;
 }
 
