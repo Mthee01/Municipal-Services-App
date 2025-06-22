@@ -97,6 +97,7 @@ export interface TranslationKey {
   
   // Messages
   welcome: string;
+  welcomeMessage: string;
   yourVoiceMatters: string;
   reportIn60Seconds: string;
   loginSuccessful: string;
@@ -213,6 +214,7 @@ export const translations: Record<string, TranslationKey> = {
     
     // Messages
     welcome: "Welcome to Municipal Services",
+    welcomeMessage: "Welcome to our Muni smart app. We are pleased to have you here.",
     yourVoiceMatters: "Your voice matters in building better municipal services",
     reportIn60Seconds: "⚡ Report in under 60 seconds",
     loginSuccessful: "Login successful",
@@ -328,6 +330,7 @@ export const translations: Record<string, TranslationKey> = {
     
     // Messages
     welcome: "Welkom by Munisipale Dienste",
+    welcomeMessage: "Welkom by ons Muni slim app. Ons is bly om jou hier te hê.",
     yourVoiceMatters: "Jou stem maak saak in die bou van beter munisipale dienste",
     reportIn60Seconds: "⚡ Rapporteer in minder as 60 sekondes",
     loginSuccessful: "Aanmelding suksesvol",
@@ -443,6 +446,7 @@ export const translations: Record<string, TranslationKey> = {
     
     // Messages
     welcome: "Siyakwamukela Ezinsizeni Zikamasipala",
+    welcomeMessage: "Siyakwamukela ku-app yethu ye-Muni ehlakaniphile. Siyajabula ukukubona lapha.",
     yourVoiceMatters: "Izwi lakho libalulekile ekwakheni izinsiza zikamasipala ezingcono",
     reportIn60Seconds: "⚡ Bika ngaphansi kwemizuzwana engu-60",
     loginSuccessful: "Ukungenela kuphumelele",
@@ -558,6 +562,7 @@ export const translations: Record<string, TranslationKey> = {
     
     // Messages
     welcome: "Wamkelekile Kwiinkonzo Zikamasipala",
+    welcomeMessage: "Wamkelekile kwi-app yethu ye-Muni ehlakaniphile. Siyavuya ukukubona apha.",
     yourVoiceMatters: "Ilizwi lakho libalulekile ekwakheni iinkonzo zikamasipala ezingcono",
     reportIn60Seconds: "⚡ Xela ngaphantsi kwemizuzwana engama-60",
     loginSuccessful: "Ukungenela kuphumelele",
@@ -674,6 +679,7 @@ export const translations: Record<string, TranslationKey> = {
     
     // Messages
     welcome: "Rea u amohela",
+    welcomeMessage: "Rea u amohela ho app ea rona ea Muni e bohlale. Re thabile ho u bona mona.",
     yourVoiceMatters: "Lentsoe la hau le bohlokoa",
     reportIn60Seconds: "Tlaleha ka liketsahalo tse 60",
     loginSuccessful: "Kena ka katleho",
@@ -790,6 +796,7 @@ export const translations: Record<string, TranslationKey> = {
     
     // Messages
     welcome: "Re go amogela",
+    welcomeMessage: "Re go amogela mo app-eng ya rona ya Muni e bohlale. Re itumeletse go go bona fa.",
     yourVoiceMatters: "Lentswe la gago le botlhokwa",
     reportIn60Seconds: "Bega mo metsotswaneng e 60",
     loginSuccessful: "Tseno e atlehile",
