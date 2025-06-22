@@ -239,7 +239,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
           <div className="bg-sa-green/10 border-t border-sa-green/20 py-2 overflow-hidden">
             <div className="animate-marquee whitespace-nowrap">
               <span className="text-sa-green font-medium text-sm">
-                Welcome to our Muni smart app. We are pleased to have you here. • Welcome to our Muni smart app. We are pleased to have you here. • Welcome to our Muni smart app. We are pleased to have you here. • Welcome to our Muni smart app. We are pleased to have you here. •
+                Welcome to our Muni smart app. We are pleased to have you here. Welcome to our Muni smart app. We are pleased to have you here. Welcome to our Muni smart app. We are pleased to have you here. Welcome to our Muni smart app. We are pleased to have you here.
               </span>
             </div>
           </div>
