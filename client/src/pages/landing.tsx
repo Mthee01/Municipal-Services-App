@@ -491,6 +491,32 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
 
                           <FormField
                             control={registerForm.control}
+                            name="role"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>User Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select your user type" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="citizen">Citizen</SelectItem>
+                                    <SelectItem value="official">Municipal Official</SelectItem>
+                                    <SelectItem value="ward_councillor">Ward Councillor</SelectItem>
+                                    <SelectItem value="mayor">Mayor</SelectItem>
+                                    <SelectItem value="tech_manager">Technical Manager</SelectItem>
+                                    <SelectItem value="admin">Administrator</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={registerForm.control}
                             name="password"
                             render={({ field }) => (
                               <FormItem>
