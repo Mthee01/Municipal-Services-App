@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { 
   MapPin, 
   MessageSquare, 
@@ -21,14 +21,21 @@ import {
   Play,
   Star,
   Heart,
-  Home as HomeIcon
+  Home as HomeIcon,
+  X
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { apiRequest } from "@/lib/queryClient";
 
 interface QuickStats {
   totalIssues: number;
@@ -50,6 +57,114 @@ interface FeatureHighlight {
 export function HomePage() {
   const { t } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [loginData, setLoginData] = useState({ username: '', password: '' });
+  const [registerData, setRegisterData] = useState({
+    username: '',
+    password: '',
+    name: '',
+    email: '',
+    phone: '',
+    role: 'citizen'
+  });
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await apiRequest('POST', '/api/auth/login', loginData);
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({
+          title: "Welcome back!",
+          description: "You have been logged in successfully.",
+        });
+        
+        // Save authentication data
+        const authData = {
+          user: data.user,
+          loginTime: new Date().toISOString(),
+          rememberMe: false
+        };
+        sessionStorage.setItem("municipalAuth", JSON.stringify(authData));
+        
+        // Navigate based on role
+        switch (data.user.role) {
+          case "citizen":
+            setLocation("/citizen");
+            break;
+          case "official":
+          case "admin":
+            setLocation("/official");
+            break;
+          case "mayor":
+            setLocation("/mayor");
+            break;
+          case "ward_councillor":
+            setLocation("/ward-councillor");
+            break;
+          case "tech_manager":
+            setLocation("/tech-manager");
+            break;
+          default:
+            setLocation("/citizen");
+        }
+        
+        setShowAuth(false);
+      } else {
+        toast({
+          title: "Login Failed",
+          description: data.message || "Invalid credentials",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to login. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await apiRequest('POST', '/api/auth/register', registerData);
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({
+          title: "Registration Successful!",
+          description: "Your account has been created. You can now log in.",
+        });
+        setAuthMode('login');
+        setRegisterData({
+          username: '',
+          password: '',
+          name: '',
+          email: '',
+          phone: '',
+          role: 'citizen'
+        });
+      } else {
+        toast({
+          title: "Registration Failed",
+          description: data.message || "Failed to create account",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to register. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const { data: quickStats } = useQuery<QuickStats>({
     queryKey: ["/api/quick-stats"],
@@ -190,10 +305,7 @@ export function HomePage() {
             <nav className="hidden md:flex items-center space-x-6">
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">{t.features || "Features"}</a>
               <a href="#stats" className="text-gray-600 hover:text-blue-600 transition-colors">{t.stats || "Statistics"}</a>
-              <a href="#about" className="text-gray-600 hover:text-blue-600 transition-colors">{t.about || "About"}</a>
-              <Link href="/citizen">
-                <Button>{t.getStarted || "Get Started"}</Button>
-              </Link>
+              <Button onClick={() => setShowAuth(true)}>{t.getStarted || "Get Started"}</Button>
             </nav>
           </div>
         </div>
@@ -529,6 +641,121 @@ export function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Authentication Dialog */}
+      <Dialog open={showAuth} onOpenChange={setShowAuth}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {authMode === 'login' ? 'Sign In' : 'Create Account'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <Tabs value={authMode} onValueChange={(value) => setAuthMode(value as 'login' | 'register')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">Sign In</TabsTrigger>
+              <TabsTrigger value="register">Register</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="login">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <Label htmlFor="login-username">Username</Label>
+                  <Input
+                    id="login-username"
+                    value={loginData.username}
+                    onChange={(e) => setLoginData({...loginData, username: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="login-password">Password</Label>
+                  <Input
+                    id="login-password"
+                    type="password"
+                    value={loginData.password}
+                    onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  Sign In
+                </Button>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="register">
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div>
+                  <Label htmlFor="register-name">Full Name</Label>
+                  <Input
+                    id="register-name"
+                    value={registerData.name}
+                    onChange={(e) => setRegisterData({...registerData, name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="register-username">Username</Label>
+                  <Input
+                    id="register-username"
+                    value={registerData.username}
+                    onChange={(e) => setRegisterData({...registerData, username: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="register-email">Email</Label>
+                  <Input
+                    id="register-email"
+                    type="email"
+                    value={registerData.email}
+                    onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="register-phone">Phone</Label>
+                  <Input
+                    id="register-phone"
+                    value={registerData.phone}
+                    onChange={(e) => setRegisterData({...registerData, phone: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={registerData.role} onValueChange={(value) => setRegisterData({...registerData, role: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="citizen">Citizen</SelectItem>
+                      <SelectItem value="official">Municipal Official</SelectItem>
+                      <SelectItem value="mayor">Mayor</SelectItem>
+                      <SelectItem value="ward_councillor">Ward Councillor</SelectItem>
+                      <SelectItem value="tech_manager">Technical Manager</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="register-password">Password</Label>
+                  <Input
+                    id="register-password"
+                    type="password"
+                    value={registerData.password}
+                    onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  Create Account
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
