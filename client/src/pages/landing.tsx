@@ -667,8 +667,8 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 <li>
                   <button 
                     onClick={() => {
-                      const loginSection = document.querySelector('.auth-section');
-                      loginSection?.scrollIntoView({ behavior: 'smooth' });
+                      // Navigate to citizen dashboard payments tab
+                      window.location.href = '/citizen-dashboard?tab=payments';
                     }}
                     className="hover:text-sa-gold transition-colors text-left"
                   >
@@ -678,8 +678,8 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 <li>
                   <button 
                     onClick={() => {
-                      const loginSection = document.querySelector('.auth-section');
-                      loginSection?.scrollIntoView({ behavior: 'smooth' });
+                      // Navigate to citizen dashboard to track issues
+                      window.location.href = '/citizen-dashboard?tab=my-issues';
                     }}
                     className="hover:text-sa-gold transition-colors text-left"
                   >
@@ -689,8 +689,8 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 <li>
                   <button 
                     onClick={() => {
-                      const loginSection = document.querySelector('.auth-section');
-                      loginSection?.scrollIntoView({ behavior: 'smooth' });
+                      // Navigate to citizen dashboard community tab
+                      window.location.href = '/citizen-dashboard?tab=community';
                     }}
                     className="hover:text-sa-gold transition-colors text-left"
                   >
@@ -706,8 +706,8 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 <li>
                   <button 
                     onClick={() => {
-                      const loginSection = document.querySelector('.auth-section');
-                      loginSection?.scrollIntoView({ behavior: 'smooth' });
+                      // Navigate to citizen dashboard communication tab for help
+                      window.location.href = '/citizen-dashboard?tab=communication';
                     }}
                     className="hover:text-sa-gold transition-colors text-left"
                   >
@@ -733,8 +733,8 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 <li>
                   <button 
                     onClick={() => {
-                      const loginSection = document.querySelector('.auth-section');
-                      loginSection?.scrollIntoView({ behavior: 'smooth' });
+                      // Show accessibility information in contact form
+                      setShowContactForm(true);
                     }}
                     className="hover:text-sa-gold transition-colors text-left"
                   >

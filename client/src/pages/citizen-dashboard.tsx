@@ -32,12 +32,37 @@ export default function CitizenDashboard() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [location] = useLocation();
 
-  // Check URL parameters to auto-open report issue form
+  // Check URL parameters to auto-open report issue form or navigate to specific tabs
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
+    
+    // Handle report issue parameter
     if (urlParams.get('report') === 'true') {
       setShowIssueForm(true);
-      // Clean up URL parameter
+    }
+    
+    // Handle tab navigation parameters
+    const tabParam = urlParams.get('tab');
+    if (tabParam) {
+      // For now, just scroll to the relevant section or show appropriate content
+      // In a full implementation, you would have actual tabs to switch to
+      if (tabParam === 'payments') {
+        // Could navigate to payments section
+        console.log('Navigate to payments section');
+      } else if (tabParam === 'my-issues') {
+        // Could filter to show only user's issues
+        console.log('Show user issues');
+      } else if (tabParam === 'community') {
+        // Could show community forum section
+        console.log('Navigate to community section');
+      } else if (tabParam === 'communication') {
+        // Could open chat/help section
+        console.log('Open communication/help section');
+      }
+    }
+    
+    // Clean up URL parameters
+    if (urlParams.has('report') || urlParams.has('tab')) {
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [location]);
