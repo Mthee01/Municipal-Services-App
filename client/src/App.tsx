@@ -14,6 +14,7 @@ import OfficialDashboard from "@/pages/official-dashboard";
 import MayorDashboard from "@/pages/mayor-dashboard";
 import WardCouncillorDashboard from "@/pages/ward-councillor-dashboard";
 import TechManagerDashboard from "@/pages/tech-manager-dashboard";
+import SystemAdminDashboard from "@/pages/system-admin-dashboard";
 import NotFound from "@/pages/not-found";
 import type { UserRole } from "@/lib/types";
 
@@ -125,11 +126,14 @@ function App() {
       case "mayor":
         setLocation("/mayor");
         break;
-      case "ward_councillor":
+      case "wardCouncillor":
         setLocation("/ward-councillor");
         break;
-      case "tech_manager":
+      case "techManager":
         setLocation("/tech-manager");
+        break;
+      case "systemAdmin":
+        setLocation("/system-admin");
         break;
       default:
         setLocation("/");
@@ -208,6 +212,7 @@ function App() {
               <Route path="/mayor" component={MayorDashboard} />
               <Route path="/ward-councillor" component={WardCouncillorDashboard} />
               <Route path="/tech-manager" component={TechManagerDashboard} />
+              <Route path="/system-admin" component={SystemAdminDashboard} />
               <Route component={NotFound} />
             </Switch>
           </main>
