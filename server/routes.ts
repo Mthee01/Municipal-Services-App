@@ -427,6 +427,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Authentication routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      
+      if (!user || user.password !== password) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      res.json({ 
+        message: "Login successful", 
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          name: user.name, 
+          role: user.role 
+        } 
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { username, password, name, email, phone, role } = req.body;
+      
+      if (!username || !password || !name) {
+        return res.status(400).json({ message: "Username, password, and name are required" });
+      }
+
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(409).json({ message: "Username already exists" });
+      }
+
+      const user = await storage.createUser({
+        username,
+        password,
+        name,
+        email: email || null,
+        phone: phone || null,
+        role: role || "citizen",
+      });
+
+      res.json({ 
+        message: "Registration successful", 
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          name: user.name, 
+          role: user.role 
+        } 
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

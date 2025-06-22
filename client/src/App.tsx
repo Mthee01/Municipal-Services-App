@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/language-selector";
 import { RoleToggle } from "@/components/role-toggle";
+import LandingPage from "@/pages/landing";
 import CitizenDashboard from "@/pages/citizen-dashboard";
 import OfficialDashboard from "@/pages/official-dashboard";
 import MayorDashboard from "@/pages/mayor-dashboard";
@@ -16,9 +17,36 @@ import NotFound from "@/pages/not-found";
 import type { UserRole } from "@/lib/types";
 
 function App() {
-  const [currentRole, setCurrentRole] = useState<UserRole>("citizen");
+  const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [language, setLanguage] = useState("en");
   const [location, setLocation] = useLocation();
+
+  const handleLogin = (userRole: string) => {
+    setCurrentRole(userRole as UserRole);
+    setIsAuthenticated(true);
+    // Navigate to appropriate dashboard based on role
+    switch (userRole) {
+      case "citizen":
+        setLocation("/");
+        break;
+      case "official":
+      case "admin":
+        setLocation("/official");
+        break;
+      case "mayor":
+        setLocation("/mayor");
+        break;
+      case "ward_councillor":
+        setLocation("/ward-councillor");
+        break;
+      case "tech_manager":
+        setLocation("/tech-manager");
+        break;
+      default:
+        setLocation("/");
+    }
+  };
 
   const handleRoleChange = (role: UserRole) => {
     setCurrentRole(role);
@@ -45,6 +73,24 @@ function App() {
     }
   };
 
+  const handleLogout = () => {
+    setCurrentRole(null);
+    setIsAuthenticated(false);
+    setLocation("/");
+  };
+
+  // Show landing page if not authenticated
+  if (!isAuthenticated || !currentRole) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <LandingPage onLogin={handleLogin} />
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -69,6 +115,16 @@ function App() {
                   
                   {/* User Role Toggle */}
                   <RoleToggle currentRole={currentRole} onRoleChange={handleRoleChange} />
+                  
+                  {/* Sign Out Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleLogout}
+                    className="text-gray-600 hover:text-gray-900"
+                  >
+                    Sign Out
+                  </Button>
                 </div>
               </div>
             </div>

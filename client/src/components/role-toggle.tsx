@@ -4,7 +4,7 @@ import { User, Shield, Building2, MapPin, Wrench, UserCheck } from "lucide-react
 import type { UserRole } from "@/lib/types";
 
 interface RoleToggleProps {
-  currentRole: UserRole;
+  currentRole: UserRole | null;
   onRoleChange: (role: UserRole) => void;
 }
 
@@ -48,6 +48,10 @@ const roleConfig: Record<UserRole, { label: string; icon: any; color: string; de
 };
 
 export function RoleToggle({ currentRole, onRoleChange }: RoleToggleProps) {
+  if (!currentRole) {
+    return null;
+  }
+
   const currentConfig = roleConfig[currentRole];
   const Icon = currentConfig.icon;
 
