@@ -222,6 +222,156 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Technicians endpoints
+  app.get("/api/technicians", async (req, res) => {
+    try {
+      const { department, status } = req.query;
+      let technicians;
+
+      if (department) {
+        technicians = await storage.getTechniciansByDepartment(department as string);
+      } else if (status) {
+        technicians = await storage.getTechniciansByStatus(status as string);
+      } else {
+        technicians = await storage.getTechnicians();
+      }
+
+      res.json(technicians);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch technicians" });
+    }
+  });
+
+  app.post("/api/technicians/:technicianId/assign/:issueId", async (req, res) => {
+    try {
+      const technicianId = parseInt(req.params.technicianId);
+      const issueId = parseInt(req.params.issueId);
+      
+      const success = await storage.assignTechnicianToIssue(technicianId, issueId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Technician or issue not found" });
+      }
+      
+      res.json({ message: "Technician assigned successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to assign technician" });
+    }
+  });
+
+  app.patch("/api/technicians/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const technician = await storage.updateTechnician(id, updates);
+      
+      if (!technician) {
+        return res.status(404).json({ message: "Technician not found" });
+      }
+      
+      res.json(technician);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update technician" });
+    }
+  });
+
+  // Wards endpoints
+  app.get("/api/wards", async (req, res) => {
+    try {
+      const wards = await storage.getWards();
+      res.json(wards);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch wards" });
+    }
+  });
+
+  app.get("/api/wards/:wardNumber/stats", async (req, res) => {
+    try {
+      const wardNumber = req.params.wardNumber;
+      const stats = await storage.getWardStats(wardNumber);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch ward statistics" });
+    }
+  });
+
+  // Analytics endpoints
+  app.get("/api/analytics/municipality", async (req, res) => {
+    try {
+      const stats = await storage.getMunicipalityStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch municipality analytics" });
+    }
+  });
+
+  app.get("/api/analytics/technicians", async (req, res) => {
+    try {
+      const performance = await storage.getTechnicianPerformance();
+      res.json(performance);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch technician performance" });
+    }
+  });
+
+  app.get("/api/analytics/departments", async (req, res) => {
+    try {
+      const { department } = req.query;
+      const stats = await storage.getDepartmentStats(department as string);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch department analytics" });
+    }
+  });
+
+  // Distance calculation utility endpoint
+  app.post("/api/technicians/nearest", async (req, res) => {
+    try {
+      const { latitude, longitude, department } = req.body;
+      
+      if (!latitude || !longitude) {
+        return res.status(400).json({ message: "Latitude and longitude required" });
+      }
+
+      let technicians = await storage.getTechniciansByStatus("available");
+      
+      if (department) {
+        technicians = technicians.filter(tech => tech.department === department);
+      }
+
+      // Calculate distances and sort by nearest
+      const techniciansWithDistance = technicians
+        .filter(tech => tech.latitude && tech.longitude)
+        .map(tech => {
+          const distance = calculateDistance(
+            parseFloat(latitude),
+            parseFloat(longitude),
+            parseFloat(tech.latitude!),
+            parseFloat(tech.longitude!)
+          );
+          return { ...tech, distance };
+        })
+        .sort((a, b) => a.distance - b.distance);
+
+      res.json(techniciansWithDistance);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to find nearest technicians" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Helper function to calculate distance between two coordinates
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in kilometers
 }

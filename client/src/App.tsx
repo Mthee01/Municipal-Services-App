@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -9,12 +9,41 @@ import { LanguageSelector } from "@/components/language-selector";
 import { RoleToggle } from "@/components/role-toggle";
 import CitizenDashboard from "@/pages/citizen-dashboard";
 import OfficialDashboard from "@/pages/official-dashboard";
+import MayorDashboard from "@/pages/mayor-dashboard";
+import WardCouncillorDashboard from "@/pages/ward-councillor-dashboard";
+import TechManagerDashboard from "@/pages/tech-manager-dashboard";
 import NotFound from "@/pages/not-found";
 import type { UserRole } from "@/lib/types";
 
 function App() {
   const [currentRole, setCurrentRole] = useState<UserRole>("citizen");
   const [language, setLanguage] = useState("en");
+  const [location, setLocation] = useLocation();
+
+  const handleRoleChange = (role: UserRole) => {
+    setCurrentRole(role);
+    // Navigate to appropriate dashboard based on role
+    switch (role) {
+      case "citizen":
+        setLocation("/");
+        break;
+      case "official":
+      case "admin":
+        setLocation("/official");
+        break;
+      case "mayor":
+        setLocation("/mayor");
+        break;
+      case "ward_councillor":
+        setLocation("/ward-councillor");
+        break;
+      case "tech_manager":
+        setLocation("/tech-manager");
+        break;
+      default:
+        setLocation("/");
+    }
+  };
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -39,7 +68,7 @@ function App() {
                   <LanguageSelector value={language} onValueChange={setLanguage} />
                   
                   {/* User Role Toggle */}
-                  <RoleToggle currentRole={currentRole} onRoleChange={setCurrentRole} />
+                  <RoleToggle currentRole={currentRole} onRoleChange={handleRoleChange} />
                 </div>
               </div>
             </div>
@@ -47,7 +76,14 @@ function App() {
 
           {/* Main Content */}
           <main>
-            {currentRole === "citizen" ? <CitizenDashboard /> : <OfficialDashboard />}
+            <Switch>
+              <Route path="/" component={CitizenDashboard} />
+              <Route path="/official" component={OfficialDashboard} />
+              <Route path="/mayor" component={MayorDashboard} />
+              <Route path="/ward-councillor" component={WardCouncillorDashboard} />
+              <Route path="/tech-manager" component={TechManagerDashboard} />
+              <Route component={NotFound} />
+            </Switch>
           </main>
 
           {/* Footer */}

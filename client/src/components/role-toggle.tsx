@@ -1,5 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { User, Shield, Building2, MapPin, Wrench, UserCheck } from "lucide-react";
 import type { UserRole } from "@/lib/types";
 
 interface RoleToggleProps {
@@ -7,35 +8,77 @@ interface RoleToggleProps {
   onRoleChange: (role: UserRole) => void;
 }
 
+const roleConfig: Record<UserRole, { label: string; icon: any; color: string; description: string }> = {
+  citizen: {
+    label: "Citizen",
+    icon: User,
+    color: "bg-blue-50 text-blue-700 border-blue-200",
+    description: "Report issues and track services"
+  },
+  official: {
+    label: "Municipal Official",
+    icon: UserCheck,
+    color: "bg-green-50 text-green-700 border-green-200",
+    description: "Manage issues and oversee operations"
+  },
+  admin: {
+    label: "Administrator",
+    icon: Shield,
+    color: "bg-purple-50 text-purple-700 border-purple-200",
+    description: "Full system administration"
+  },
+  mayor: {
+    label: "Mayor",
+    icon: Building2,
+    color: "bg-red-50 text-red-700 border-red-200",
+    description: "Municipality-wide oversight"
+  },
+  ward_councillor: {
+    label: "Ward Councillor",
+    icon: MapPin,
+    color: "bg-orange-50 text-orange-700 border-orange-200",
+    description: "Ward-specific management"
+  },
+  tech_manager: {
+    label: "Technical Manager",
+    icon: Wrench,
+    color: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    description: "Technician allocation and performance"
+  }
+};
+
 export function RoleToggle({ currentRole, onRoleChange }: RoleToggleProps) {
+  const currentConfig = roleConfig[currentRole];
+  const Icon = currentConfig.icon;
+
   return (
-    <div className="bg-gray-100 rounded-lg p-1 flex">
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn(
-          "px-4 py-2 text-sm font-medium rounded-md transition-colors",
-          currentRole === "citizen" 
-            ? "bg-sa-green text-white hover:bg-green-700" 
-            : "text-gray-700 hover:bg-white"
-        )}
-        onClick={() => onRoleChange("citizen")}
-      >
-        Citizen
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn(
-          "px-4 py-2 text-sm font-medium rounded-md transition-colors",
-          currentRole === "official" 
-            ? "bg-sa-green text-white hover:bg-green-700" 
-            : "text-gray-700 hover:bg-white"
-        )}
-        onClick={() => onRoleChange("official")}
-      >
-        Official
-      </Button>
+    <div className="flex items-center gap-3">
+      <Badge variant="outline" className={currentConfig.color}>
+        <Icon className="w-4 h-4 mr-1" />
+        {currentConfig.label}
+      </Badge>
+      
+      <Select value={currentRole} onValueChange={onRoleChange}>
+        <SelectTrigger className="w-48">
+          <SelectValue placeholder="Switch role" />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.entries(roleConfig).map(([role, config]) => {
+            const RoleIcon = config.icon;
+            return (
+              <SelectItem key={role} value={role}>
+                <div className="flex items-center gap-2">
+                  <RoleIcon className="w-4 h-4" />
+                  <div>
+                    <div className="font-medium">{config.label}</div>
+                    <div className="text-xs text-gray-500">{config.description}</div>
+                  </div>
+                </div>
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

@@ -54,6 +54,46 @@ export const teams = pgTable("teams", {
   lastUpdate: timestamp("last_update").notNull().defaultNow(),
 });
 
+export const technicians = pgTable("technicians", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  phone: text("phone").notNull(),
+  email: text("email"),
+  department: text("department").notNull(),
+  skills: text("skills").array(),
+  status: text("status").notNull().default("available"), // available, on_job, offline
+  currentLocation: text("current_location"),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
+  teamId: integer("team_id"),
+  performanceRating: integer("performance_rating").default(5),
+  completedIssues: integer("completed_issues").default(0),
+  avgResolutionTime: integer("avg_resolution_time").default(0), // in hours
+  lastUpdate: timestamp("last_update").notNull().defaultNow(),
+});
+
+export const wards = pgTable("wards", {
+  id: serial("id").primaryKey(),
+  wardNumber: text("ward_number").notNull().unique(),
+  name: text("name").notNull(),
+  councillorName: text("councillor_name"),
+  councillorPhone: text("councillor_phone"),
+  councillorEmail: text("councillor_email"),
+  population: integer("population"),
+  area: text("area"), // in km²
+  description: text("description"),
+});
+
+export const issueUpdates = pgTable("issue_updates", {
+  id: serial("id").primaryKey(),
+  issueId: integer("issue_id").notNull(),
+  status: text("status").notNull(),
+  comment: text("comment"),
+  updatedBy: text("updated_by"),
+  technicianId: integer("technician_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
 });
@@ -74,6 +114,20 @@ export const insertTeamSchema = createInsertSchema(teams).omit({
   lastUpdate: true,
 });
 
+export const insertTechnicianSchema = createInsertSchema(technicians).omit({
+  id: true,
+  lastUpdate: true,
+});
+
+export const insertWardSchema = createInsertSchema(wards).omit({
+  id: true,
+});
+
+export const insertIssueUpdateSchema = createInsertSchema(issueUpdates).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Issue = typeof issues.$inferSelect;
@@ -82,3 +136,9 @@ export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type Team = typeof teams.$inferSelect;
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
+export type Technician = typeof technicians.$inferSelect;
+export type InsertTechnician = z.infer<typeof insertTechnicianSchema>;
+export type Ward = typeof wards.$inferSelect;
+export type InsertWard = z.infer<typeof insertWardSchema>;
+export type IssueUpdate = typeof issueUpdates.$inferSelect;
+export type InsertIssueUpdate = z.infer<typeof insertIssueUpdateSchema>;
