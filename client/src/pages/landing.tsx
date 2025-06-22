@@ -274,7 +274,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
               <Card className="w-full max-w-md shadow-2xl bg-white/95 backdrop-blur-sm border-0">
                 <CardHeader className="text-center pb-4">
                   <div className="flex justify-between items-center mb-6">
-                    <CardTitle className="text-3xl font-bold bg-gradient-to-r from-sa-green to-green-600 bg-clip-text text-transparent">
+                    <CardTitle className="text-3xl font-bold text-black">
                       Get Started
                     </CardTitle>
                     <LanguageSelector />
