@@ -72,32 +72,24 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
   const loginMutation = useMutation({
     mutationFn: async (data: LoginFormData) => {
       const response = await apiRequest("POST", "/api/auth/login", data);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Login failed");
+      }
       return response.json();
     },
-    onSuccess: (data, variables) => {
-      // Store user session
-      const userData = {
-        user: data.user,
-        loginTime: new Date().toISOString(),
-        rememberMe: variables.rememberMe
-      };
-      
-      if (variables.rememberMe) {
-        localStorage.setItem("municipalAuth", JSON.stringify(userData));
-      } else {
-        sessionStorage.setItem("municipalAuth", JSON.stringify(userData));
-      }
-      
+    onSuccess: (data) => {
       toast({
-        title: "Login Successful",
-        description: "Welcome back to the municipal platform!",
+        title: t.welcome,
+        description: `${t.welcome} ${data.user?.name || data.user?.username}!`,
       });
-      onLogin(data.user?.role || "citizen");
+      localStorage.setItem("user", JSON.stringify(data.user));
+      onLogin(data.user.role);
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Login Failed",
-        description: "Invalid username or password. Please try again.",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -106,19 +98,24 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterFormData) => {
       const response = await apiRequest("POST", "/api/auth/register", data);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Registration failed");
+      }
       return response.json();
     },
     onSuccess: (data) => {
       toast({
-        title: "Registration Successful",
+        title: "Account Created",
         description: "Your account has been created successfully!",
       });
-      setActiveTab("login");
+      localStorage.setItem("user", JSON.stringify(data.user));
+      onLogin(data.user.role);
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Registration Failed",
-        description: "Unable to create account. Username may already exist.",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -134,158 +131,152 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
 
   const features = [
     {
-      icon: <MapPin className="h-6 w-6 text-blue-600" />,
+      icon: <MapPin className="h-8 w-8 text-blue-500" />,
       title: "Report Issues",
-      description: "Report municipal issues in your area with photos and location tracking",
+      description: "Easily report municipal issues with GPS location and photo evidence for faster resolution."
     },
     {
-      icon: <Users className="h-6 w-6 text-green-600" />,
+      icon: <Users className="h-8 w-8 text-green-500" />,
       title: "Community Engagement",
-      description: "Connect with fellow citizens and stay updated on local developments",
+      description: "Connect with your community, track neighborhood improvements, and participate in local governance."
     },
     {
-      icon: <Clock className="h-6 w-6 text-orange-600" />,
+      icon: <Clock className="h-8 w-8 text-orange-500" />,
       title: "Real-time Updates",
-      description: "Track the progress of your reports and get notified of updates",
+      description: "Get instant notifications about issue progress, municipal announcements, and service updates."
     },
     {
-      icon: <CheckCircle className="h-6 w-6 text-green-600" />,
-      title: "Service Delivery",
-      description: "Access municipal services and make payments conveniently online",
+      icon: <CheckCircle className="h-8 w-8 text-purple-500" />,
+      title: "Track Progress",
+      description: "Monitor the status of your reports and see how your municipality is performing."
     },
     {
-      icon: <Shield className="h-6 w-6 text-purple-600" />,
-      title: "Transparency",
-      description: "View municipal performance data and hold officials accountable",
+      icon: <Shield className="h-8 w-8 text-red-500" />,
+      title: "Secure Payments",
+      description: "Make municipal payments securely online for utilities, taxes, and other services."
     },
     {
-      icon: <Zap className="h-6 w-6 text-yellow-600" />,
-      title: "Quick Services",
-      description: "Purchase utilities vouchers and access services in under 60 seconds",
-    },
+      icon: <Zap className="h-8 w-8 text-yellow-500" />,
+      title: "Utility Management",
+      description: "Purchase prepaid electricity and water vouchers instantly through our platform."
+    }
   ];
 
   const stats = [
-    { number: "50,000+", label: "Citizens Served" },
-    { number: "15,000+", label: "Issues Resolved" },
-    { number: "98%", label: "Satisfaction Rate" },
-    { number: "24/7", label: "Platform Availability" },
+    { number: "50K+", label: "Active Citizens" },
+    { number: "25K+", label: "Issues Resolved" },
+    { number: "15", label: "Municipalities" },
+    { number: "95%", label: "Satisfaction Rate" }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sa-green via-green-600 to-green-700 relative">
-      {/* Geometric Background Pattern */}
-      <div 
-        className="absolute inset-0 z-0 opacity-10 pointer-events-none"
-        style={{
-          backgroundImage: `
-            radial-gradient(circle at 25% 25%, rgba(255,255,255,0.3) 1px, transparent 1px),
-            radial-gradient(circle at 75% 75%, rgba(255,255,255,0.2) 1px, transparent 1px),
-            linear-gradient(45deg, transparent 24%, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.08) 26%, transparent 27%, transparent 74%, rgba(255,255,255,0.08) 75%, rgba(255,255,255,0.08) 76%, transparent 77%)
-          `,
-          backgroundSize: '50px 50px, 30px 30px, 60px 60px',
-          backgroundPosition: '0 0, 15px 15px, 0 0'
-        }}
-      />
-      
-      {/* Floating Elements */}
-      <div className="absolute top-20 left-10 w-24 h-24 bg-white/5 rounded-full blur-lg animate-pulse pointer-events-none z-0" />
-      <div className="absolute top-40 right-20 w-16 h-16 bg-yellow-300/10 rounded-full blur-md animate-pulse delay-1000 pointer-events-none z-0" />
-      <div className="absolute bottom-32 left-1/4 w-12 h-12 bg-white/8 rounded-full blur-lg animate-pulse delay-2000 pointer-events-none z-0" />
-      <div className="absolute bottom-20 right-1/3 w-20 h-20 bg-green-300/5 rounded-full blur-md animate-pulse delay-500 pointer-events-none z-0" />
-      
-      {/* Hero Section */}
-      <div className="relative z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Content */}
-            <div className="text-black space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative overflow-hidden">
+      {/* Background geometric patterns */}
+      <div className="absolute inset-0 z-0">
+        {/* Animated geometric shapes */}
+        <div className="absolute top-20 left-10 w-64 h-64 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-blue-400/20 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
+        <div className="absolute -bottom-32 left-20 w-80 h-80 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
+        
+        {/* Grid pattern overlay */}
+        <div 
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `
+              linear-gradient(90deg, rgba(34,197,94,0.3) 1px, transparent 1px),
+              linear-gradient(rgba(34,197,94,0.3) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px'
+          }}
+        />
+      </div>
+
+      {/* Navigation */}
+      <nav className="relative z-50 bg-white/80 backdrop-blur-md border-b border-gray-200/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-sa-green to-green-600 rounded-xl flex items-center justify-center">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
               <div>
-                <Badge className="bg-sa-gold text-black mb-4">
-                  Digital Municipal Services
-                </Badge>
-                <h1 className="text-4xl font-bold mb-6 leading-tight text-black">
-                  {t.welcome}
-                  <span className="block text-black">
-                    {t.dashboard}
+                <h1 className="text-xl font-bold text-black">MuniConnect</h1>
+                <p className="text-xs text-gray-600">Citizen Engagement Platform</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <LanguageSelector />
+              <div className="hidden sm:flex space-x-6">
+                <a href="#features" className="text-black hover:text-sa-green transition-colors font-medium">Features</a>
+                <a href="#about" className="text-black hover:text-sa-green transition-colors font-medium">About</a>
+                <a href="#contact" className="text-black hover:text-sa-green transition-colors font-medium">Contact</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <div className="relative z-20 pt-16 pb-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Column - Hero Content */}
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
+                  <span className="text-black">Transform Your</span>
+                  <br />
+                  <span 
+                    className="bg-gradient-to-r from-sa-green via-green-500 to-blue-600 bg-clip-text text-transparent"
+                    style={{
+                      backgroundImage: 'linear-gradient(135deg, hsl(142, 76%, 36%) 0%, hsl(158, 64%, 52%) 50%, hsl(217, 91%, 60%) 100%)'
+                    }}
+                  >
+                    Municipality
                   </span>
                 </h1>
-                <p className="text-xl text-black mb-8 leading-relaxed font-medium">
-                  {t.yourVoiceMatters}
+                <p className="text-xl text-black leading-relaxed max-w-lg">
+                  {t.yourVoiceMatters} Connect directly with your local government, 
+                  report issues, track progress, and build stronger communities together.
                 </p>
               </div>
 
-              {/* Features Grid */}
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="flex items-center gap-4 p-4 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-200">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center">
-                    <Droplets className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-black font-semibold">{t.buyVoucher}</span>
-                </div>
-                <div className="flex items-center gap-4 p-4 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-200">
-                  <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-pink-500 rounded-lg flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-black font-semibold">{t.reportIssue}</span>
-                </div>
-                <div className="flex items-center gap-4 p-4 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-200">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-lg flex items-center justify-center">
-                    <Users className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-black font-semibold">Community Engagement</span>
-                </div>
-                <div className="flex items-center gap-4 p-4 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-200">
-                  <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-yellow-500 rounded-lg flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-black font-semibold">Real-time Tracking</span>
-                </div>
-              </div>
-
-              {/* Quick Action Callout */}
-              <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 p-6 rounded-2xl shadow-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">⚡</span>
-                  </div>
-                  <div>
-                    <p className="text-red-700 font-bold text-xl">
-                      {t.reportIn60Seconds}
-                    </p>
-                    <p className="text-red-600 text-sm mt-1">Fast-track your service requests</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-8 border-t border-white/30">
+              {/* Quick stats */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map((stat, index) => (
-                  <div key={index} className="text-center p-4 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30">
-                    <div className="text-3xl font-bold text-sa-gold mb-2">{stat.number}</div>
+                  <div key={index} className="text-center">
+                    <div className="text-2xl font-bold text-black">{stat.number}</div>
                     <div className="text-sm text-black font-medium">{stat.label}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Right Content - Auth Forms */}
-            <div className="flex justify-center">
-              <Card className="w-full max-w-md shadow-2xl bg-white/95 backdrop-blur-sm border-0">
-                <CardHeader className="text-center pb-4">
-                  <div className="flex justify-between items-center mb-6">
-                    <CardTitle className="text-3xl font-bold text-black">
-                      Get Started
-                    </CardTitle>
-                    <LanguageSelector />
-                  </div>
-                  <p className="text-gray-600 font-medium text-lg">Access your municipal services</p>
+            {/* Right Column - Auth Forms (Top Right) */}
+            <div className="relative">
+              <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-sa-green/20 to-blue-500/20 rounded-full blur-2xl"></div>
+              <Card className="relative z-10 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-2xl">
+                <CardHeader className="text-center space-y-2">
+                  <CardTitle className="text-2xl font-bold text-black">
+                    {activeTab === "login" ? t.login : t.createAccount}
+                  </CardTitle>
+                  <p className="text-gray-600">
+                    {activeTab === "login" 
+                      ? "Access your municipal dashboard" 
+                      : "Join your community platform"
+                    }
+                  </p>
                 </CardHeader>
                 <CardContent>
-                  <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-2 mb-8 h-12 bg-gray-100 rounded-xl p-1">
-                      <TabsTrigger value="login" className="rounded-lg font-semibold text-base">{t.login}</TabsTrigger>
-                      <TabsTrigger value="register" className="rounded-lg font-semibold text-base">{t.register}</TabsTrigger>
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                    <TabsList className="grid w-full grid-cols-2 bg-gray-100">
+                      <TabsTrigger value="login" className="text-sm font-medium">
+                        {t.login}
+                      </TabsTrigger>
+                      <TabsTrigger value="register" className="text-sm font-medium">
+                        {t.register}
+                      </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="login" className="mt-8">
@@ -459,32 +450,6 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
 
                           <FormField
                             control={registerForm.control}
-                            name="role"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Account Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select account type" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="citizen">Citizen</SelectItem>
-                                    <SelectItem value="official">Municipal Official</SelectItem>
-                                    <SelectItem value="ward_councillor">Ward Councillor</SelectItem>
-                                    <SelectItem value="mayor">Mayor</SelectItem>
-                                    <SelectItem value="tech_manager">Technical Manager</SelectItem>
-                                    <SelectItem value="admin">Administrator</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={registerForm.control}
                             name="password"
                             render={({ field }) => (
                               <FormItem>
@@ -592,7 +557,6 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
           <p className="text-xl text-black mb-8">
             Join thousands of citizens already using our platform to improve their communities
           </p>
-
         </div>
       </div>
     </div>
