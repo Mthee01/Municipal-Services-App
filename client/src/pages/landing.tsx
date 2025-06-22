@@ -182,7 +182,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
         
         {/* Grid pattern overlay */}
         <div 
-          className="absolute inset-0 opacity-15"
+          className="absolute inset-0 opacity-0"
           style={{
             backgroundImage: `
               linear-gradient(90deg, rgba(34,197,94,0.6) 1px, transparent 1px),
