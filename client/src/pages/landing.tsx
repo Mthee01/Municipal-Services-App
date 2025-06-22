@@ -654,12 +654,15 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
               <h4 className="font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-gray-300">
                 <li>
-                  <a 
-                    href="/citizen-dashboard?report=true"
-                    className="hover:text-sa-gold transition-colors text-left block"
+                  <button 
+                    onClick={() => {
+                      // Navigate to citizen dashboard with report issue form open
+                      window.location.href = '/citizen-dashboard?report=true';
+                    }}
+                    className="hover:text-sa-gold transition-colors text-left"
                   >
                     Report Issue
-                  </a>
+                  </button>
                 </li>
                 <li>
                   <button 
