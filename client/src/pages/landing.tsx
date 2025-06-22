@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LanguageSelector } from "@/components/language-selector";
+import { ContactForm } from "@/components/contact-form";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -44,6 +45,7 @@ interface LandingPageProps {
 export default function LandingPage({ onLogin }: LandingPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
+  const [showContactForm, setShowContactForm] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -223,7 +225,12 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
               <LanguageSelector />
               <div className="hidden sm:flex space-x-6">
                 <a href="#features" className="text-black hover:text-sa-green transition-colors font-medium">Features</a>
-                <a href="#contact" className="text-black hover:text-sa-green transition-colors font-medium">Contact</a>
+                <button 
+                  onClick={() => setShowContactForm(true)}
+                  className="text-black hover:text-sa-green transition-colors font-medium"
+                >
+                  Contact
+                </button>
               </div>
             </div>
           </div>
@@ -572,6 +579,12 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
           </p>
         </div>
       </div>
+
+      {/* Contact Form Modal */}
+      <ContactForm 
+        isOpen={showContactForm} 
+        onClose={() => setShowContactForm(false)} 
+      />
     </div>
   );
 }
