@@ -592,23 +592,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
           <p className="text-xl text-black mb-8">
             Join thousands of citizens already using our platform to improve their communities
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="bg-sa-gold text-black hover:bg-yellow-500 font-semibold"
-              onClick={() => setActiveTab("register")}
-            >
-              Get Started Today
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-white text-white hover:bg-white hover:text-green-600"
-              onClick={() => setActiveTab("login")}
-            >
-              Sign In
-            </Button>
-          </div>
+
         </div>
       </div>
     </div>
