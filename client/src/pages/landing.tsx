@@ -209,7 +209,6 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
               <LanguageSelector />
               <div className="hidden sm:flex space-x-6">
                 <a href="#features" className="text-black hover:text-sa-green transition-colors font-medium">Features</a>
-                <a href="#about" className="text-black hover:text-sa-green transition-colors font-medium">About</a>
                 <a href="#contact" className="text-black hover:text-sa-green transition-colors font-medium">Contact</a>
               </div>
             </div>
