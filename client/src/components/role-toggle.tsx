@@ -44,6 +44,12 @@ const roleConfig: Record<UserRole, { label: string; icon: any; color: string; de
     icon: Wrench,
     color: "bg-indigo-50 text-indigo-700 border-indigo-200",
     description: "Technician allocation and performance"
+  },
+  field_technician: {
+    label: "Field Technician",
+    icon: Wrench,
+    color: "bg-cyan-50 text-cyan-700 border-cyan-200",
+    description: "On-site repairs and maintenance work"
   }
 };
 

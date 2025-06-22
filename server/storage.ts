@@ -1,9 +1,13 @@
 import { 
   users, issues, payments, teams, technicians, wards, issueUpdates, vouchers,
+  fieldReports, partsInventory, partsOrders, technicianMessages, technicianLocations,
   type User, type InsertUser, type Issue, type InsertIssue, 
   type Payment, type InsertPayment, type Team, type InsertTeam,
   type Technician, type InsertTechnician, type Ward, type InsertWard,
-  type IssueUpdate, type InsertIssueUpdate, type Voucher, type InsertVoucher
+  type IssueUpdate, type InsertIssueUpdate, type Voucher, type InsertVoucher,
+  type FieldReport, type InsertFieldReport, type PartsInventory, type InsertPartsInventory,
+  type PartsOrder, type InsertPartsOrder, type TechnicianMessage, type InsertTechnicianMessage,
+  type TechnicianLocation, type InsertTechnicianLocation
 } from "@shared/schema";
 
 export interface IStorage {
@@ -65,6 +69,44 @@ export interface IStorage {
   updateVoucher(id: number, updates: Partial<Voucher>): Promise<Voucher | undefined>;
   useVoucher(voucherCode: string): Promise<boolean>;
 
+  // Field report operations
+  getFieldReports(): Promise<FieldReport[]>;
+  getFieldReport(id: number): Promise<FieldReport | undefined>;
+  getFieldReportsByTechnician(technicianId: number): Promise<FieldReport[]>;
+  getFieldReportsByIssue(issueId: number): Promise<FieldReport[]>;
+  createFieldReport(report: InsertFieldReport): Promise<FieldReport>;
+  updateFieldReport(id: number, updates: Partial<FieldReport>): Promise<FieldReport | undefined>;
+
+  // Parts inventory operations
+  getPartsInventory(): Promise<PartsInventory[]>;
+  getPartsInventoryItem(id: number): Promise<PartsInventory | undefined>;
+  getPartsInventoryByCategory(category: string): Promise<PartsInventory[]>;
+  createPartsInventoryItem(item: InsertPartsInventory): Promise<PartsInventory>;
+  updatePartsInventoryItem(id: number, updates: Partial<PartsInventory>): Promise<PartsInventory | undefined>;
+
+  // Parts order operations
+  getPartsOrders(): Promise<PartsOrder[]>;
+  getPartsOrder(id: number): Promise<PartsOrder | undefined>;
+  getPartsOrdersByTechnician(technicianId: number): Promise<PartsOrder[]>;
+  getPartsOrdersByStatus(status: string): Promise<PartsOrder[]>;
+  createPartsOrder(order: InsertPartsOrder): Promise<PartsOrder>;
+  updatePartsOrder(id: number, updates: Partial<PartsOrder>): Promise<PartsOrder | undefined>;
+
+  // Technician message operations
+  getTechnicianMessages(): Promise<TechnicianMessage[]>;
+  getTechnicianMessage(id: number): Promise<TechnicianMessage | undefined>;
+  getTechnicianMessagesByUser(userId: number): Promise<TechnicianMessage[]>;
+  getTechnicianMessagesBetweenUsers(fromUserId: number, toUserId: number): Promise<TechnicianMessage[]>;
+  createTechnicianMessage(message: InsertTechnicianMessage): Promise<TechnicianMessage>;
+  updateTechnicianMessage(id: number, updates: Partial<TechnicianMessage>): Promise<TechnicianMessage | undefined>;
+
+  // Technician location operations
+  getTechnicianLocations(): Promise<TechnicianLocation[]>;
+  getTechnicianLocation(id: number): Promise<TechnicianLocation | undefined>;
+  getTechnicianLocationsByTechnician(technicianId: number): Promise<TechnicianLocation[]>;
+  createTechnicianLocation(location: InsertTechnicianLocation): Promise<TechnicianLocation>;
+  getLatestTechnicianLocation(technicianId: number): Promise<TechnicianLocation | undefined>;
+
   // Analytics operations
   getWardStats(wardNumber?: string): Promise<any>;
   getTechnicianPerformance(): Promise<any>;
@@ -81,6 +123,11 @@ export class MemStorage implements IStorage {
   private wards: Map<number, Ward>;
   private issueUpdates: Map<number, IssueUpdate>;
   private vouchers: Map<number, Voucher>;
+  private fieldReports: Map<number, FieldReport>;
+  private partsInventory: Map<number, PartsInventory>;
+  private partsOrders: Map<number, PartsOrder>;
+  private technicianMessages: Map<number, TechnicianMessage>;
+  private technicianLocations: Map<number, TechnicianLocation>;
   private currentUserId: number;
   private currentIssueId: number;
   private currentPaymentId: number;
@@ -89,6 +136,11 @@ export class MemStorage implements IStorage {
   private currentWardId: number;
   private currentIssueUpdateId: number;
   private currentVoucherId: number;
+  private currentFieldReportId: number;
+  private currentPartsInventoryId: number;
+  private currentPartsOrderId: number;
+  private currentTechnicianMessageId: number;
+  private currentTechnicianLocationId: number;
 
   constructor() {
     this.users = new Map();
@@ -99,6 +151,11 @@ export class MemStorage implements IStorage {
     this.wards = new Map();
     this.issueUpdates = new Map();
     this.vouchers = new Map();
+    this.fieldReports = new Map();
+    this.partsInventory = new Map();
+    this.partsOrders = new Map();
+    this.technicianMessages = new Map();
+    this.technicianLocations = new Map();
     this.currentUserId = 1;
     this.currentIssueId = 1;
     this.currentPaymentId = 1;
@@ -107,8 +164,14 @@ export class MemStorage implements IStorage {
     this.currentWardId = 1;
     this.currentIssueUpdateId = 1;
     this.currentVoucherId = 1;
+    this.currentFieldReportId = 1;
+    this.currentPartsInventoryId = 1;
+    this.currentPartsOrderId = 1;
+    this.currentTechnicianMessageId = 1;
+    this.currentTechnicianLocationId = 1;
 
     this.seedData();
+    this.seedFieldTechnicianData();
   }
 
   private seedData() {
@@ -940,6 +1003,447 @@ export class MemStorage implements IStorage {
       usedDate: new Date(),
     });
     return true;
+  }
+
+  // Field Report methods
+  async getFieldReports(): Promise<FieldReport[]> {
+    return Array.from(this.fieldReports.values());
+  }
+
+  async getFieldReport(id: number): Promise<FieldReport | undefined> {
+    return this.fieldReports.get(id);
+  }
+
+  async getFieldReportsByTechnician(technicianId: number): Promise<FieldReport[]> {
+    return Array.from(this.fieldReports.values()).filter(r => r.technicianId === technicianId);
+  }
+
+  async getFieldReportsByIssue(issueId: number): Promise<FieldReport[]> {
+    return Array.from(this.fieldReports.values()).filter(r => r.issueId === issueId);
+  }
+
+  async createFieldReport(insertReport: InsertFieldReport): Promise<FieldReport> {
+    const id = this.currentFieldReportId++;
+    const report: FieldReport = {
+      ...insertReport,
+      id,
+      createdAt: new Date(),
+    };
+    this.fieldReports.set(id, report);
+    return report;
+  }
+
+  async updateFieldReport(id: number, updates: Partial<FieldReport>): Promise<FieldReport | undefined> {
+    const report = this.fieldReports.get(id);
+    if (!report) return undefined;
+    
+    const updatedReport: FieldReport = { ...report, ...updates };
+    this.fieldReports.set(id, updatedReport);
+    return updatedReport;
+  }
+
+  // Parts Inventory methods
+  async getPartsInventory(): Promise<PartsInventory[]> {
+    return Array.from(this.partsInventory.values());
+  }
+
+  async getPartsInventoryItem(id: number): Promise<PartsInventory | undefined> {
+    return this.partsInventory.get(id);
+  }
+
+  async getPartsInventoryByCategory(category: string): Promise<PartsInventory[]> {
+    return Array.from(this.partsInventory.values()).filter(p => p.category === category);
+  }
+
+  async createPartsInventoryItem(insertItem: InsertPartsInventory): Promise<PartsInventory> {
+    const id = this.currentPartsInventoryId++;
+    const item: PartsInventory = {
+      ...insertItem,
+      id,
+      lastUpdated: new Date(),
+    };
+    this.partsInventory.set(id, item);
+    return item;
+  }
+
+  async updatePartsInventoryItem(id: number, updates: Partial<PartsInventory>): Promise<PartsInventory | undefined> {
+    const item = this.partsInventory.get(id);
+    if (!item) return undefined;
+    
+    const updatedItem: PartsInventory = { 
+      ...item, 
+      ...updates,
+      lastUpdated: new Date()
+    };
+    this.partsInventory.set(id, updatedItem);
+    return updatedItem;
+  }
+
+  // Parts Order methods
+  async getPartsOrders(): Promise<PartsOrder[]> {
+    return Array.from(this.partsOrders.values());
+  }
+
+  async getPartsOrder(id: number): Promise<PartsOrder | undefined> {
+    return this.partsOrders.get(id);
+  }
+
+  async getPartsOrdersByTechnician(technicianId: number): Promise<PartsOrder[]> {
+    return Array.from(this.partsOrders.values()).filter(o => o.technicianId === technicianId);
+  }
+
+  async getPartsOrdersByStatus(status: string): Promise<PartsOrder[]> {
+    return Array.from(this.partsOrders.values()).filter(o => o.status === status);
+  }
+
+  async createPartsOrder(insertOrder: InsertPartsOrder): Promise<PartsOrder> {
+    const id = this.currentPartsOrderId++;
+    const order: PartsOrder = {
+      ...insertOrder,
+      id,
+      orderDate: new Date(),
+    };
+    this.partsOrders.set(id, order);
+    return order;
+  }
+
+  async updatePartsOrder(id: number, updates: Partial<PartsOrder>): Promise<PartsOrder | undefined> {
+    const order = this.partsOrders.get(id);
+    if (!order) return undefined;
+    
+    const updatedOrder: PartsOrder = { ...order, ...updates };
+    this.partsOrders.set(id, updatedOrder);
+    return updatedOrder;
+  }
+
+  // Technician Message methods
+  async getTechnicianMessages(): Promise<TechnicianMessage[]> {
+    return Array.from(this.technicianMessages.values());
+  }
+
+  async getTechnicianMessage(id: number): Promise<TechnicianMessage | undefined> {
+    return this.technicianMessages.get(id);
+  }
+
+  async getTechnicianMessagesByUser(userId: number): Promise<TechnicianMessage[]> {
+    return Array.from(this.technicianMessages.values()).filter(m => 
+      m.fromUserId === userId || m.toUserId === userId
+    );
+  }
+
+  async getTechnicianMessagesBetweenUsers(fromUserId: number, toUserId: number): Promise<TechnicianMessage[]> {
+    return Array.from(this.technicianMessages.values()).filter(m => 
+      (m.fromUserId === fromUserId && m.toUserId === toUserId) ||
+      (m.fromUserId === toUserId && m.toUserId === fromUserId)
+    ).sort((a, b) => a.sentAt.getTime() - b.sentAt.getTime());
+  }
+
+  async createTechnicianMessage(insertMessage: InsertTechnicianMessage): Promise<TechnicianMessage> {
+    const id = this.currentTechnicianMessageId++;
+    const message: TechnicianMessage = {
+      ...insertMessage,
+      id,
+      sentAt: new Date(),
+    };
+    this.technicianMessages.set(id, message);
+    return message;
+  }
+
+  async updateTechnicianMessage(id: number, updates: Partial<TechnicianMessage>): Promise<TechnicianMessage | undefined> {
+    const message = this.technicianMessages.get(id);
+    if (!message) return undefined;
+    
+    const updatedMessage: TechnicianMessage = { ...message, ...updates };
+    this.technicianMessages.set(id, updatedMessage);
+    return updatedMessage;
+  }
+
+  // Technician Location methods
+  async getTechnicianLocations(): Promise<TechnicianLocation[]> {
+    return Array.from(this.technicianLocations.values());
+  }
+
+  async getTechnicianLocation(id: number): Promise<TechnicianLocation | undefined> {
+    return this.technicianLocations.get(id);
+  }
+
+  async getTechnicianLocationsByTechnician(technicianId: number): Promise<TechnicianLocation[]> {
+    return Array.from(this.technicianLocations.values())
+      .filter(l => l.technicianId === technicianId)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }
+
+  async createTechnicianLocation(insertLocation: InsertTechnicianLocation): Promise<TechnicianLocation> {
+    const id = this.currentTechnicianLocationId++;
+    const location: TechnicianLocation = {
+      ...insertLocation,
+      id,
+      timestamp: new Date(),
+    };
+    this.technicianLocations.set(id, location);
+    return location;
+  }
+
+  async getLatestTechnicianLocation(technicianId: number): Promise<TechnicianLocation | undefined> {
+    const locations = await this.getTechnicianLocationsByTechnician(technicianId);
+    return locations[0]; // Already sorted by timestamp desc
+  }
+
+  private seedFieldTechnicianData() {
+    // Seed parts inventory
+    const inventoryItems = [
+      { 
+        id: 1, 
+        partName: 'Water Pipe 25mm', 
+        partNumber: 'WP-25MM-001',
+        description: 'Standard 25mm water pipe for municipal repairs',
+        category: 'Plumbing', 
+        stockQuantity: 50, 
+        minimumStock: 10, 
+        unitPrice: 15.50, 
+        supplier: 'PlumbCorp', 
+        createdAt: new Date(),
+        lastOrderDate: null
+      },
+      { 
+        id: 2, 
+        partName: 'Electrical Cable 2.5mm', 
+        partNumber: 'EC-2.5MM-001',
+        description: 'Electrical cable for street lighting repairs',
+        category: 'Electrical', 
+        stockQuantity: 100, 
+        minimumStock: 20, 
+        unitPrice: 3.25, 
+        supplier: 'ElectroSupply', 
+        createdAt: new Date(),
+        lastOrderDate: null
+      },
+      { 
+        id: 3, 
+        partName: 'Concrete Mix 25kg', 
+        partNumber: 'CM-25KG-001',
+        description: 'Quick-set concrete mix for road repairs',
+        category: 'Construction', 
+        stockQuantity: 30, 
+        minimumStock: 5, 
+        unitPrice: 8.75, 
+        supplier: 'BuildMaterials', 
+        createdAt: new Date(),
+        lastOrderDate: null
+      },
+      { 
+        id: 4, 
+        partName: 'Road Patch Kit', 
+        partNumber: 'RPK-001',
+        description: 'Complete road patching kit for pothole repairs',
+        category: 'Roads', 
+        stockQuantity: 15, 
+        minimumStock: 3, 
+        unitPrice: 45.00, 
+        supplier: 'RoadFix', 
+        createdAt: new Date(),
+        lastOrderDate: null
+      },
+      { 
+        id: 5, 
+        partName: 'LED Street Light', 
+        partNumber: 'LSL-001',
+        description: 'Energy-efficient LED street light fixture',
+        category: 'Lighting', 
+        stockQuantity: 25, 
+        minimumStock: 5, 
+        unitPrice: 120.00, 
+        supplier: 'LightTech', 
+        createdAt: new Date(),
+        lastOrderDate: null
+      }
+    ];
+
+    inventoryItems.forEach(item => {
+      this.partsInventory.set(item.id, item);
+    });
+    this.currentPartsInventoryId = 6;
+
+    // Seed field reports  
+    const reports = [
+      {
+        id: 1,
+        issueId: 1,
+        technicianId: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        arrivalTime: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        departureTime: null,
+        travelTimeMinutes: 15,
+        workDescription: 'Assessed water pipe damage, requires replacement of 5m section',
+        materialsUsed: ['Water Pipe 25mm', 'Pipe Fittings'],
+        photoUrls: ['/uploads/pipe-damage-1.jpg'],
+        status: 'in_progress',
+        findings: 'Pipe corroded beyond repair, affecting water pressure in area',
+        recommendations: 'Schedule pipe replacement for tomorrow morning',
+        followUpRequired: true,
+        nextVisitDate: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      },
+      {
+        id: 2,
+        issueId: 2,
+        technicianId: 1,
+        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        arrivalTime: new Date(Date.now() - 26 * 60 * 60 * 1000),
+        departureTime: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        travelTimeMinutes: 12,
+        workDescription: 'Street light repair completed successfully',
+        materialsUsed: ['LED Driver Unit', 'Electrical Wire'],
+        photoUrls: ['/uploads/streetlight-fixed-1.jpg'],
+        status: 'completed',
+        findings: 'Faulty LED driver was causing intermittent operation',
+        recommendations: 'Monitor operation for 48 hours',
+        followUpRequired: false,
+        nextVisitDate: null
+      }
+    ];
+
+    reports.forEach(report => {
+      this.fieldReports.set(report.id, report);
+    });
+    this.currentFieldReportId = 3;
+
+    // Seed parts orders
+    const orders = [
+      {
+        id: 1,
+        orderNumber: 'PO-2024-001',
+        technicianId: 1,
+        issueId: 1,
+        fieldReportId: 1,
+        partName: 'Hydraulic Valve 50mm',
+        partNumber: 'HV-50MM-001',
+        quantity: 2,
+        unitPrice: 125.00,
+        totalPrice: 250.00,
+        priority: 'high',
+        status: 'pending',
+        justification: 'Required for emergency water main repair',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        expectedDeliveryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+        deliveryLocation: 'Oak Street Site'
+      },
+      {
+        id: 2,
+        orderNumber: 'PO-2024-002',
+        technicianId: 1,
+        issueId: 2,
+        fieldReportId: null,
+        partName: 'Asphalt Cold Mix 25kg',
+        partNumber: 'ACM-25KG-001',
+        quantity: 5,
+        unitPrice: 15.00,
+        totalPrice: 75.00,
+        priority: 'medium',
+        status: 'approved',
+        justification: 'Pothole repairs in Ward 3',
+        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        expectedDeliveryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+        deliveryLocation: 'Pine Avenue Site'
+      }
+    ];
+
+    orders.forEach(order => {
+      this.partsOrders.set(order.id, order);
+    });
+    this.currentPartsOrderId = 3;
+
+    // Seed technician messages
+    const messages = [
+      {
+        id: 1,
+        fromUserId: 2, // Technical Manager
+        toUserId: 1,   // Field Technician
+        issueId: 1,
+        fieldReportId: null,
+        subject: 'Priority Assignment Update',
+        message: 'Please prioritize the water main issue on Oak Street. Residents are without water since this morning.',
+        messageType: 'urgent',
+        priority: 'high',
+        attachments: null,
+        isRead: true,
+        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        readAt: new Date(Date.now() - 60 * 60 * 1000)
+      },
+      {
+        id: 2,
+        fromUserId: 1, // Field Technician
+        toUserId: 2,   // Technical Manager
+        issueId: 1,
+        fieldReportId: 1,
+        subject: 'Parts Request - Hydraulic Valve',
+        message: 'Need urgent approval for hydraulic valve order. Current valve is completely failed.',
+        messageType: 'help_request',
+        priority: 'high',
+        attachments: null,
+        isRead: false,
+        createdAt: new Date(Date.now() - 30 * 60 * 1000),
+        readAt: null
+      },
+      {
+        id: 3,
+        fromUserId: 3, // Call Center Agent
+        toUserId: 1,   // Field Technician
+        issueId: 2,
+        fieldReportId: null,
+        subject: 'Citizen Feedback',
+        message: 'Received positive feedback about your street light repairs. Great work!',
+        messageType: 'general',
+        priority: 'low',
+        attachments: null,
+        isRead: true,
+        createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+        readAt: new Date(Date.now() - 3 * 60 * 60 * 1000)
+      }
+    ];
+
+    messages.forEach(message => {
+      this.technicianMessages.set(message.id, message);
+    });
+    this.currentTechnicianMessageId = 4;
+
+    // Seed technician locations
+    const locations = [
+      {
+        id: 1,
+        technicianId: 1,
+        latitude: '-26.2041',
+        longitude: '28.0473',
+        address: 'Oak Street, Johannesburg',
+        isOnSite: true,
+        currentIssueId: 1,
+        speed: null,
+        heading: null,
+        accuracy: 5,
+        timestamp: new Date()
+      },
+      {
+        id: 2,
+        technicianId: 1,
+        latitude: '-26.2055',
+        longitude: '28.0485',
+        address: 'Pine Avenue, Johannesburg',
+        isOnSite: false,
+        currentIssueId: null,
+        speed: 25,
+        heading: 180,
+        accuracy: 3,
+        timestamp: new Date(Date.now() - 60 * 60 * 1000)
+      }
+    ];
+
+    locations.forEach(location => {
+      this.technicianLocations.set(location.id, location);
+    });
+    this.currentTechnicianLocationId = 3;
   }
 }
 

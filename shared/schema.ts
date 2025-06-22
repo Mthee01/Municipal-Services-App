@@ -107,6 +107,91 @@ export const vouchers = pgTable("vouchers", {
   usedDate: timestamp("used_date"),
 });
 
+export const fieldReports = pgTable("field_reports", {
+  id: serial("id").primaryKey(),
+  issueId: integer("issue_id").notNull(),
+  technicianId: integer("technician_id").notNull(),
+  arrivalTime: timestamp("arrival_time"),
+  departureTime: timestamp("departure_time"),
+  travelTimeMinutes: integer("travel_time_minutes"),
+  workCompletedPercentage: integer("work_completed_percentage").default(0),
+  sitePhotos: text("site_photos").array(),
+  technicianNotes: text("technician_notes"),
+  citizenFeedback: text("citizen_feedback"),
+  citizenSignature: text("citizen_signature"),
+  partsUsed: text("parts_used").array(),
+  partsOrdered: text("parts_ordered").array(),
+  nextVisitRequired: boolean("next_visit_required").default(false),
+  nextVisitDate: timestamp("next_visit_date"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const partsInventory = pgTable("parts_inventory", {
+  id: serial("id").primaryKey(),
+  partNumber: text("part_number").notNull().unique(),
+  partName: text("part_name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(),
+  unitPrice: integer("unit_price").notNull(), // in cents
+  stockQuantity: integer("stock_quantity").notNull().default(0),
+  minimumStock: integer("minimum_stock").notNull().default(5),
+  supplier: text("supplier"),
+  lastOrderDate: timestamp("last_order_date"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const partsOrders = pgTable("parts_orders", {
+  id: serial("id").primaryKey(),
+  technicianId: integer("technician_id").notNull(),
+  issueId: integer("issue_id"),
+  fieldReportId: integer("field_report_id"),
+  orderNumber: text("order_number").notNull().unique(),
+  status: text("status").notNull().default("pending"), // pending, approved, ordered, delivered, cancelled
+  priority: text("priority").notNull().default("normal"), // urgent, high, normal, low
+  partsRequested: text("parts_requested").array(), // JSON array of {partId, quantity, justification}
+  totalEstimatedCost: integer("total_estimated_cost"), // in cents
+  justification: text("justification").notNull(),
+  approvedBy: text("approved_by"),
+  approvedAt: timestamp("approved_at"),
+  orderDate: timestamp("order_date"),
+  expectedDelivery: timestamp("expected_delivery"),
+  deliveredAt: timestamp("delivered_at"),
+  deliveryLocation: text("delivery_location"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const technicianMessages = pgTable("technician_messages", {
+  id: serial("id").primaryKey(),
+  fromUserId: integer("from_user_id").notNull(),
+  toUserId: integer("to_user_id").notNull(),
+  issueId: integer("issue_id"),
+  fieldReportId: integer("field_report_id"),
+  messageType: text("message_type").notNull().default("general"), // general, urgent, parts_request, status_update
+  subject: text("subject"),
+  message: text("message").notNull(),
+  attachments: text("attachments").array(),
+  isRead: boolean("is_read").default(false),
+  priority: text("priority").notNull().default("normal"), // urgent, high, normal, low
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  readAt: timestamp("read_at"),
+});
+
+export const technicianLocations = pgTable("technician_locations", {
+  id: serial("id").primaryKey(),
+  technicianId: integer("technician_id").notNull(),
+  latitude: text("latitude").notNull(),
+  longitude: text("longitude").notNull(),
+  address: text("address"),
+  isOnSite: boolean("is_on_site").default(false),
+  currentIssueId: integer("current_issue_id"),
+  speed: integer("speed"), // km/h
+  heading: integer("heading"), // degrees
+  accuracy: integer("accuracy"), // meters
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
 });
@@ -146,6 +231,34 @@ export const insertVoucherSchema = createInsertSchema(vouchers).omit({
   purchaseDate: true,
 });
 
+export const insertFieldReportSchema = createInsertSchema(fieldReports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPartsInventorySchema = createInsertSchema(partsInventory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPartsOrderSchema = createInsertSchema(partsOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  orderNumber: true,
+});
+
+export const insertTechnicianMessageSchema = createInsertSchema(technicianMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTechnicianLocationSchema = createInsertSchema(technicianLocations).omit({
+  id: true,
+  timestamp: true,
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Issue = typeof issues.$inferSelect;
@@ -162,3 +275,13 @@ export type IssueUpdate = typeof issueUpdates.$inferSelect;
 export type InsertIssueUpdate = z.infer<typeof insertIssueUpdateSchema>;
 export type Voucher = typeof vouchers.$inferSelect;
 export type InsertVoucher = z.infer<typeof insertVoucherSchema>;
+export type FieldReport = typeof fieldReports.$inferSelect;
+export type InsertFieldReport = z.infer<typeof insertFieldReportSchema>;
+export type PartsInventory = typeof partsInventory.$inferSelect;
+export type InsertPartsInventory = z.infer<typeof insertPartsInventorySchema>;
+export type PartsOrder = typeof partsOrders.$inferSelect;
+export type InsertPartsOrder = z.infer<typeof insertPartsOrderSchema>;
+export type TechnicianMessage = typeof technicianMessages.$inferSelect;
+export type InsertTechnicianMessage = z.infer<typeof insertTechnicianMessageSchema>;
+export type TechnicianLocation = typeof technicianLocations.$inferSelect;
+export type InsertTechnicianLocation = z.infer<typeof insertTechnicianLocationSchema>;

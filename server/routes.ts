@@ -3,7 +3,11 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertIssueSchema, insertPaymentSchema, insertUserSchema } from "@shared/schema";
+import { 
+  insertIssueSchema, insertPaymentSchema, insertUserSchema, 
+  insertFieldReportSchema, insertPartsInventorySchema, insertPartsOrderSchema,
+  insertTechnicianMessageSchema, insertTechnicianLocationSchema
+} from "@shared/schema";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -501,6 +505,287 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Registration error:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Field Report endpoints
+  app.get("/api/field-reports", async (req, res) => {
+    try {
+      const { technicianId, issueId } = req.query;
+      let reports;
+      
+      if (technicianId) {
+        reports = await storage.getFieldReportsByTechnician(Number(technicianId));
+      } else if (issueId) {
+        reports = await storage.getFieldReportsByIssue(Number(issueId));
+      } else {
+        reports = await storage.getFieldReports();
+      }
+      
+      res.json(reports);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch field reports" });
+    }
+  });
+
+  app.post("/api/field-reports", upload.array('photos', 5), async (req, res) => {
+    try {
+      const reportData = insertFieldReportSchema.parse(req.body);
+      
+      // Handle uploaded photos
+      if (req.files && Array.isArray(req.files)) {
+        reportData.photos = req.files.map(file => `/uploads/${file.filename}`);
+      }
+      
+      const report = await storage.createFieldReport(reportData);
+      res.status(201).json(report);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid field report data" });
+    }
+  });
+
+  app.patch("/api/field-reports/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const report = await storage.updateFieldReport(id, updates);
+      
+      if (!report) {
+        return res.status(404).json({ error: "Field report not found" });
+      }
+      
+      res.json(report);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update field report" });
+    }
+  });
+
+  // Parts Inventory endpoints
+  app.get("/api/parts-inventory", async (req, res) => {
+    try {
+      const { category } = req.query;
+      let inventory;
+      
+      if (category) {
+        inventory = await storage.getPartsInventoryByCategory(category as string);
+      } else {
+        inventory = await storage.getPartsInventory();
+      }
+      
+      res.json(inventory);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch parts inventory" });
+    }
+  });
+
+  app.post("/api/parts-inventory", async (req, res) => {
+    try {
+      const itemData = insertPartsInventorySchema.parse(req.body);
+      const item = await storage.createPartsInventoryItem(itemData);
+      res.status(201).json(item);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid inventory item data" });
+    }
+  });
+
+  app.patch("/api/parts-inventory/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const item = await storage.updatePartsInventoryItem(id, updates);
+      
+      if (!item) {
+        return res.status(404).json({ error: "Inventory item not found" });
+      }
+      
+      res.json(item);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update inventory item" });
+    }
+  });
+
+  // Parts Order endpoints
+  app.get("/api/parts-orders", async (req, res) => {
+    try {
+      const { technicianId, status } = req.query;
+      let orders;
+      
+      if (technicianId) {
+        orders = await storage.getPartsOrdersByTechnician(Number(technicianId));
+      } else if (status) {
+        orders = await storage.getPartsOrdersByStatus(status as string);
+      } else {
+        orders = await storage.getPartsOrders();
+      }
+      
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch parts orders" });
+    }
+  });
+
+  app.post("/api/parts-orders", async (req, res) => {
+    try {
+      const orderData = insertPartsOrderSchema.parse(req.body);
+      const order = await storage.createPartsOrder(orderData);
+      res.status(201).json(order);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid parts order data" });
+    }
+  });
+
+  app.patch("/api/parts-orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const order = await storage.updatePartsOrder(id, updates);
+      
+      if (!order) {
+        return res.status(404).json({ error: "Parts order not found" });
+      }
+      
+      res.json(order);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update parts order" });
+    }
+  });
+
+  // Technician Message endpoints
+  app.get("/api/technician-messages", async (req, res) => {
+    try {
+      const { userId, fromUserId, toUserId } = req.query;
+      let messages;
+      
+      if (fromUserId && toUserId) {
+        messages = await storage.getTechnicianMessagesBetweenUsers(Number(fromUserId), Number(toUserId));
+      } else if (userId) {
+        messages = await storage.getTechnicianMessagesByUser(Number(userId));
+      } else {
+        messages = await storage.getTechnicianMessages();
+      }
+      
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch technician messages" });
+    }
+  });
+
+  app.post("/api/technician-messages", async (req, res) => {
+    try {
+      const messageData = insertTechnicianMessageSchema.parse(req.body);
+      const message = await storage.createTechnicianMessage(messageData);
+      res.status(201).json(message);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid message data" });
+    }
+  });
+
+  app.patch("/api/technician-messages/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const message = await storage.updateTechnicianMessage(id, updates);
+      
+      if (!message) {
+        return res.status(404).json({ error: "Message not found" });
+      }
+      
+      res.json(message);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update message" });
+    }
+  });
+
+  // Technician Location endpoints
+  app.get("/api/technician-locations", async (req, res) => {
+    try {
+      const { technicianId, latest } = req.query;
+      let locations;
+      
+      if (technicianId && latest === 'true') {
+        const location = await storage.getLatestTechnicianLocation(Number(technicianId));
+        return res.json(location || null);
+      } else if (technicianId) {
+        locations = await storage.getTechnicianLocationsByTechnician(Number(technicianId));
+      } else {
+        locations = await storage.getTechnicianLocations();
+      }
+      
+      res.json(locations);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch technician locations" });
+    }
+  });
+
+  app.post("/api/technician-locations", async (req, res) => {
+    try {
+      const locationData = insertTechnicianLocationSchema.parse(req.body);
+      const location = await storage.createTechnicianLocation(locationData);
+      res.status(201).json(location);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid location data" });
+    }
+  });
+
+  // Work session endpoints for field technicians
+  app.post("/api/work-sessions/start", async (req, res) => {
+    try {
+      const { issueId, technicianId } = req.body;
+      
+      // Update issue status to in_progress and assign technician
+      const issue = await storage.updateIssue(issueId, {
+        status: 'in_progress',
+        technicianId: technicianId
+      });
+      
+      if (!issue) {
+        return res.status(404).json({ error: "Issue not found" });
+      }
+      
+      // Create location entry for work start
+      await storage.createTechnicianLocation({
+        technicianId,
+        latitude: req.body.latitude || '0',
+        longitude: req.body.longitude || '0',
+        address: req.body.address || 'On site'
+      });
+      
+      res.json({ message: "Work session started", issue });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to start work session" });
+    }
+  });
+
+  app.post("/api/work-sessions/complete", async (req, res) => {
+    try {
+      const { issueId, technicianId, completionNotes } = req.body;
+      
+      // Update issue status to resolved
+      const issue = await storage.updateIssue(issueId, {
+        status: 'resolved',
+        resolvedAt: new Date(),
+        feedback: completionNotes
+      });
+      
+      if (!issue) {
+        return res.status(404).json({ error: "Issue not found" });
+      }
+      
+      // Create completion field report
+      await storage.createFieldReport({
+        issueId,
+        technicianId,
+        reportType: 'completion',
+        description: completionNotes || 'Work completed',
+        findings: 'Issue resolved successfully',
+        actionsTaken: 'Completed assigned work',
+        materialsUsed: [],
+        nextSteps: 'No further action required'
+      });
+      
+      res.json({ message: "Work session completed", issue });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to complete work session" });
     }
   });
 

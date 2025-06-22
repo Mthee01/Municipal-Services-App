@@ -12,16 +12,20 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState(() => {
-    // Check localStorage first, then browser language, fallback to English
-    const savedLanguage = localStorage.getItem('municipalLanguage');
-    if (savedLanguage && supportedLanguages.some(lang => lang.code === savedLanguage)) {
-      return savedLanguage;
-    }
-    
-    // Check browser language
-    const browserLang = navigator.language.split('-')[0];
-    if (supportedLanguages.some(lang => lang.code === browserLang)) {
-      return browserLang;
+    try {
+      // Check localStorage first, then browser language, fallback to English
+      const savedLanguage = localStorage.getItem('municipalLanguage');
+      if (savedLanguage && supportedLanguages.some(lang => lang.code === savedLanguage)) {
+        return savedLanguage;
+      }
+      
+      // Check browser language
+      const browserLang = navigator.language.split('-')[0];
+      if (supportedLanguages.some(lang => lang.code === browserLang)) {
+        return browserLang;
+      }
+    } catch (error) {
+      console.warn('Error accessing localStorage:', error);
     }
     
     return 'en';

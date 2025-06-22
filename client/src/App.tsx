@@ -14,6 +14,7 @@ import OfficialDashboard from "@/pages/official-dashboard";
 import MayorDashboard from "@/pages/mayor-dashboard";
 import WardCouncillorDashboard from "@/pages/ward-councillor-dashboard";
 import TechManagerDashboard from "@/pages/tech-manager-dashboard";
+import FieldTechnicianDashboard from "@/pages/field-technician-dashboard";
 import NotFound from "@/pages/not-found";
 import type { UserRole } from "@/lib/types";
 
@@ -114,6 +115,9 @@ function App() {
       case "tech_manager":
         setLocation("/tech-manager");
         break;
+      case "field_technician":
+        setLocation("/field-technician");
+        break;
       default:
         setLocation("/");
     }
@@ -138,6 +142,9 @@ function App() {
         break;
       case "tech_manager":
         setLocation("/tech-manager");
+        break;
+      case "field_technician":
+        setLocation("/field-technician");
         break;
       default:
         setLocation("/");
@@ -243,6 +250,11 @@ function App() {
               {/* Tech Manager Dashboard - Only for tech managers and admins */}
               {(currentRole === "tech_manager" || currentRole === "admin") && (
                 <Route path="/tech-manager" component={TechManagerDashboard} />
+              )}
+              
+              {/* Field Technician Dashboard - Only for field technicians and admins */}
+              {(currentRole === "field_technician" || currentRole === "admin") && (
+                <Route path="/field-technician" component={FieldTechnicianDashboard} />
               )}
               
               {/* Default route based on user role */}
