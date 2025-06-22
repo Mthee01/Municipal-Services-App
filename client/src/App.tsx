@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/language-selector";
 import { RoleToggle } from "@/components/role-toggle";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { HomePage } from "@/pages/home";
+import { HomeNavigation, MobileNavigation } from "@/components/home-navigation";
+import { HomePage } from "@/pages/home-redesigned";
 import CitizenDashboard from "@/pages/citizen-dashboard";
 import OfficialDashboard from "@/pages/official-dashboard";
 import MayorDashboard from "@/pages/mayor-dashboard";
@@ -241,9 +242,19 @@ function App() {
               <Route path="/tech-manager" component={TechManagerDashboard} />
               <Route path="/system-admin" component={SystemAdminDashboard} />
               <Route path="/financial" component={FinancialManagement} />
+              <Route path="/report-issue" component={CitizenDashboard} />
+              <Route path="/track-issues" component={CitizenDashboard} />
+              <Route path="/emergency" component={CitizenDashboard} />
+              <Route path="/book-service" component={CitizenDashboard} />
               <Route component={NotFound} />
             </Switch>
           </main>
+
+          {/* Home Navigation - Fixed position for easy access */}
+          <HomeNavigation />
+          
+          {/* Mobile Navigation - Bottom navigation for mobile */}
+          <MobileNavigation />
 
           {/* Footer */}
           <footer className="bg-gray-900 text-white py-12">
