@@ -234,7 +234,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
             
             <div className="flex items-center space-x-4">
               <LanguageSelector />
-              <div className="hidden sm:flex space-x-6">
+              <div className="flex space-x-6">
                 <button 
                   onClick={() => {
                     const loginSection = document.querySelector('.auth-section');
