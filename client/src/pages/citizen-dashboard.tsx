@@ -56,7 +56,7 @@ export default function CitizenDashboard() {
             <Plus className="mr-2 h-5 w-5" />
             Report New Issue
           </Button>
-          <p className="text-sm text-yellow-600 mt-2">⚡ Report in under 60 seconds</p>
+          <p className="text-sm text-red-500 mt-2">⚡ Report in under 60 seconds</p>
         </div>
       </section>
 
