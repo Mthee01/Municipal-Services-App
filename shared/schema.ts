@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -285,3 +285,43 @@ export type TechnicianMessage = typeof technicianMessages.$inferSelect;
 export type InsertTechnicianMessage = z.infer<typeof insertTechnicianMessageSchema>;
 export type TechnicianLocation = typeof technicianLocations.$inferSelect;
 export type InsertTechnicianLocation = z.infer<typeof insertTechnicianLocationSchema>;
+
+// Chat Messages Table
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull(),
+  userId: integer("user_id"),
+  message: text("message").notNull(),
+  isBot: boolean("is_bot").default(false).notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  messageType: text("message_type").default("text").notNull(), // text, image, file, quick_reply
+  metadata: json("metadata"), // for storing additional data like quick reply options
+});
+
+// WhatsApp Messages Table
+export const whatsappMessages = pgTable("whatsapp_messages", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id"),
+  phoneNumber: text("phone_number").notNull(),
+  message: text("message").notNull(),
+  direction: text("direction").notNull(), // inbound, outbound
+  messageId: text("message_id"),
+  status: text("status").default("sent").notNull(), // sent, delivered, read, failed
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  webhookData: json("webhook_data"), // store raw webhook data
+});
+
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertWhatsappMessageSchema = createInsertSchema(whatsappMessages).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type WhatsappMessage = typeof whatsappMessages.$inferSelect;
+export type InsertWhatsappMessage = z.infer<typeof insertWhatsappMessageSchema>;

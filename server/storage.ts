@@ -1,13 +1,15 @@
 import { 
   users, issues, payments, teams, technicians, wards, issueUpdates, vouchers,
   fieldReports, partsInventory, partsOrders, technicianMessages, technicianLocations,
+  chatMessages, whatsappMessages,
   type User, type InsertUser, type Issue, type InsertIssue, 
   type Payment, type InsertPayment, type Team, type InsertTeam,
   type Technician, type InsertTechnician, type Ward, type InsertWard,
   type IssueUpdate, type InsertIssueUpdate, type Voucher, type InsertVoucher,
   type FieldReport, type InsertFieldReport, type PartsInventory, type InsertPartsInventory,
   type PartsOrder, type InsertPartsOrder, type TechnicianMessage, type InsertTechnicianMessage,
-  type TechnicianLocation, type InsertTechnicianLocation
+  type TechnicianLocation, type InsertTechnicianLocation, type ChatMessage, type InsertChatMessage,
+  type WhatsappMessage, type InsertWhatsappMessage
 } from "@shared/schema";
 
 export interface IStorage {
@@ -107,6 +109,15 @@ export interface IStorage {
   createTechnicianLocation(location: InsertTechnicianLocation): Promise<TechnicianLocation>;
   getLatestTechnicianLocation(technicianId: number): Promise<TechnicianLocation | undefined>;
 
+  // Chat message operations
+  getChatMessages(sessionId: string): Promise<ChatMessage[]>;
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  
+  // WhatsApp message operations
+  getWhatsappMessages(phoneNumber?: string): Promise<WhatsappMessage[]>;
+  createWhatsappMessage(message: InsertWhatsappMessage): Promise<WhatsappMessage>;
+  updateWhatsappMessageStatus(messageId: string, status: string): Promise<boolean>;
+
   // Analytics operations
   getWardStats(wardNumber?: string): Promise<any>;
   getTechnicianPerformance(): Promise<any>;
@@ -128,6 +139,8 @@ export class MemStorage implements IStorage {
   private partsOrders: Map<number, PartsOrder>;
   private technicianMessages: Map<number, TechnicianMessage>;
   private technicianLocations: Map<number, TechnicianLocation>;
+  private chatMessagesStore: Map<number, ChatMessage>;
+  private whatsappMessagesStore: Map<number, WhatsappMessage>;
   private currentUserId: number;
   private currentIssueId: number;
   private currentPaymentId: number;
@@ -141,6 +154,8 @@ export class MemStorage implements IStorage {
   private currentPartsOrderId: number;
   private currentTechnicianMessageId: number;
   private currentTechnicianLocationId: number;
+  private currentChatMessageId: number;
+  private currentWhatsappMessageId: number;
 
   constructor() {
     this.users = new Map();
@@ -156,6 +171,8 @@ export class MemStorage implements IStorage {
     this.partsOrders = new Map();
     this.technicianMessages = new Map();
     this.technicianLocations = new Map();
+    this.chatMessagesStore = new Map();
+    this.whatsappMessagesStore = new Map();
     this.currentUserId = 1;
     this.currentIssueId = 1;
     this.currentPaymentId = 1;
@@ -169,6 +186,8 @@ export class MemStorage implements IStorage {
     this.currentPartsOrderId = 1;
     this.currentTechnicianMessageId = 1;
     this.currentTechnicianLocationId = 1;
+    this.currentChatMessageId = 1;
+    this.currentWhatsappMessageId = 1;
 
     this.seedData();
     this.seedFieldTechnicianData();
@@ -1444,6 +1463,53 @@ export class MemStorage implements IStorage {
       this.technicianLocations.set(location.id, location);
     });
     this.currentTechnicianLocationId = 3;
+  }
+
+  // Chat message operations
+  async getChatMessages(sessionId: string): Promise<ChatMessage[]> {
+    return Array.from(this.chatMessagesStore.values())
+      .filter(message => message.sessionId === sessionId)
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  }
+
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const chatMessage: ChatMessage = {
+      id: this.currentChatMessageId++,
+      ...message,
+      timestamp: new Date(),
+    };
+    this.chatMessagesStore.set(chatMessage.id, chatMessage);
+    return chatMessage;
+  }
+
+  // WhatsApp message operations
+  async getWhatsappMessages(phoneNumber?: string): Promise<WhatsappMessage[]> {
+    const messages = Array.from(this.whatsappMessagesStore.values());
+    if (phoneNumber) {
+      return messages.filter(message => message.phoneNumber === phoneNumber)
+        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    }
+    return messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  }
+
+  async createWhatsappMessage(message: InsertWhatsappMessage): Promise<WhatsappMessage> {
+    const whatsappMessage: WhatsappMessage = {
+      id: this.currentWhatsappMessageId++,
+      ...message,
+      timestamp: new Date(),
+    };
+    this.whatsappMessagesStore.set(whatsappMessage.id, whatsappMessage);
+    return whatsappMessage;
+  }
+
+  async updateWhatsappMessageStatus(messageId: string, status: string): Promise<boolean> {
+    for (const message of this.whatsappMessagesStore.values()) {
+      if (message.messageId === messageId) {
+        message.status = status;
+        return true;
+      }
+    }
+    return false;
   }
 }
 

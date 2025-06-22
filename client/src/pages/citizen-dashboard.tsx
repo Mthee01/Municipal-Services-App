@@ -11,6 +11,8 @@ import { CommunityFeatures } from "@/components/community-features";
 import { VoucherSection } from "@/components/voucher-section";
 import { RealTimeNotifications } from "@/components/real-time-notifications";
 import { GISMapIntegration } from "@/components/gis-map-integration";
+import Chatbot from "@/components/chatbot";
+import WhatsAppIntegration from "@/components/whatsapp-integration";
 import type { Issue } from "@shared/schema";
 
 const categories = [
@@ -149,7 +151,7 @@ export default function CitizenDashboard() {
       <section className="relative z-10 py-12">
         <div className="max-w-6xl mx-auto px-4">
           <Tabs defaultValue="my-issues" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="my-issues">My Issues</TabsTrigger>
               <TabsTrigger value="community">Community</TabsTrigger>
               <TabsTrigger value="map-view">
@@ -158,6 +160,7 @@ export default function CitizenDashboard() {
               </TabsTrigger>
               <TabsTrigger value="payments">Payments</TabsTrigger>
               <TabsTrigger value="vouchers">Vouchers</TabsTrigger>
+              <TabsTrigger value="communication">Communication</TabsTrigger>
             </TabsList>
 
             <TabsContent value="my-issues" className="space-y-6">
@@ -242,6 +245,47 @@ export default function CitizenDashboard() {
             <TabsContent value="vouchers" className="space-y-6">
               <VoucherSection />
             </TabsContent>
+
+            <TabsContent value="communication" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <WhatsAppIntegration userId={1} />
+                <div className="space-y-6">
+                  <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 shadow-lg border border-gray-200">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900">Communication Features</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          💬
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-blue-900">AI Assistant</h4>
+                          <p className="text-sm text-blue-700">Get instant help with municipal services via our smart chatbot</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          📱
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-green-900">WhatsApp Notifications</h4>
+                          <p className="text-sm text-green-700">Receive real-time updates about your service requests</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                          🔔
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-purple-900">Real-time Alerts</h4>
+                          <p className="text-sm text-purple-700">Stay informed about service outages and announcements</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <RealTimeNotifications userRole="citizen" />
+                </div>
+              </div>
+            </TabsContent>
           </Tabs>
         </div>
       </section>
@@ -251,6 +295,9 @@ export default function CitizenDashboard() {
         isOpen={showIssueForm}
         onClose={() => setShowIssueForm(false)}
       />
+
+      {/* Floating Chatbot */}
+      <Chatbot userId={1} />
     </div>
   );
 }

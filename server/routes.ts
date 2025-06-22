@@ -858,7 +858,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return updatedIssue;
   };
 
+  // Chat API routes
+  app.get("/api/chat/:sessionId", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const messages = await storage.getChatMessages(sessionId);
+      res.json(messages);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const message = await storage.createChatMessage(req.body);
+      
+      // Generate bot response for citizen queries
+      if (!req.body.isBot && req.body.message) {
+        const botResponse = generateBotResponse(req.body.message);
+        const botMessage = await storage.createChatMessage({
+          sessionId: req.body.sessionId,
+          userId: null,
+          message: botResponse.message,
+          isBot: true,
+          messageType: botResponse.type,
+          metadata: botResponse.metadata
+        });
+        
+        res.json({ userMessage: message, botMessage });
+      } else {
+        res.json(message);
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // WhatsApp API routes
+  app.get("/api/whatsapp", async (req, res) => {
+    try {
+      const { phoneNumber } = req.query;
+      const messages = await storage.getWhatsappMessages(phoneNumber as string);
+      res.json(messages);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/whatsapp", async (req, res) => {
+    try {
+      const message = await storage.createWhatsappMessage(req.body);
+      res.json(message);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/whatsapp/webhook", async (req, res) => {
+    try {
+      // Handle WhatsApp webhook for incoming messages
+      const { messageId, phoneNumber, message, status } = req.body;
+      
+      if (status) {
+        // Update message status
+        await storage.updateWhatsappMessageStatus(messageId, status);
+      } else if (message) {
+        // Create new incoming message
+        await storage.createWhatsappMessage({
+          phoneNumber,
+          message,
+          direction: "inbound",
+          messageId,
+          webhookData: req.body
+        });
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
+}
+
+// Chatbot response generator for citizens
+function generateBotResponse(userMessage: string) {
+  const message = userMessage.toLowerCase();
+  
+  // Common municipal service queries
+  if (message.includes('water') || message.includes('leak') || message.includes('pipe')) {
+    return {
+      message: "I can help you with water-related issues. You can:\n• Report a water leak\n• Check service outages\n• Request meter readings\n• Pay water bills\n\nWould you like me to help you report a water issue?",
+      type: "quick_reply",
+      metadata: {
+        options: ["Report Water Leak", "Check Outages", "Pay Bill", "Other"]
+      }
+    };
+  }
+  
+  if (message.includes('electricity') || message.includes('power') || message.includes('outage')) {
+    return {
+      message: "I can assist with electricity services:\n• Report power outages\n• Check load shedding schedules\n• Report street light issues\n• Pay electricity bills\n\nWhat electricity issue can I help you with?",
+      type: "quick_reply",
+      metadata: {
+        options: ["Report Outage", "Load Shedding", "Street Lights", "Pay Bill"]
+      }
+    };
+  }
+  
+  if (message.includes('waste') || message.includes('garbage') || message.includes('refuse')) {
+    return {
+      message: "For waste management services:\n• Report missed collections\n• Request additional bins\n• Report illegal dumping\n• Schedule bulk waste pickup\n\nHow can I help with waste services?",
+      type: "quick_reply",
+      metadata: {
+        options: ["Missed Collection", "Request Bins", "Report Dumping", "Bulk Pickup"]
+      }
+    };
+  }
+  
+  if (message.includes('road') || message.includes('pothole') || message.includes('traffic')) {
+    return {
+      message: "I can help with road and transport issues:\n• Report potholes\n• Report traffic light problems\n• Request road maintenance\n• Report damaged road signs\n\nWhat road issue would you like to report?",
+      type: "quick_reply",
+      metadata: {
+        options: ["Report Pothole", "Traffic Lights", "Road Maintenance", "Road Signs"]
+      }
+    };
+  }
+  
+  if (message.includes('bill') || message.includes('pay') || message.includes('payment')) {
+    return {
+      message: "I can help you with payments and billing:\n• Pay municipal bills\n• Check account balance\n• Download statements\n• Set up payment arrangements\n\nWhat payment service do you need?",
+      type: "quick_reply",
+      metadata: {
+        options: ["Pay Bills", "Check Balance", "Statements", "Payment Plan"]
+      }
+    };
+  }
+  
+  if (message.includes('voucher') || message.includes('prepaid')) {
+    return {
+      message: "For prepaid services:\n• Purchase electricity vouchers\n• Purchase water vouchers\n• Check voucher history\n• Get voucher support\n\nWhich voucher service do you need?",
+      type: "quick_reply",
+      metadata: {
+        options: ["Buy Electricity", "Buy Water", "Voucher History", "Support"]
+      }
+    };
+  }
+  
+  if (message.includes('hello') || message.includes('hi') || message.includes('help')) {
+    return {
+      message: "Hello! I'm your municipal services assistant. I can help you with:\n\n🏠 Report issues (water, electricity, roads, waste)\n💳 Pay bills and buy vouchers\n📍 Track service requests\n📞 Connect with support\n\nWhat can I help you with today?",
+      type: "quick_reply",
+      metadata: {
+        options: ["Report Issue", "Pay Bills", "Track Request", "Get Support"]
+      }
+    };
+  }
+  
+  // Default response
+  return {
+    message: "I'm here to help with municipal services. You can ask me about:\n• Water and sanitation\n• Electricity services\n• Waste management\n• Roads and transport\n• Bill payments\n• Prepaid vouchers\n\nPlease tell me what you need assistance with, or type 'help' for more options.",
+    type: "text",
+    metadata: null
+  };
 }
 
 // Helper function to calculate distance between two coordinates
