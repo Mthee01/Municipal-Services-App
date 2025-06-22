@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { z } from "zod";
 import { Eye, EyeOff, MapPin, Users, Clock, CheckCircle, Shield, Zap, Droplets } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
   const [showContactForm, setShowContactForm] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
+  const [, setLocation] = useLocation();
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -657,7 +659,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                   <button 
                     onClick={() => {
                       // Navigate to citizen dashboard with report issue form open
-                      window.location.href = '/citizen-dashboard?report=true';
+                      setLocation('/citizen-dashboard?report=true');
                     }}
                     className="hover:text-sa-gold transition-colors text-left"
                   >
@@ -668,7 +670,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                   <button 
                     onClick={() => {
                       // Navigate to citizen dashboard payments tab
-                      window.location.href = '/citizen-dashboard?tab=payments';
+                      setLocation('/citizen-dashboard?tab=payments');
                     }}
                     className="hover:text-sa-gold transition-colors text-left"
                   >
@@ -679,7 +681,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                   <button 
                     onClick={() => {
                       // Navigate to citizen dashboard to track issues
-                      window.location.href = '/citizen-dashboard?tab=my-issues';
+                      setLocation('/citizen-dashboard?tab=my-issues');
                     }}
                     className="hover:text-sa-gold transition-colors text-left"
                   >
@@ -690,7 +692,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                   <button 
                     onClick={() => {
                       // Navigate to citizen dashboard community tab
-                      window.location.href = '/citizen-dashboard?tab=community';
+                      setLocation('/citizen-dashboard?tab=community');
                     }}
                     className="hover:text-sa-gold transition-colors text-left"
                   >
@@ -707,7 +709,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                   <button 
                     onClick={() => {
                       // Navigate to citizen dashboard communication tab for help
-                      window.location.href = '/citizen-dashboard?tab=communication';
+                      setLocation('/citizen-dashboard?tab=communication');
                     }}
                     className="hover:text-sa-gold transition-colors text-left"
                   >

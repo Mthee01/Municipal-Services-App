@@ -233,6 +233,9 @@ function App() {
               {currentRole === "citizen" && (
                 <Route path="/" component={CitizenDashboard} />
               )}
+              {currentRole === "citizen" && (
+                <Route path="/citizen-dashboard" component={CitizenDashboard} />
+              )}
               
               {/* Official Dashboard - Only for officials and admins */}
               {(currentRole === "official" || currentRole === "admin") && (
