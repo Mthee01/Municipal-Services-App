@@ -235,7 +235,15 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
             <div className="flex items-center space-x-4">
               <LanguageSelector />
               <div className="hidden sm:flex space-x-6">
-                <a href="#features" className="text-black hover:text-sa-green transition-colors font-medium">Features</a>
+                <button 
+                  onClick={() => {
+                    const loginSection = document.querySelector('.auth-section');
+                    loginSection?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="text-black hover:text-sa-green transition-colors font-medium"
+                >
+                  Login
+                </button>
                 <button 
                   onClick={() => setShowContactForm(true)}
                   className="text-black hover:text-sa-green transition-colors font-medium"
@@ -295,7 +303,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
             </div>
 
             {/* Right Column - Auth Forms (Top Right) */}
-            <div className="relative">
+            <div className="relative auth-section">
               <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-sa-green/20 to-blue-500/20 rounded-full blur-2xl"></div>
               <Card className="relative z-10 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-2xl">
                 <CardHeader className="text-center space-y-2">
