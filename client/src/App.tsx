@@ -151,8 +151,32 @@ function App() {
     setLocation("/");
   };
 
-  // Show home page if not authenticated or if explicitly accessing root
-  if (!isAuthenticated || !currentRole || location === "/") {
+  // Show home page if not authenticated and on root path
+  if ((!isAuthenticated || !currentRole) && location === "/") {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <LanguageProvider>
+          <TooltipProvider>
+            <HomePage />
+            <Toaster />
+          </TooltipProvider>
+        </LanguageProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  // Check for test role access
+  const testRole = localStorage.getItem('testRole');
+  if (!isAuthenticated && testRole) {
+    setIsAuthenticated(true);
+    setCurrentRole(testRole as UserRole);
+  }
+
+  // If not authenticated but trying to access other pages, redirect to home
+  if (!isAuthenticated || !currentRole) {
+    if (location !== "/") {
+      setLocation("/");
+    }
     return (
       <QueryClientProvider client={queryClient}>
         <LanguageProvider>

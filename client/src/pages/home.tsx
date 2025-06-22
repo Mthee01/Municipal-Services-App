@@ -190,9 +190,30 @@ export function HomePage() {
             <nav className="hidden md:flex items-center space-x-6">
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">{t.features || "Features"}</a>
               <a href="#stats" className="text-gray-600 hover:text-blue-600 transition-colors">{t.stats || "Statistics"}</a>
-              <Link href="/citizen">
-                <Button>{t.getStarted || "Get Started"}</Button>
-              </Link>
+              <div className="flex items-center space-x-2">
+                <select 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      localStorage.setItem('testRole', e.target.value);
+                      window.location.href = `/${e.target.value}`;
+                    }
+                  }}
+                  className="px-3 py-1 border rounded-md text-sm"
+                  defaultValue=""
+                >
+                  <option value="">Quick Test Access</option>
+                  <option value="citizen">Citizen Dashboard</option>
+                  <option value="mayor">Mayor Dashboard</option>
+                  <option value="official">Official Dashboard</option>
+                  <option value="ward-councillor">Ward Councillor</option>
+                  <option value="system-admin">System Admin</option>
+                  <option value="tech-manager">Tech Manager</option>
+                  <option value="master">Master Dashboard</option>
+                </select>
+                <Link href="/citizen">
+                  <Button>{t.getStarted || "Get Started"}</Button>
+                </Link>
+              </div>
             </nav>
           </div>
         </div>
