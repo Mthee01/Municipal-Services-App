@@ -100,7 +100,7 @@ export default function OfficialDashboard() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Municipal Dashboard</h2>
+              <h2 className="text-2xl font-bold text-gray-900">ADA Smart Munic Dashboard</h2>
               <p className="text-gray-600">Service delivery monitoring and management</p>
             </div>
             <div className="flex flex-wrap gap-4">

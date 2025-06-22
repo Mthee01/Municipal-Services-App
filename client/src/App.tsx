@@ -229,7 +229,7 @@ function App() {
                     <div className="w-10 h-10 bg-sa-green rounded-full flex items-center justify-center">
                       <span className="text-white text-lg">🏢</span>
                     </div>
-                    <h3 className="text-xl font-bold">Municipal Services</h3>
+                    <h3 className="text-xl font-bold">ADA Smart Munic</h3>
                   </div>
                   <p className="text-gray-300 mb-4">
                     Connecting citizens with their local government for better service delivery and community engagement.
