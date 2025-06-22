@@ -215,6 +215,20 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
               <div className="w-10 h-10 bg-gradient-to-br from-sa-green to-green-600 rounded-xl flex items-center justify-center">
                 <Shield className="h-6 w-6 text-white" />
               </div>
+              {/* Demo Logo */}
+              <div className="w-8 h-8 rounded-lg overflow-hidden">
+                <svg viewBox="0 0 100 100" className="w-full h-full">
+                  <defs>
+                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#22c55e" />
+                      <stop offset="100%" stopColor="#15803d" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="45" fill="url(#logoGradient)" />
+                  <path d="M30 40 L50 25 L70 40 L70 65 L50 80 L30 65 Z" fill="white" opacity="0.9" />
+                  <circle cx="50" cy="50" r="8" fill="#22c55e" />
+                </svg>
+              </div>
               <div>
                 <h1 className="text-xl font-bold text-black">MuniConnect</h1>
                 <p className="text-xs text-gray-600">Citizen Engagement Platform</p>
