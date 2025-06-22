@@ -48,7 +48,7 @@ export default function CitizenDashboard() {
       <section className="bg-gradient-to-r from-sa-green to-green-600 text-white py-16">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-4xl font-bold mb-4" style={{ color: 'hsl(220, 85%, 15%)' }}>Report Issues. Track Progress. Build Community.</h2>
-          <p className="text-xl text-yellow-300 mb-8">Your voice matters in building better municipal services</p>
+          <p className="text-xl text-yellow-600 mb-8">Your voice matters in building better municipal services</p>
           <Button 
             onClick={() => setShowIssueForm(true)}
             className="bg-sa-gold hover:bg-yellow-500 text-black font-semibold px-8 py-4 text-lg"
