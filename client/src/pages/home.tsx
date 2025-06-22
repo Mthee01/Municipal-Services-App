@@ -183,7 +183,7 @@ export function HomePage() {
                 <HomeIcon className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Municipal Hub</h1>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">ADA_Smart Munics</h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">{t.tagline || "Connecting Communities"}</p>
               </div>
             </div>
@@ -491,7 +491,7 @@ export function HomePage() {
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-green-600 rounded-full flex items-center justify-center">
                   <HomeIcon className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="text-xl font-bold">Municipal Hub</h3>
+                <h3 className="text-xl font-bold">ADA_Smart Munics</h3>
               </div>
               <p className="text-gray-300 mb-4 max-w-md">
                 {t.footerDescription || "Empowering citizens and strengthening communities through innovative digital solutions for municipal service delivery."}
@@ -525,7 +525,7 @@ export function HomePage() {
           
           <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
             <p>&copy; 2024 {t.municipalPlatform || "Municipal Service Delivery Platform"}. {t.allRightsReserved || "All rights reserved"}.</p>
-            <p className="mt-2">{t.developedBy || "Developed by Adacode - Empowering Local Government"}</p>
+            <p className="mt-2">{t.developedBy || "Developed by Adacode Solutions - Empowering Smart Municipal Governance"}</p>
           </div>
         </div>
       </footer>
