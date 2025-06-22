@@ -206,7 +206,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 </Badge>
                 <h1 className="text-4xl font-bold mb-6 leading-tight text-black">
                   {t.welcome}
-                  <span className="block text-sa-gold bg-gradient-to-r from-yellow-300 to-yellow-500 bg-clip-text text-transparent">
+                  <span className="block text-black">
                     {t.dashboard}
                   </span>
                 </h1>
