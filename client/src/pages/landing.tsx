@@ -199,18 +199,18 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
-            <div className="text-white space-y-8">
+            <div className="text-black space-y-8">
               <div>
                 <Badge className="bg-sa-gold text-black mb-4">
                   Digital Municipal Services
                 </Badge>
-                <h1 className="text-5xl font-bold mb-6 leading-tight">
+                <h1 className="text-5xl font-bold mb-6 leading-tight text-black">
                   {t.welcome}
                   <span className="block text-sa-gold bg-gradient-to-r from-yellow-300 to-yellow-500 bg-clip-text text-transparent">
                     {t.dashboard}
                   </span>
                 </h1>
-                <p className="text-xl text-green-50 mb-8 leading-relaxed font-medium">
+                <p className="text-xl text-black mb-8 leading-relaxed font-medium">
                   {t.yourVoiceMatters}
                 </p>
               </div>
@@ -221,25 +221,25 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center">
                     <Droplets className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-white font-semibold">{t.buyVoucher}</span>
+                  <span className="text-black font-semibold">{t.buyVoucher}</span>
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-200">
                   <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-pink-500 rounded-lg flex items-center justify-center">
                     <MapPin className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-white font-semibold">{t.reportIssue}</span>
+                  <span className="text-black font-semibold">{t.reportIssue}</span>
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-200">
                   <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-lg flex items-center justify-center">
                     <Users className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-white font-semibold">Community Engagement</span>
+                  <span className="text-black font-semibold">Community Engagement</span>
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-200">
                   <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-yellow-500 rounded-lg flex items-center justify-center">
                     <Clock className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-white font-semibold">Real-time Tracking</span>
+                  <span className="text-black font-semibold">Real-time Tracking</span>
                 </div>
               </div>
 
@@ -263,7 +263,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 {stats.map((stat, index) => (
                   <div key={index} className="text-center p-4 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30">
                     <div className="text-3xl font-bold text-sa-gold mb-2">{stat.number}</div>
-                    <div className="text-sm text-green-50 font-medium">{stat.label}</div>
+                    <div className="text-sm text-black font-medium">{stat.label}</div>
                   </div>
                 ))}
               </div>
