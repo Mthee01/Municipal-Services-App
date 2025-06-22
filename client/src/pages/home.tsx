@@ -190,7 +190,6 @@ export function HomePage() {
             <nav className="hidden md:flex items-center space-x-6">
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">{t.features || "Features"}</a>
               <a href="#stats" className="text-gray-600 hover:text-blue-600 transition-colors">{t.stats || "Statistics"}</a>
-              <a href="#about" className="text-gray-600 hover:text-blue-600 transition-colors">{t.about || "About"}</a>
               <Link href="/citizen">
                 <Button>{t.getStarted || "Get Started"}</Button>
               </Link>
