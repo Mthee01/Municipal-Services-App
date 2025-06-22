@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Plus, Filter, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,6 +30,17 @@ export default function CitizenDashboard() {
   const [showIssueForm, setShowIssueForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [location] = useLocation();
+
+  // Check URL parameters to auto-open report issue form
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('report') === 'true') {
+      setShowIssueForm(true);
+      // Clean up URL parameter
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [location]);
 
   const { data: userIssues = [], isLoading: userIssuesLoading } = useQuery<Issue[]>({
     queryKey: ["/api/issues", { user: "current" }],

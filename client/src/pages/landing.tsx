@@ -656,8 +656,8 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 <li>
                   <button 
                     onClick={() => {
-                      const loginSection = document.querySelector('.auth-section');
-                      loginSection?.scrollIntoView({ behavior: 'smooth' });
+                      // Navigate to citizen dashboard with report issue form open
+                      window.location.href = '/citizen-dashboard?report=true';
                     }}
                     className="hover:text-sa-gold transition-colors text-left"
                   >
