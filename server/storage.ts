@@ -473,7 +473,14 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      email: insertUser.email ?? null,
+      phone: insertUser.phone ?? null,
+      municipalityAccountNo: insertUser.municipalityAccountNo ?? null,
+      role: insertUser.role || 'citizen'
+    };
     this.users.set(id, user);
     return user;
   }
@@ -558,6 +565,9 @@ export class MemStorage implements IStorage {
       ...insertPayment,
       id,
       createdAt: new Date(),
+      status: insertPayment.status || 'pending',
+      description: insertPayment.description ?? null,
+      accountNumber: insertPayment.accountNumber ?? null,
     };
     this.payments.set(id, payment);
     return payment;
@@ -694,7 +704,16 @@ export class MemStorage implements IStorage {
 
   async createWard(insertWard: InsertWard): Promise<Ward> {
     const id = this.currentWardId++;
-    const ward: Ward = { ...insertWard, id };
+    const ward: Ward = { 
+      ...insertWard, 
+      id,
+      area: insertWard.area ?? null,
+      description: insertWard.description ?? null,
+      councillorName: insertWard.councillorName ?? null,
+      councillorPhone: insertWard.councillorPhone ?? null,
+      councillorEmail: insertWard.councillorEmail ?? null,
+      population: insertWard.population ?? null
+    };
     this.wards.set(id, ward);
     return ward;
   }

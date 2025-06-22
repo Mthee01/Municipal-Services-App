@@ -185,42 +185,47 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                   Digital Municipal Services
                 </Badge>
                 <h1 className="text-5xl font-bold mb-6 leading-tight">
-                  Your Voice in
-                  <span className="block text-sa-gold">Municipal Services</span>
+                  {t.welcome}
+                  <span className="block text-sa-gold">{t.dashboard}</span>
                 </h1>
-                <p className="text-xl text-green-100 mb-8 leading-relaxed">
-                  Empowering South African citizens to engage with local government, 
-                  report issues, track service delivery, and build stronger communities 
-                  through transparent digital platforms.
+                <p className="text-xl text-gray-800 mb-8 leading-relaxed font-semibold">
+                  {t.yourVoiceMatters}
                 </p>
               </div>
 
               {/* Features Grid */}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="flex items-center gap-3">
-                  <Droplets className="h-5 w-5 text-blue-300" />
-                  <span>Water & Electricity Vouchers</span>
+                  <Droplets className="h-5 w-5 text-yellow-400" />
+                  <span className="text-gray-800 font-semibold">{t.buyVoucher}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <MapPin className="h-5 w-5 text-blue-300" />
-                  <span>GPS Issue Reporting</span>
+                  <MapPin className="h-5 w-5 text-yellow-400" />
+                  <span className="text-gray-800 font-semibold">{t.reportIssue}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Users className="h-5 w-5 text-blue-300" />
-                  <span>Community Engagement</span>
+                  <Users className="h-5 w-5 text-yellow-400" />
+                  <span className="text-gray-800 font-semibold">Community Engagement</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Clock className="h-5 w-5 text-blue-300" />
-                  <span>Real-time Tracking</span>
+                  <Clock className="h-5 w-5 text-yellow-400" />
+                  <span className="text-gray-800 font-semibold">Real-time Tracking</span>
                 </div>
               </div>
 
+              {/* Quick Action Callout */}
+              <div className="bg-yellow-100 border-l-4 border-red-500 p-4 rounded-r-lg">
+                <p className="text-red-700 font-bold text-lg">
+                  ⚡ {t.reportIn60Seconds}
+                </p>
+              </div>
+
               {/* Stats */}
-              <div className="grid grid-cols-4 gap-4 pt-8 border-t border-green-400">
+              <div className="grid grid-cols-4 gap-4 pt-8 border-t border-yellow-400">
                 {stats.map((stat, index) => (
                   <div key={index} className="text-center">
                     <div className="text-2xl font-bold text-sa-gold">{stat.number}</div>
-                    <div className="text-sm text-green-200">{stat.label}</div>
+                    <div className="text-sm text-gray-800 font-semibold">{stat.label}</div>
                   </div>
                 ))}
               </div>
@@ -230,16 +235,19 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
             <div className="flex justify-center">
               <Card className="w-full max-w-md shadow-2xl">
                 <CardHeader className="text-center pb-4">
-                  <CardTitle className="text-2xl font-bold" style={{ color: 'hsl(220, 85%, 15%)' }}>
-                    Welcome Back
-                  </CardTitle>
-                  <p className="text-gray-600">Access your municipal services</p>
+                  <div className="flex justify-between items-center mb-4">
+                    <CardTitle className="text-2xl font-bold" style={{ color: 'hsl(220, 85%, 15%)' }}>
+                      {t.welcome}
+                    </CardTitle>
+                    <LanguageSelector />
+                  </div>
+                  <p className="text-gray-700 font-medium">Access your municipal services</p>
                 </CardHeader>
                 <CardContent>
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="grid w-full grid-cols-2 mb-6">
-                      <TabsTrigger value="login">Login</TabsTrigger>
-                      <TabsTrigger value="register">Register</TabsTrigger>
+                      <TabsTrigger value="login">{t.login}</TabsTrigger>
+                      <TabsTrigger value="register">{t.register}</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="login">
@@ -250,9 +258,9 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                             name="username"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Username</FormLabel>
+                                <FormLabel>{t.username}</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="Enter your username" {...field} />
+                                  <Input placeholder={`Enter your ${t.username.toLowerCase()}`} {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -269,7 +277,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                                   <div className="relative">
                                     <Input
                                       type={showPassword ? "text" : "password"}
-                                      placeholder="Enter your password"
+                                      placeholder={`Enter your ${t.password.toLowerCase()}`}
                                       {...field}
                                     />
                                     <Button
@@ -305,7 +313,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                                 </FormControl>
                                 <div className="space-y-1 leading-none">
                                   <FormLabel>
-                                    Keep me logged in
+                                    {t.keepMeLoggedIn}
                                   </FormLabel>
                                 </div>
                               </FormItem>
@@ -323,7 +331,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                                 Signing In...
                               </>
                             ) : (
-                              "Sign In"
+                              t.login
                             )}
                           </Button>
                         </form>

@@ -573,6 +573,324 @@ export const translations: Record<string, TranslationKey> = {
     mayor: "Usodolophu",
     wardCouncillor: "Ikhanselam Lewadi",
     techManager: "Umlawuli Wezobuchwephesha",
+  },
+  
+  // Sotho (Sesotho)
+  st: {
+    // Navigation and common
+    dashboard: "Boto ea Taolo",
+    home: "Hae",
+    reports: "Litlaleho",
+    payments: "Litefo",
+    vouchers: "Li-voucher",
+    settings: "Litlhophiso",
+    logout: "Tsoa",
+    login: "Kena",
+    register: "Ngolisa",
+    
+    // Authentication
+    username: "Lebitso la Mosebelisi",
+    password: "Phasewete",
+    email: "Aterese ea Imeile",
+    phone: "Nomoro ea Mohala",
+    fullName: "Lebitso le Feletseng",
+    municipalityAccountNumber: "Nomoro ea Akhaonto ea Masepala",
+    keepMeLoggedIn: "Nkgole nkenile",
+    createAccount: "Theha Akhaonto",
+    alreadyHaveAccount: "Na u se u na le akhaonto?",
+    dontHaveAccount: "Ha u na akhaonto?",
+    
+    // Issue reporting
+    reportIssue: "Tlaleha Bothata",
+    issueTitle: "Sehlooho sa Bothata",
+    issueDescription: "Tlhaloso ea Bothata",
+    category: "Sehlopha",
+    priority: "Bohlokoa",
+    location: "Sebaka",
+    ward: "Wate",
+    reporterName: "Lebitso la Motlaletsi",
+    reporterPhone: "Mohala oa Motlaletsi",
+    attachPhotos: "Khomarela Lintho",
+    submitReport: "Romela Tlaleho",
+    
+    // Categories
+    waterSanitation: "Metsi le Bohloeki",
+    electricity: "Motlakase",
+    roadsTransport: "Litsela le Lipalangoang",
+    wasteManagement: "Tsamaiso ea Litšila",
+    safetySecurity: "Tšireletso le Polokeho",
+    housing: "Matlo",
+    other: "Tse ling",
+    
+    // Priorities
+    low: "Tlase",
+    medium: "Mahareng",
+    high: "Holimo",
+    emergency: "Tšohanyetso",
+    
+    // Status
+    open: "E bulehile",
+    assigned: "E abeliloe",
+    inProgress: "E tsoela pele",
+    resolved: "E rarolliloe",
+    closed: "E koetsoeng",
+    
+    // Payments
+    waterBill: "Bili ea Metsi",
+    electricityBill: "Bili ea Motlakase",
+    ratesTaxes: "Litefo le Lekhetho",
+    fines: "Litlholo",
+    payNow: "Lefa Hona Joale",
+    amount: "Chelete",
+    dueDate: "Letsatsi la Tefo",
+    overdue: "Le fetile nako",
+    paid: "Le lefuoe",
+    pending: "Le emetse",
+    
+    // Vouchers
+    buyVoucher: "Reka Voucher",
+    waterVoucher: "Voucher ea Metsi",
+    electricityVoucher: "Voucher ea Motlakase",
+    voucherCode: "Khouto ea Voucher",
+    voucherAmount: "Chelete ea Voucher",
+    purchaseDate: "Letsatsi la Reko",
+    expiryDate: "Letsatsi la Pheletso",
+    active: "E sebetsa",
+    used: "E sebelisitsoe",
+    expired: "E felile",
+    
+    // Common actions
+    view: "Sheba",
+    edit: "Fetola",
+    delete: "Hlakola",
+    save: "Boloka",
+    cancel: "Hlakola",
+    confirm: "Netefatsa",
+    close: "Koala",
+    next: "E latelang",
+    previous: "E fetileng",
+    search: "Batla",
+    filter: "Khetha",
+    
+    // Messages
+    welcome: "Rea u amohela",
+    yourVoiceMatters: "Lentsoe la hau le bohlokoa",
+    reportIn60Seconds: "Tlaleha ka liketsahalo tse 60",
+    loginSuccessful: "Kena ka katleho",
+    registrationSuccessful: "Ngoliso e atlehile",
+    issueReported: "Bothata bo tlalehiloe",
+    paymentSuccessful: "Tefo e atlehile",
+    voucherPurchased: "Voucher e rekuoe",
+    
+    // Roles
+    citizen: "Moahi",
+    official: "Mohlahlogi",
+    admin: "Motsamaisi",
+    mayor: "Meya",
+    wardCouncillor: "Tonakgolo ea Wate",
+    techManager: "Motsamaisi oa Theknoloji",
+  },
+  
+  // Tswana (Setswana)
+  tn: {
+    // Navigation and common
+    dashboard: "Boto ya Taolo",
+    home: "Gae",
+    reports: "Dipego",
+    payments: "Dituelo",
+    vouchers: "Di-voucher",
+    settings: "Dithulaganyo",
+    logout: "Tswa",
+    login: "Tsena",
+    register: "Kwala",
+    
+    // Authentication
+    username: "Leina la Modirisi",
+    password: "Phasewete",
+    email: "Atrese ya Imeile",
+    phone: "Nomoro ya Mogala",
+    fullName: "Leina le le Feletseng",
+    municipalityAccountNumber: "Nomoro ya Akhaonto ya Masepala",
+    keepMeLoggedIn: "Nkgole tsena",
+    createAccount: "Dira Akhaonto",
+    alreadyHaveAccount: "A o na le akhaonto?",
+    dontHaveAccount: "Ga o na akhaonto?",
+    
+    // Issue reporting
+    reportIssue: "Begela Bothata",
+    issueTitle: "Setlhogo sa Bothata",
+    issueDescription: "Tlhaloso ya Bothata",
+    category: "Setlhopha",
+    priority: "Botlhokwa",
+    location: "Lefelo",
+    ward: "Wate",
+    reporterName: "Leina la Mmegi",
+    reporterPhone: "Mogala wa Mmegi",
+    attachPhotos: "Tsenya Ditshwantsho",
+    submitReport: "Romela Pego",
+    
+    // Categories
+    waterSanitation: "Metsi le Bohloeki",
+    electricity: "Motlakase",
+    roadsTransport: "Ditsela le Dipalangwa",
+    wasteManagement: "Tsamaiso ya Matlakala",
+    safetySecurity: "Polokesego le Tshireletso",
+    housing: "Matlo",
+    other: "Tse dingwe",
+    
+    // Priorities
+    low: "Tlase",
+    medium: "Fa gare",
+    high: "Kwa godimo",
+    emergency: "Tshoganyetso",
+    
+    // Status
+    open: "E buletswe",
+    assigned: "E abelwe",
+    inProgress: "E tsweletse",
+    resolved: "E raroletswe",
+    closed: "E tswaletswe",
+    
+    // Payments
+    waterBill: "Bila ya Metsi",
+    electricityBill: "Bila ya Motlakase",
+    ratesTaxes: "Dituelo le Lekgetho",
+    fines: "Dikotlhao",
+    payNow: "Duela Jaanong",
+    amount: "Madi",
+    dueDate: "Letsatsi la Tefo",
+    overdue: "Le fetile nako",
+    paid: "Le duelesitswe",
+    pending: "Le emetse",
+    
+    // Vouchers
+    buyVoucher: "Reka Voucher",
+    waterVoucher: "Voucher ya Metsi",
+    electricityVoucher: "Voucher ya Motlakase",
+    voucherCode: "Khouto ya Voucher",
+    voucherAmount: "Madi a Voucher",
+    purchaseDate: "Letsatsi la go Reka",
+    expiryDate: "Letsatsi la Bokhutlo",
+    active: "E dira",
+    used: "E dirisitswe",
+    expired: "E fedile",
+    
+    // Common actions
+    view: "Bona",
+    edit: "Baakanya",
+    delete: "Phimola",
+    save: "Boloka",
+    cancel: "Khansela",
+    confirm: "Netefatsa",
+    close: "Tswala",
+    next: "E latelang",
+    previous: "E e fetileng",
+    search: "Batla",
+    filter: "Kgetha",
+    
+    // Messages
+    welcome: "Re go amogela",
+    yourVoiceMatters: "Lentswe la gago le botlhokwa",
+    reportIn60Seconds: "Bega mo metsotswaneng e 60",
+    loginSuccessful: "Tseno e atlehile",
+    registrationSuccessful: "Kwalo e atlehile",
+    issueReported: "Bothata bo begetswe",
+    paymentSuccessful: "Tuelo e atlehile",
+    voucherPurchased: "Voucher e rekile",
+    
+    // Roles
+    citizen: "Moagi",
+    official: "Lekgotlana",
+    admin: "Motsamaisi",
+    mayor: "Meya",
+    wardCouncillor: "Khansela ya Wate",
+    techManager: "Motsamaisi wa Thekenoloji",
+  },
+  
+  // Additional languages with basic translations for core functionality
+  ss: {
+    dashboard: "Liboto Lekuphakamisa", home: "Ekhaya", reports: "Emabiko", 
+    payments: "Emalipayimenti", vouchers: "Emavowutsha", settings: "Emasetheni",
+    logout: "Phuma", login: "Ngena", register: "Bhalisa", welcome: "Siyakwamukela",
+    yourVoiceMatters: "Live lakho libalulekile", reportIn60Seconds: "Bika ngemisekhondo le-60",
+    citizen: "Libandla", official: "Sigcini", admin: "Mphakamisi", mayor: "Meya",
+    wardCouncillor: "Khanselara Lewadi", techManager: "Mphakamisi Webuchwepheshe",
+    username: "Libito Lemsebenti", password: "Liphasiwedi", email: "Likheli Le-imeyili",
+    phone: "Inombolo Yefoni", fullName: "Libito Leliphelele", 
+    municipalityAccountNumber: "Inombolo Ye-akhawunti Yamasipala",
+    keepMeLoggedIn: "Ngigcine ngingenile", createAccount: "Yakha I-akhawunti",
+    alreadyHaveAccount: "Usunayo i-akhawunti?", dontHaveAccount: "Awunayo i-akhawunti?",
+    reportIssue: "Bika Inkinga", waterSanitation: "Emanti Nekuhlanjululwa",
+    electricity: "Ugesi", other: "Lokunye", low: "Kuphansi", medium: "Emkhatsini",
+    high: "Phakeme", emergency: "Isimo Lesiphuthumako",
+  },
+  
+  ve: {
+    dashboard: "Boto ya u Fara", home: "Hayani", reports: "Mivhigo", 
+    payments: "Mbadelo", vouchers: "Vhaushara", settings: "Mavhekanyelo",
+    logout: "Buda", login: "Pinda", register: "Nyorwa", welcome: "Ri a ni amukela",
+    yourVoiceMatters: "Ipfi lanu li a khou tshimbila", reportIn60Seconds: "Vhiga nga minete makumi matharathini",
+    citizen: "Mudzulapo", official: "Muofisiali", admin: "Murangaphanḓa", mayor: "Meya",
+    wardCouncillor: "Khonsorali ya Wada", techManager: "Murangaphanḓa wa Thekhinolodzhi",
+    username: "Dzina la Mushumisi", password: "Phasiwede", email: "Adresi ya Imeili",
+    phone: "Nomboro ya Lutingo", fullName: "Dzina Lothelele", 
+    municipalityAccountNumber: "Nomboro ya Akhantu ya Masipala",
+    keepMeLoggedIn: "Ni mpindzele ndo pinda", createAccount: "Vhumbani Akhantu",
+    alreadyHaveAccount: "Ni na akhantu?", dontHaveAccount: "A ni na akhantu?",
+    reportIssue: "Vhiga Tshikolodo", waterSanitation: "Mai na u Penya",
+    electricity: "Muṱhakathi", other: "Zwinwe", low: "Fhasi", medium: "Vhukati",
+    high: "Ntha", emergency: "Tshifhinga tsha u ṱavhanya",
+  },
+  
+  ts: {
+    dashboard: "Bodo ra Vulawuri", home: "Kaya", reports: "Miviko", 
+    payments: "Mahakelo", vouchers: "Tivhauchara", settings: "Mahanditiviselo",
+    logout: "Huma", login: "Ngena", register: "Tsala", welcome: "Hi mi amukela",
+    yourVoiceMatters: "Rito ra wena ri tlhontlha", reportIn60Seconds: "Vika hi timinete to 60",
+    citizen: "Munhu wa dorobani", official: "Muofisiali", admin: "Muphambisi", mayor: "Meya",
+    wardCouncillor: "Khonsinara wa Wada", techManager: "Muphambisi wa Theknoloji",
+    username: "Vito ra Mutirhisi", password: "Phasiwede", email: "Adresi ya Imeyli",
+    phone: "Nomboro ya Riqingho", fullName: "Vito ra Hinkwaro", 
+    municipalityAccountNumber: "Nomboro ya Akhawundi ya Masipala",
+    keepMeLoggedIn: "Ni hlayise ndzi nghenile", createAccount: "Endla Akhawundi",
+    alreadyHaveAccount: "U na akhawundi?", dontHaveAccount: "A wu na akhawundi?",
+    reportIssue: "Vika Xiphiqo", waterSanitation: "Mati na Ku baswa",
+    electricity: "Gezi", other: "Swin'wana", low: "Ehansi", medium: "Exikarhi",
+    high: "Ehenhla", emergency: "Xirisi",
+  },
+  
+  nr: {
+    dashboard: "Ibhodi Lokulawula", home: "Ekhaya", reports: "Imibiko", 
+    payments: "Izinkokhelo", vouchers: "Amavawusha", settings: "Izilungiselelo",
+    logout: "Phuma", login: "Ngena", register: "Bhalisa", welcome: "Siyakwamukela",
+    yourVoiceMatters: "Ilizwi lakho libalulekile", reportIn60Seconds: "Bika ngemaminithi la-60",
+    citizen: "Isakhamuzi", official: "Isikhulu", admin: "Umlawuli", mayor: "Umeya",
+    wardCouncillor: "Ikhansilara Lewadi", techManager: "Umlawuli Wetheknoloji",
+    username: "Ibizo Lomsebenzisi", password: "Iphasiwedi", email: "Ikheli Le-imeyili",
+    phone: "Inombolo Yefoni", fullName: "Ibizo Eliphelele", 
+    municipalityAccountNumber: "Inombolo Ye-akhawunti Yamasipala",
+    keepMeLoggedIn: "Ngigcine ngingenile", createAccount: "Dala I-akhawunti",
+    alreadyHaveAccount: "Usunayo i-akhawunti?", dontHaveAccount: "Awunayo i-akhawunti?",
+    reportIssue: "Bika Inkinga", waterSanitation: "Amanzi Nokuhlanzeka",
+    electricity: "Ugesi", other: "Okunye", low: "Okuphansi", medium: "Okuphakathi",
+    high: "Okuphakeme", emergency: "Isimo Esiphuthuma",
+  },
+  
+  nso: {
+    dashboard: "Boto ya Taolo", home: "Gae", reports: "Dipegelo", 
+    payments: "Ditefo", vouchers: "Di-voucher", settings: "Dithulaganyo",
+    logout: "Tswa", login: "Tsena", register: "Ngwala", welcome: "Rea le amogela",
+    yourVoiceMatters: "Lentšu la geno le bohlokwa", reportIn60Seconds: "Begela ka metsotso e 60",
+    citizen: "Moagi", official: "Molaodi", admin: "Motsamaisi", mayor: "Meya",
+    wardCouncillor: "Khansela ya Wata", techManager: "Motsamaisi wa Thekenoloji",
+    username: "Leina la Modiriši", password: "Phasewete", email: "Aterese ya Imeile",
+    phone: "Nomoro ya Mogala", fullName: "Leina le Feletseng", 
+    municipalityAccountNumber: "Nomoro ya Akhaonto ya Masepala",
+    keepMeLoggedIn: "Nkgole nkena", createAccount: "Hlola Akhaonto",
+    alreadyHaveAccount: "Na o na le akhaonto?", dontHaveAccount: "Ga o na akhaonto?",
+    reportIssue: "Begela Bothata", waterSanitation: "Meetse le Bohlwekileng",
+    electricity: "Motlakase", other: "Tše dingwe", low: "Tlase", medium: "Gare",
+    high: "Godimo", emergency: "Tšoganyetšo",
   }
 };
 
@@ -581,7 +899,14 @@ export const supportedLanguages = [
   { code: 'en', name: 'English', nativeName: 'English' },
   { code: 'af', name: 'Afrikaans', nativeName: 'Afrikaans' },
   { code: 'zu', name: 'Zulu', nativeName: 'isiZulu' },
-  { code: 'xh', name: 'Xhosa', nativeName: 'isiXhosa' }
+  { code: 'xh', name: 'Xhosa', nativeName: 'isiXhosa' },
+  { code: 'st', name: 'Sotho', nativeName: 'Sesotho' },
+  { code: 'tn', name: 'Tswana', nativeName: 'Setswana' },
+  { code: 'ss', name: 'Swati', nativeName: 'siSwati' },
+  { code: 've', name: 'Venda', nativeName: 'Tshivenda' },
+  { code: 'ts', name: 'Tsonga', nativeName: 'Xitsonga' },
+  { code: 'nr', name: 'Ndebele', nativeName: 'isiNdebele' },
+  { code: 'nso', name: 'Northern Sotho', nativeName: 'Sepedi' },
 ];
 
 // Translation hook
