@@ -212,9 +212,6 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-sa-green to-green-600 rounded-xl flex items-center justify-center">
-                <Shield className="h-6 w-6 text-white" />
-              </div>
               {/* Demo Logo */}
               <div className="w-8 h-8 rounded-lg overflow-hidden">
                 <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -228,6 +225,9 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                   <path d="M30 40 L50 25 L70 40 L70 65 L50 80 L30 65 Z" fill="white" opacity="0.9" />
                   <circle cx="50" cy="50" r="8" fill="#22c55e" />
                 </svg>
+              </div>
+              <div className="w-10 h-10 bg-gradient-to-br from-sa-green to-green-600 rounded-xl flex items-center justify-center">
+                <Shield className="h-6 w-6 text-white" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-black">MuniConnect</h1>
