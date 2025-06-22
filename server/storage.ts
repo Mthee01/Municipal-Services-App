@@ -8,12 +8,9 @@ import {
 
 export interface IStorage {
   // User operations
-  getUsers(): Promise<User[]>;
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
-  deleteUser(id: number): Promise<boolean>;
 
   // Issue operations
   getIssues(): Promise<Issue[]>;
@@ -466,10 +463,6 @@ export class MemStorage implements IStorage {
   }
 
   // User operations
-  async getUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
-  }
-
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
   }
@@ -490,29 +483,6 @@ export class MemStorage implements IStorage {
     };
     this.users.set(id, user);
     return user;
-  }
-
-  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) {
-      return undefined;
-    }
-
-    const updatedUser: User = {
-      ...user,
-      ...updates,
-      id, // Ensure ID doesn't change
-      email: updates.email !== undefined ? updates.email : user.email,
-      phone: updates.phone !== undefined ? updates.phone : user.phone,
-      municipalityAccountNo: updates.municipalityAccountNo !== undefined ? updates.municipalityAccountNo : user.municipalityAccountNo,
-    };
-
-    this.users.set(id, updatedUser);
-    return updatedUser;
-  }
-
-  async deleteUser(id: number): Promise<boolean> {
-    return this.users.delete(id);
   }
 
   // Issue operations
@@ -544,13 +514,6 @@ export class MemStorage implements IStorage {
     const issue: Issue = {
       ...insertIssue,
       id,
-      photos: insertIssue.photos ?? null,
-      status: insertIssue.status || "open",
-      priority: insertIssue.priority || "medium",
-      ward: insertIssue.ward ?? null,
-      reporterName: insertIssue.reporterName ?? null,
-      reporterPhone: insertIssue.reporterPhone ?? null,
-      assignedTo: insertIssue.assignedTo ?? null,
       createdAt: now,
       updatedAt: now,
       resolvedAt: null,
@@ -637,10 +600,6 @@ export class MemStorage implements IStorage {
     const team: Team = {
       ...insertTeam,
       id,
-      status: insertTeam.status || "available",
-      currentLocation: insertTeam.currentLocation ?? null,
-      members: insertTeam.members ?? null,
-      equipment: insertTeam.equipment ?? null,
       lastUpdate: new Date(),
     };
     this.teams.set(id, team);
@@ -682,15 +641,6 @@ export class MemStorage implements IStorage {
     const technician: Technician = {
       ...insertTechnician,
       id,
-      email: insertTechnician.email ?? null,
-      status: insertTechnician.status || "available",
-      currentLocation: insertTechnician.currentLocation ?? null,
-      skills: insertTechnician.skills ?? null,
-      latitude: insertTechnician.latitude ?? null,
-      longitude: insertTechnician.longitude ?? null,
-      completedIssues: insertTechnician.completedIssues ?? null,
-      performanceRating: insertTechnician.performanceRating ?? null,
-      avgResolutionTime: insertTechnician.avgResolutionTime ?? null,
       lastUpdate: new Date(),
     };
     this.technicians.set(id, technician);
@@ -789,9 +739,6 @@ export class MemStorage implements IStorage {
     const update: IssueUpdate = {
       ...insertUpdate,
       id,
-      technicianId: insertUpdate.technicianId ?? null,
-      comment: insertUpdate.comment ?? null,
-      updatedBy: insertUpdate.updatedBy ?? null,
       createdAt: new Date(),
     };
     this.issueUpdates.set(id, update);
@@ -969,11 +916,7 @@ export class MemStorage implements IStorage {
     const voucher: Voucher = {
       ...insertVoucher,
       id,
-      status: insertVoucher.status || "active",
-      purchasedBy: insertVoucher.purchasedBy ?? null,
-      usedDate: insertVoucher.usedDate ?? null,
       purchaseDate: new Date(),
-      expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
     };
     this.vouchers.set(id, voucher);
     return voucher;

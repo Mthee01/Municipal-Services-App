@@ -8,14 +8,12 @@ import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/language-selector";
 import { RoleToggle } from "@/components/role-toggle";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { HomePage } from "@/pages/home";
+import LandingPage from "@/pages/landing";
 import CitizenDashboard from "@/pages/citizen-dashboard";
 import OfficialDashboard from "@/pages/official-dashboard";
 import MayorDashboard from "@/pages/mayor-dashboard";
 import WardCouncillorDashboard from "@/pages/ward-councillor-dashboard";
 import TechManagerDashboard from "@/pages/tech-manager-dashboard";
-import SystemAdminDashboard from "@/pages/system-admin-dashboard";
-import { MasterDashboard } from "@/pages/master-dashboard";
 import NotFound from "@/pages/not-found";
 import type { UserRole } from "@/lib/types";
 
@@ -127,14 +125,11 @@ function App() {
       case "mayor":
         setLocation("/mayor");
         break;
-      case "wardCouncillor":
+      case "ward_councillor":
         setLocation("/ward-councillor");
         break;
-      case "techManager":
+      case "tech_manager":
         setLocation("/tech-manager");
-        break;
-      case "systemAdmin":
-        setLocation("/system-admin");
         break;
       default:
         setLocation("/");
@@ -151,13 +146,13 @@ function App() {
     setLocation("/");
   };
 
-  // Show home page if not authenticated or if explicitly accessing root
-  if (!isAuthenticated || !currentRole || location === "/") {
+  // Show landing page if not authenticated
+  if (!isAuthenticated || !currentRole) {
     return (
       <QueryClientProvider client={queryClient}>
         <LanguageProvider>
           <TooltipProvider>
-            <HomePage />
+            <LandingPage onLogin={handleLogin} />
             <Toaster />
           </TooltipProvider>
         </LanguageProvider>
@@ -209,12 +204,10 @@ function App() {
           <main>
             <Switch>
               <Route path="/" component={CitizenDashboard} />
-              <Route path="/master" component={MasterDashboard} />
               <Route path="/official" component={OfficialDashboard} />
               <Route path="/mayor" component={MayorDashboard} />
               <Route path="/ward-councillor" component={WardCouncillorDashboard} />
               <Route path="/tech-manager" component={TechManagerDashboard} />
-              <Route path="/system-admin" component={SystemAdminDashboard} />
               <Route component={NotFound} />
             </Switch>
           </main>

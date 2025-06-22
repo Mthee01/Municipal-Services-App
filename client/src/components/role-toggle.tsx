@@ -33,23 +33,17 @@ const roleConfig: Record<UserRole, { label: string; icon: any; color: string; de
     color: "bg-red-50 text-red-700 border-red-200",
     description: "Municipality-wide oversight"
   },
-  wardCouncillor: {
+  ward_councillor: {
     label: "Ward Councillor",
     icon: MapPin,
     color: "bg-orange-50 text-orange-700 border-orange-200",
     description: "Ward-specific management"
   },
-  techManager: {
+  tech_manager: {
     label: "Technical Manager",
     icon: Wrench,
     color: "bg-indigo-50 text-indigo-700 border-indigo-200",
     description: "Technician allocation and performance"
-  },
-  systemAdmin: {
-    label: "System Administrator",
-    icon: Shield,
-    color: "bg-purple-50 text-purple-700 border-purple-200",
-    description: "Complete system management and user administration"
   }
 };
 
