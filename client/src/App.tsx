@@ -26,6 +26,14 @@ function App() {
   // Check for saved authentication on app load
   useEffect(() => {
     const checkSavedAuth = () => {
+      // Clear any potentially corrupted auth data first
+      try {
+        localStorage.removeItem("municipalAuth");
+        sessionStorage.removeItem("municipalAuth");
+      } catch (error) {
+        console.error("Error clearing auth storage:", error);
+      }
+      
       // Check localStorage first (remember me)
       let savedAuth = localStorage.getItem("municipalAuth");
       if (!savedAuth) {

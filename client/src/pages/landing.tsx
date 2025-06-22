@@ -173,29 +173,29 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sa-green via-green-600 to-green-700 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-sa-green via-green-600 to-green-700 relative">
       {/* Geometric Background Pattern */}
       <div 
-        className="absolute inset-0 opacity-20"
+        className="absolute inset-0 z-0 opacity-10 pointer-events-none"
         style={{
           backgroundImage: `
-            radial-gradient(circle at 25% 25%, rgba(255,255,255,0.2) 2px, transparent 2px),
-            radial-gradient(circle at 75% 75%, rgba(255,255,255,0.15) 1px, transparent 1px),
-            linear-gradient(45deg, transparent 24%, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.05) 26%, transparent 27%, transparent 74%, rgba(255,255,255,0.05) 75%, rgba(255,255,255,0.05) 76%, transparent 77%)
+            radial-gradient(circle at 25% 25%, rgba(255,255,255,0.3) 1px, transparent 1px),
+            radial-gradient(circle at 75% 75%, rgba(255,255,255,0.2) 1px, transparent 1px),
+            linear-gradient(45deg, transparent 24%, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.08) 26%, transparent 27%, transparent 74%, rgba(255,255,255,0.08) 75%, rgba(255,255,255,0.08) 76%, transparent 77%)
           `,
-          backgroundSize: '60px 60px, 40px 40px, 80px 80px',
-          backgroundPosition: '0 0, 20px 20px, 0 0'
+          backgroundSize: '50px 50px, 30px 30px, 60px 60px',
+          backgroundPosition: '0 0, 15px 15px, 0 0'
         }}
       />
       
       {/* Floating Elements */}
-      <div className="absolute top-20 left-10 w-32 h-32 bg-white/10 rounded-full blur-xl animate-pulse" />
-      <div className="absolute top-40 right-20 w-24 h-24 bg-yellow-300/20 rounded-full blur-lg animate-pulse delay-1000" />
-      <div className="absolute bottom-32 left-1/4 w-20 h-20 bg-white/15 rounded-full blur-xl animate-pulse delay-2000" />
-      <div className="absolute bottom-20 right-1/3 w-28 h-28 bg-green-300/10 rounded-full blur-lg animate-pulse delay-500" />
+      <div className="absolute top-20 left-10 w-24 h-24 bg-white/5 rounded-full blur-lg animate-pulse pointer-events-none z-0" />
+      <div className="absolute top-40 right-20 w-16 h-16 bg-yellow-300/10 rounded-full blur-md animate-pulse delay-1000 pointer-events-none z-0" />
+      <div className="absolute bottom-32 left-1/4 w-12 h-12 bg-white/8 rounded-full blur-lg animate-pulse delay-2000 pointer-events-none z-0" />
+      <div className="absolute bottom-20 right-1/3 w-20 h-20 bg-green-300/5 rounded-full blur-md animate-pulse delay-500 pointer-events-none z-0" />
       
       {/* Hero Section */}
-      <div className="relative overflow-hidden z-10">
+      <div className="relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
@@ -542,19 +542,19 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       </div>
 
       {/* Features Section */}
-      <div className="bg-white py-16 relative z-10 overflow-hidden">
+      <div className="bg-white py-16 relative z-20">
         {/* Subtle background pattern for features section */}
         <div 
-          className="absolute inset-0 opacity-5"
+          className="absolute inset-0 z-0 opacity-3 pointer-events-none"
           style={{
             backgroundImage: `
-              linear-gradient(90deg, rgba(34,197,94,0.1) 1px, transparent 1px),
-              linear-gradient(rgba(34,197,94,0.1) 1px, transparent 1px)
+              linear-gradient(90deg, rgba(34,197,94,0.05) 1px, transparent 1px),
+              linear-gradient(rgba(34,197,94,0.05) 1px, transparent 1px)
             `,
-            backgroundSize: '20px 20px'
+            backgroundSize: '25px 25px'
           }}
         />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4" style={{ color: 'hsl(220, 85%, 15%)' }}>
               Empowering Citizens Through Technology
