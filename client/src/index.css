@@ -118,4 +118,27 @@
       transform: translateX(-100%);
     }
   }
+
+  /* Fix tab text compression on mobile */
+  .tabs-trigger-mobile {
+    min-width: fit-content !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  /* Responsive tab grid improvements */
+  @media (max-width: 640px) {
+    .tabs-list-mobile {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 0.25rem !important;
+    }
+  }
+
+  @media (min-width: 640px) and (max-width: 768px) {
+    .tabs-list-mobile {
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 0.5rem !important;
+    }
+  }
 }
