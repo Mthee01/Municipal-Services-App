@@ -150,9 +150,9 @@ export default function FieldTechnicianDashboard() {
     setIsRealTimeTracking(true);
 
     const options = {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0 // Always get fresh location
+      enableHighAccuracy: false, // Less accurate but faster on mobile
+      timeout: 30000, // Increased timeout for mobile
+      maximumAge: 60000 // Accept cached location up to 1 minute for real-time
     };
 
     const watchId = navigator.geolocation.watchPosition(
@@ -227,9 +227,9 @@ export default function FieldTechnicianDashboard() {
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
+          enableHighAccuracy: false, // Less accurate but faster on mobile
+          timeout: 30000, // Increased timeout for mobile
+          maximumAge: 300000 // Accept cached location up to 5 minutes
         });
       });
 
@@ -269,29 +269,13 @@ export default function FieldTechnicianDashboard() {
     }
   };
 
-  // Check if location permissions are already granted on mount
+  // Auto-request location on mount if geolocation is available
   useEffect(() => {
-    if (navigator.geolocation && navigator.permissions) {
-      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
-        if (result.state === 'granted') {
-          // Only get location if permission is already granted
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              setCurrentLocation({
-                lat: position.coords.latitude,
-                lng: position.coords.longitude
-              });
-              setLocationAccuracy(position.coords.accuracy);
-            },
-            () => {
-              // Silent fail if location unavailable but permission granted
-            },
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
-          );
-        }
-      }).catch(() => {
-        // Silent fail if permissions API not supported
-      });
+    if (navigator.geolocation) {
+      // Try to get location immediately on load
+      requestLocationAccess();
+    } else {
+      setLocationError("Geolocation not supported by this browser");
     }
   }, []);
 
@@ -1485,6 +1469,7 @@ function LocationTrackingPanel({
                 <div className="space-y-4">
                   <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
                   <p className="text-gray-500">Requesting location access...</p>
+                  <p className="text-xs text-gray-400">May take up to 30 seconds on mobile devices</p>
                 </div>
               ) : locationError ? (
                 <div className="space-y-4">
