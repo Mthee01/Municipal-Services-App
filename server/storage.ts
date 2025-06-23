@@ -202,6 +202,7 @@ export class MemStorage implements IStorage {
 
   private seedData() {
     // Seed demo users for testing
+    const now = new Date();
     const sampleUsers: User[] = [
       {
         id: this.currentUserId++,
@@ -212,6 +213,8 @@ export class MemStorage implements IStorage {
         phone: "0821234567",
         role: "citizen",
         municipalityAccountNo: "MC001234",
+        createdAt: now,
+        updatedAt: now,
       },
       {
         id: this.currentUserId++,
@@ -222,6 +225,8 @@ export class MemStorage implements IStorage {
         phone: "0827654321",
         role: "call_centre_agent",
         municipalityAccountNo: null,
+        createdAt: now,
+        updatedAt: now,
       },
       {
         id: this.currentUserId++,
@@ -232,6 +237,8 @@ export class MemStorage implements IStorage {
         phone: "0823456789",
         role: "mayor",
         municipalityAccountNo: null,
+        createdAt: now,
+        updatedAt: now,
       },
       {
         id: this.currentUserId++,
@@ -242,6 +249,8 @@ export class MemStorage implements IStorage {
         phone: "0829876543",
         role: "ward_councillor",
         municipalityAccountNo: null,
+        createdAt: now,
+        updatedAt: now,
       },
       {
         id: this.currentUserId++,
@@ -252,6 +261,8 @@ export class MemStorage implements IStorage {
         phone: "0825678901",
         role: "tech_manager",
         municipalityAccountNo: null,
+        createdAt: now,
+        updatedAt: now,
       },
       {
         id: this.currentUserId++,
@@ -262,6 +273,8 @@ export class MemStorage implements IStorage {
         phone: "0824567890",
         role: "field_technician",
         municipalityAccountNo: null,
+        createdAt: now,
+        updatedAt: now,
       },
       {
         id: this.currentUserId++,
@@ -272,10 +285,18 @@ export class MemStorage implements IStorage {
         phone: "0820123456",
         role: "admin",
         municipalityAccountNo: null,
+        createdAt: now,
+        updatedAt: now,
       },
     ];
 
-    sampleUsers.forEach(user => this.users.set(user.id, user));
+    sampleUsers.forEach(user => {
+      console.log(`Creating user: ${user.username} with ID: ${user.id}`);
+      this.users.set(user.id, user);
+    });
+    
+    console.log(`Total users created: ${this.users.size}`);
+    console.log(`Available usernames:`, Array.from(this.users.values()).map(u => u.username));
 
     // Seed teams
     const sampleTeams: Team[] = [
@@ -716,7 +737,9 @@ export class MemStorage implements IStorage {
       email: insertUser.email ?? null,
       phone: insertUser.phone ?? null,
       municipalityAccountNo: insertUser.municipalityAccountNo ?? null,
-      role: insertUser.role || 'citizen'
+      role: insertUser.role || 'citizen',
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     this.users.set(id, user);
     return user;
