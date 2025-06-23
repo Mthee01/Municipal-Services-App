@@ -16,6 +16,7 @@ import MayorDashboard from "@/pages/mayor-dashboard";
 import WardCouncillorDashboard from "@/pages/ward-councillor-dashboard";
 import TechManagerDashboard from "@/pages/tech-manager-dashboard";
 import FieldTechnicianDashboard from "@/pages/field-technician-dashboard";
+import WhatsAppDashboard from "@/pages/whatsapp-dashboard";
 import NotFound from "@/pages/not-found";
 import type { UserRole } from "@/lib/types";
 
@@ -237,6 +238,9 @@ function App() {
               {/* Call Centre Agent Dashboard - Only for call centre agents and admins */}
               {(currentRole === "call_centre_agent" || currentRole === "admin") && (
                 <Route path="/official" component={OfficialDashboard} />
+              )}
+              {(currentRole === "call_centre_agent" || currentRole === "admin") && (
+                <Route path="/whatsapp" component={WhatsAppDashboard} />
               )}
               
               {/* Mayor Dashboard - Only for mayors and admins */}

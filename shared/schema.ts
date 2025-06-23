@@ -322,6 +322,25 @@ export const whatsappMessages = pgTable("whatsapp_messages", {
   status: text("status").default("sent").notNull(), // sent, delivered, read, failed
   timestamp: timestamp("timestamp").defaultNow().notNull(),
   webhookData: json("webhook_data"), // store raw webhook data
+  agentId: integer("agent_id"), // call center agent who sent/received message
+  issueId: integer("issue_id"), // related issue if applicable
+  messageType: text("message_type").default("text").notNull(), // text, image, document, template
+  templateName: text("template_name"), // for WhatsApp templates
+});
+
+// WhatsApp Conversations Table
+export const whatsappConversations = pgTable("whatsapp_conversations", {
+  id: serial("id").primaryKey(),
+  citizenId: integer("citizen_id").notNull(),
+  agentId: integer("agent_id"),
+  phoneNumber: text("phone_number").notNull(),
+  status: text("status").default("open").notNull(), // open, closed, transferred
+  subject: text("subject"),
+  issueId: integer("issue_id"), // linked issue if conversation is about specific issue
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  closedAt: timestamp("closed_at"),
+  lastMessageAt: timestamp("last_message_at").defaultNow().notNull(),
 });
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
@@ -334,7 +353,16 @@ export const insertWhatsappMessageSchema = createInsertSchema(whatsappMessages).
   timestamp: true,
 });
 
+export const insertWhatsappConversationSchema = createInsertSchema(whatsappConversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastMessageAt: true,
+});
+
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type WhatsappMessage = typeof whatsappMessages.$inferSelect;
 export type InsertWhatsappMessage = z.infer<typeof insertWhatsappMessageSchema>;
+export type WhatsappConversation = typeof whatsappConversations.$inferSelect;
+export type InsertWhatsappConversation = z.infer<typeof insertWhatsappConversationSchema>;

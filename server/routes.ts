@@ -1132,6 +1132,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // WhatsApp Communication Routes for Call Center Agents
+  app.get("/api/whatsapp/conversations", async (req, res) => {
+    try {
+      const conversations = await storage.getWhatsappConversations();
+      res.json(conversations);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch conversations: " + error.message });
+    }
+  });
+
+  app.get("/api/whatsapp/messages/:phoneNumber", async (req, res) => {
+    try {
+      const { phoneNumber } = req.params;
+      const messages = await storage.getWhatsappMessages(phoneNumber);
+      res.json(messages);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch messages: " + error.message });
+    }
+  });
+
+  app.post("/api/whatsapp/send-message", async (req, res) => {
+    try {
+      const { phoneNumber, message, agentId, issueId } = req.body;
+      
+      const whatsappMessage = await storage.createWhatsappMessage({
+        phoneNumber,
+        message,
+        direction: "outbound",
+        agentId,
+        issueId,
+        messageType: "text",
+        status: "sent",
+        userId: null,
+        messageId: null,
+        webhookData: null,
+        templateName: null
+      });
+
+      // In a real implementation, integrate with WhatsApp Business API
+      // For demo purposes, we'll simulate sending
+      
+      res.json({ success: true, message: whatsappMessage });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to send message: " + error.message });
+    }
+  });
+
+  app.post("/api/whatsapp/start-conversation", async (req, res) => {
+    try {
+      const { citizenId, phoneNumber, agentId, subject, issueId } = req.body;
+      
+      const conversation = await storage.createWhatsappConversation({
+        citizenId,
+        phoneNumber,
+        agentId,
+        subject,
+        issueId,
+        status: "open"
+      });
+
+      res.json(conversation);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to start conversation: " + error.message });
+    }
+  });
+
+  app.patch("/api/whatsapp/conversations/:id/status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, agentId } = req.body;
+      
+      await storage.updateWhatsappConversationStatus(parseInt(id), status, agentId);
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to update conversation: " + error.message });
+    }
+  });
+
   return httpServer;
 }
 

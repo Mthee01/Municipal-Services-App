@@ -28,8 +28,10 @@ import {
   Plus,
   FileDown,
   Truck,
-  TriangleAlert
+  TriangleAlert,
+  MessageCircle
 } from "lucide-react";
+import { Link } from "wouter";
 import type { Issue, Technician, Team } from "@shared/schema";
 
 // Helper functions
@@ -251,9 +253,17 @@ export default function OfficialDashboard() {
               <h1 className="text-3xl font-bold text-gray-900">Municipal Official Dashboard</h1>
               <p className="text-gray-600 mt-1">Manage service requests and city operations</p>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Welcome back</p>
-              <p className="font-semibold text-gray-900">Municipal Official</p>
+            <div className="flex items-center space-x-4">
+              <Link href="/whatsapp">
+                <Button variant="outline" className="flex items-center space-x-2">
+                  <MessageCircle className="h-4 w-4" />
+                  <span>WhatsApp Center</span>
+                </Button>
+              </Link>
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Welcome back</p>
+                <p className="font-semibold text-gray-900">Municipal Official</p>
+              </div>
             </div>
           </div>
         </div>

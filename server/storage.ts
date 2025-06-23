@@ -144,6 +144,7 @@ export class MemStorage implements IStorage {
   private technicianLocations: Map<number, TechnicianLocation>;
   private chatMessagesStore: Map<number, ChatMessage>;
   private whatsappMessagesStore: Map<number, WhatsappMessage>;
+  private whatsappConversationsStore: Map<number, WhatsappConversation>;
   private activeWorkSessions: Map<number, { issueId: number; arrivalTime: Date; isActive: boolean }>;
   private currentUserId: number;
   private currentIssueId: number;
@@ -160,6 +161,7 @@ export class MemStorage implements IStorage {
   private currentTechnicianLocationId: number;
   private currentChatMessageId: number;
   private currentWhatsappMessageId: number;
+  private currentWhatsappConversationId: number;
 
   constructor() {
     this.users = new Map();
@@ -1713,6 +1715,39 @@ export class MemStorage implements IStorage {
     }
     return false;
   }
+
+  // WhatsApp Conversations
+  async getWhatsappConversations(): Promise<WhatsappConversation[]> {
+    return Array.from(this.whatsappConversationsStore.values());
+  }
+
+  async createWhatsappConversation(conversation: InsertWhatsappConversation): Promise<WhatsappConversation> {
+    const newConversation: WhatsappConversation = {
+      id: this.currentWhatsappConversationId++,
+      ...conversation,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastMessageAt: new Date(),
+    };
+    this.whatsappConversationsStore.set(newConversation.id, newConversation);
+    return newConversation;
+  }
+
+  async getWhatsappMessagesByConversation(citizenId: number): Promise<WhatsappMessage[]> {
+    return Array.from(this.whatsappMessagesStore.values())
+      .filter(msg => msg.userId === citizenId)
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  }
+
+  async updateWhatsappConversationStatus(conversationId: number, status: string, agentId?: number): Promise<void> {
+    const conversation = this.whatsappConversationsStore.get(conversationId);
+    if (conversation) {
+      conversation.status = status;
+      conversation.updatedAt = new Date();
+      if (agentId) conversation.agentId = agentId;
+      if (status === 'closed') conversation.closedAt = new Date();
+    }
+  }
 }
 
 import { db } from "./db";
@@ -1955,9 +1990,38 @@ export class DatabaseStorage implements IStorage {
   async getChatMessages(sessionId: string): Promise<ChatMessage[]> { return []; }
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> { throw new Error("Not implemented"); }
 
-  async getWhatsappMessages(phoneNumber?: string): Promise<WhatsappMessage[]> { return []; }
-  async createWhatsappMessage(message: InsertWhatsappMessage): Promise<WhatsappMessage> { throw new Error("Not implemented"); }
+  async getWhatsappMessages(phoneNumber?: string): Promise<WhatsappMessage[]> { 
+    const messages = await db.select().from(whatsappMessages).orderBy(whatsappMessages.timestamp);
+    if (phoneNumber) {
+      return messages.filter(msg => msg.phoneNumber === phoneNumber);
+    }
+    return messages;
+  }
+  async createWhatsappMessage(message: InsertWhatsappMessage): Promise<WhatsappMessage> { 
+    const [result] = await db.insert(whatsappMessages).values(message).returning();
+    return result;
+  }
   async updateWhatsappMessageStatus(messageId: string, status: string): Promise<boolean> { return false; }
+  
+  async getWhatsappConversations(): Promise<WhatsappConversation[]> {
+    const conversations = await db.select().from(whatsappConversations).orderBy(whatsappConversations.lastMessageAt);
+    return conversations;
+  }
+  
+  async createWhatsappConversation(conversation: InsertWhatsappConversation): Promise<WhatsappConversation> {
+    const [result] = await db.insert(whatsappConversations).values(conversation).returning();
+    return result;
+  }
+  
+  async updateWhatsappConversationStatus(conversationId: number, status: string, agentId?: number): Promise<void> {
+    const updates: any = { status, updatedAt: new Date() };
+    if (agentId) updates.agentId = agentId;
+    if (status === 'closed') updates.closedAt = new Date();
+    
+    await db.update(whatsappConversations)
+      .set(updates)
+      .where(eq(whatsappConversations.id, conversationId));
+  }
 
   async getWardStats(wardNumber?: string): Promise<any> { return {}; }
   async getTechnicianPerformance(): Promise<any> { return []; }
