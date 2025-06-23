@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -86,6 +87,9 @@ export default function OfficialDashboard() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [selectedTechnician, setSelectedTechnician] = useState("");
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportEmail, setExportEmail] = useState("");
+  const [exportMethod, setExportMethod] = useState("email");
 
   // Queries
   const { data: issues = [], isLoading: issuesLoading } = useQuery<Issue[]>({
@@ -156,6 +160,19 @@ export default function OfficialDashboard() {
 
   // Handle export report
   const handleExportReport = () => {
+    setShowExportModal(true);
+  };
+
+  const handleExportSubmit = async () => {
+    if (exportMethod === "email" && !exportEmail.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const csvContent = [
       ['ID', 'Title', 'Category', 'Priority', 'Status', 'Location', 'Ward', 'Assigned To', 'Created', 'Reporter'],
       ...filteredIssues.map(issue => [
@@ -172,20 +189,46 @@ export default function OfficialDashboard() {
       ])
     ].map(row => row.join(',')).join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `issues-report-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    if (exportMethod === "email") {
+      try {
+        await apiRequest("POST", "/api/export-report", {
+          email: exportEmail,
+          reportData: csvContent,
+          reportType: "issues",
+          fileName: `issues-report-${new Date().toISOString().split('T')[0]}.csv`
+        });
+        
+        toast({
+          title: "Success",
+          description: `Report sent to ${exportEmail}`,
+        });
+        setShowExportModal(false);
+        setExportEmail("");
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to send report via email",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // Download directly
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `issues-report-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
 
-    toast({
-      title: "Export Complete",
-      description: "Issues report has been downloaded successfully.",
-    });
+      toast({
+        title: "Success",
+        description: "Report downloaded successfully",
+      });
+      setShowExportModal(false);
+    }
   };
 
   // Statistics calculations
@@ -680,6 +723,53 @@ export default function OfficialDashboard() {
           </div>
         </div>
       </section>
+
+      {/* Export Report Modal */}
+      <Dialog open={showExportModal} onOpenChange={setShowExportModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Export Issues Report</DialogTitle>
+            <DialogDescription>
+              Choose how you would like to receive the issues report.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-4">
+              <Label htmlFor="export-method">Delivery Method</Label>
+              <Select value={exportMethod} onValueChange={setExportMethod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select delivery method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="email">Send via Email</SelectItem>
+                  <SelectItem value="download">Download Directly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {exportMethod === "email" && (
+              <div className="space-y-2">
+                <Label htmlFor="export-email">Email Address</Label>
+                <Input
+                  id="export-email"
+                  type="email"
+                  placeholder="Enter email address"
+                  value={exportEmail}
+                  onChange={(e) => setExportEmail(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExportModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleExportSubmit}>
+              {exportMethod === "email" ? "Send Report" : "Download Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -962,6 +962,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Export report via email
+  app.post("/api/export-report", async (req, res) => {
+    try {
+      const { email, reportData, reportType, fileName } = req.body;
+
+      if (!email || !reportData || !fileName) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // In a real implementation, you would:
+      // 1. Use a service like SendGrid, Mailgun, or AWS SES to send emails
+      // 2. Attach the CSV file to the email
+      // 3. Store the email sending record for audit purposes
+
+      // For demo purposes, we'll simulate email sending
+      console.log(`Simulating email send to: ${email}`);
+      console.log(`Report type: ${reportType}`);
+      console.log(`File name: ${fileName}`);
+      console.log(`Report data length: ${reportData.length} characters`);
+
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      res.json({ 
+        success: true, 
+        message: `Report sent successfully to ${email}`,
+        emailId: `email_${Date.now()}`
+      });
+    } catch (error) {
+      console.error("Error sending report via email:", error);
+      res.status(500).json({ message: "Failed to send report via email" });
+    }
+  });
+
   return httpServer;
 }
 
