@@ -1834,7 +1834,7 @@ export class MemStorage implements IStorage {
 }
 
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
   // User operations
@@ -1854,6 +1854,33 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser || undefined;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, id));
+    return result.rowCount > 0;
+  }
+
+  async updateUserStatus(id: number, status: string): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser || undefined;
   }
 
   // Issue operations
@@ -2121,6 +2148,66 @@ export class DatabaseStorage implements IStorage {
     return Math.min(unreadCount, 5); // Cap at 5 for demo purposes
   }
 
+  // Ward operations - stub implementations for now
+  async getWards(): Promise<Ward[]> { return []; }
+  async getWard(id: number): Promise<Ward | undefined> { return undefined; }
+  async createWard(ward: InsertWard): Promise<Ward> { throw new Error("Not implemented"); }
+  async updateWard(id: number, updates: Partial<Ward>): Promise<Ward | undefined> { return undefined; }
+
+  // Issue update operations - stub implementations
+  async getIssueUpdates(): Promise<IssueUpdate[]> { return []; }
+  async getIssueUpdate(id: number): Promise<IssueUpdate | undefined> { return undefined; }
+  async getIssueUpdatesByIssue(issueId: number): Promise<IssueUpdate[]> { return []; }
+  async createIssueUpdate(update: InsertIssueUpdate): Promise<IssueUpdate> { throw new Error("Not implemented"); }
+
+  // Voucher operations - stub implementations
+  async getVouchers(): Promise<Voucher[]> { return []; }
+  async getVoucher(id: number): Promise<Voucher | undefined> { return undefined; }
+  async getVouchersByType(type: string): Promise<Voucher[]> { return []; }
+  async createVoucher(voucher: InsertVoucher): Promise<Voucher> { throw new Error("Not implemented"); }
+  async updateVoucher(id: number, updates: Partial<Voucher>): Promise<Voucher | undefined> { return undefined; }
+
+  // Field report operations - stub implementations
+  async getFieldReports(): Promise<FieldReport[]> { return []; }
+  async getFieldReport(id: number): Promise<FieldReport | undefined> { return undefined; }
+  async getFieldReportsByTechnician(technicianId: number): Promise<FieldReport[]> { return []; }
+  async getFieldReportsByIssue(issueId: number): Promise<FieldReport[]> { return []; }
+  async createFieldReport(report: InsertFieldReport): Promise<FieldReport> { throw new Error("Not implemented"); }
+  async updateFieldReport(id: number, updates: Partial<FieldReport>): Promise<FieldReport | undefined> { return undefined; }
+
+  // Parts inventory operations - stub implementations
+  async getPartsInventory(): Promise<PartsInventory[]> { return []; }
+  async getPartsInventoryItem(id: number): Promise<PartsInventory | undefined> { return undefined; }
+  async updatePartsInventory(id: number, updates: Partial<PartsInventory>): Promise<PartsInventory | undefined> { return undefined; }
+  async createPartsInventoryItem(item: InsertPartsInventory): Promise<PartsInventory> { throw new Error("Not implemented"); }
+
+  // Parts order operations - stub implementations
+  async getPartsOrders(): Promise<PartsOrder[]> { return []; }
+  async getPartsOrder(id: number): Promise<PartsOrder | undefined> { return undefined; }
+  async getPartsOrdersByTechnician(technicianId: number): Promise<PartsOrder[]> { return []; }
+  async createPartsOrder(order: InsertPartsOrder): Promise<PartsOrder> { throw new Error("Not implemented"); }
+  async updatePartsOrder(id: number, updates: Partial<PartsOrder>): Promise<PartsOrder | undefined> { return undefined; }
+
+  // Technician message operations - stub implementations
+  async getTechnicianMessages(): Promise<TechnicianMessage[]> { return []; }
+  async getTechnicianMessage(id: number): Promise<TechnicianMessage | undefined> { return undefined; }
+  async getTechnicianMessagesByUser(userId: number): Promise<TechnicianMessage[]> { return []; }
+  async createTechnicianMessage(message: InsertTechnicianMessage): Promise<TechnicianMessage> { throw new Error("Not implemented"); }
+  async updateTechnicianMessage(id: number, updates: Partial<TechnicianMessage>): Promise<TechnicianMessage | undefined> { return undefined; }
+
+  // Technician location operations - stub implementations
+  async getTechnicianLocations(): Promise<TechnicianLocation[]> { return []; }
+  async getTechnicianLocation(id: number): Promise<TechnicianLocation | undefined> { return undefined; }
+  async getTechnicianLocationsByTechnician(technicianId: number): Promise<TechnicianLocation[]> { return []; }
+  async createTechnicianLocation(location: InsertTechnicianLocation): Promise<TechnicianLocation> { throw new Error("Not implemented"); }
+
+  // Chat message operations - stub implementations
+  async getChatMessages(): Promise<ChatMessage[]> { return []; }
+  async getChatMessage(id: number): Promise<ChatMessage | undefined> { return undefined; }
+  async getChatMessagesBySession(sessionId: string): Promise<ChatMessage[]> { return []; }
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> { throw new Error("Not implemented"); }
+
+  // Analytics operations - stub implementations
   async getWardStats(wardNumber?: string): Promise<any> { return {}; }
   async getTechnicianPerformance(): Promise<any> { return []; }
   async getMunicipalityStats(): Promise<any> { return {}; }
