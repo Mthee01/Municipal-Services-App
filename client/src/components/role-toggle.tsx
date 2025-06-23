@@ -15,7 +15,7 @@ const roleConfig: Record<UserRole, { label: string; icon: any; color: string; de
     color: "bg-blue-50 text-blue-700 border-blue-200",
     description: "Report issues and track services"
   },
-  official: {
+  call_centre_agent: {
     label: "Call Centre Agent",
     icon: UserCheck,
     color: "bg-green-50 text-green-700 border-green-200",

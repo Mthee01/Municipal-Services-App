@@ -208,12 +208,12 @@ export class MemStorage implements IStorage {
       },
       {
         id: this.currentUserId++,
-        username: "official",
+        username: "agent",
         password: "password",
-        name: "Sarah Official",
-        email: "official@municipality.gov.za",
+        name: "Sarah Agent",
+        email: "agent@municipality.gov.za",
         phone: "0827654321",
-        role: "official",
+        role: "call_centre_agent",
         municipalityAccountNo: null,
       },
       {

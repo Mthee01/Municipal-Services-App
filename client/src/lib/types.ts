@@ -1,4 +1,4 @@
-export type UserRole = "citizen" | "official" | "admin" | "ward_councillor" | "mayor" | "tech_manager" | "field_technician";
+export type UserRole = "citizen" | "call_centre_agent" | "admin" | "ward_councillor" | "mayor" | "tech_manager" | "field_technician";
 
 export type IssueStatus = "open" | "assigned" | "in_progress" | "resolved" | "closed";
 

@@ -64,7 +64,7 @@ function App() {
               case "citizen":
                 setLocation("/");
                 break;
-              case "official":
+              case "call_centre_agent":
               case "admin":
                 setLocation("/official");
                 break;
@@ -104,7 +104,7 @@ function App() {
       case "citizen":
         setLocation("/");
         break;
-      case "official":
+      case "call_centre_agent":
       case "admin":
         setLocation("/official");
         break;
@@ -132,7 +132,7 @@ function App() {
       case "citizen":
         setLocation("/");
         break;
-      case "official":
+      case "call_centre_agent":
       case "admin":
         setLocation("/official");
         break;
@@ -237,8 +237,8 @@ function App() {
                 <Route path="/citizen-dashboard" component={CitizenDashboard} />
               )}
               
-              {/* Official Dashboard - Only for officials and admins */}
-              {(currentRole === "official" || currentRole === "admin") && (
+              {/* Call Centre Agent Dashboard - Only for call centre agents and admins */}
+              {(currentRole === "call_centre_agent" || currentRole === "admin") && (
                 <Route path="/official" component={OfficialDashboard} />
               )}
               
@@ -265,7 +265,7 @@ function App() {
               {/* Default route based on user role */}
               <Route path="/">
                 {currentRole === "citizen" && <CitizenDashboard />}
-                {(currentRole === "official" || currentRole === "admin") && <OfficialDashboard />}
+                {(currentRole === "call_centre_agent" || currentRole === "admin") && <OfficialDashboard />}
                 {currentRole === "mayor" && <MayorDashboard />}
                 {currentRole === "ward_councillor" && <WardCouncillorDashboard />}
                 {currentRole === "tech_manager" && <TechManagerDashboard />}
