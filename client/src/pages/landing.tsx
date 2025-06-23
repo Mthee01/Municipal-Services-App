@@ -87,7 +87,20 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
         title: t.welcome,
         description: `${t.welcome} ${data.user?.name || data.user?.username}!`,
       });
-      localStorage.setItem("user", JSON.stringify(data.user));
+      
+      // Store authentication data properly
+      const authData = {
+        user: data.user,
+        loginTime: new Date().toISOString(),
+        rememberMe: loginForm.getValues().rememberMe
+      };
+      
+      if (authData.rememberMe) {
+        localStorage.setItem("municipalAuth", JSON.stringify(authData));
+      } else {
+        sessionStorage.setItem("municipalAuth", JSON.stringify(authData));
+      }
+      
       onLogin(data.user.role);
     },
     onError: (error) => {
