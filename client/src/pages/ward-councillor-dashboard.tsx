@@ -20,31 +20,47 @@ export default function WardCouncillorDashboard() {
 
   const { data: wards, isLoading: wardsLoading } = useQuery({
     queryKey: ["/api/wards"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/wards");
+      return await response.json();
+    },
   });
 
   const { data: wardStats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/wards", selectedWard, "stats"],
-    queryFn: () => apiRequest(`/api/wards/${selectedWard}/stats`),
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/wards/${selectedWard}/stats`);
+      return await response.json();
+    },
     enabled: !!selectedWard,
   });
 
   const { data: issues, isLoading: issuesLoading } = useQuery({
     queryKey: ["/api/issues"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/issues");
+      return await response.json();
+    },
   });
 
   const { data: technicians, isLoading: techLoading } = useQuery({
     queryKey: ["/api/technicians"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/technicians");
+      return await response.json();
+    },
   });
 
   const updateIssueMutation = useMutation({
     mutationFn: ({ id, ...updates }: { id: number } & any) =>
-      apiRequest(`/api/issues/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-      }),
+      apiRequest("PATCH", `/api/issues/${id}`, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
-      toast({ title: "Issue updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/wards", selectedWard, "stats"] });
+      toast({
+        title: "Success",
+        description: "Issue updated successfully",
+      });
     },
   });
 
@@ -395,6 +411,56 @@ export default function WardCouncillorDashboard() {
                     <span className="text-sm text-gray-600 dark:text-gray-300">In Progress</span>
                     <span className="font-semibold text-blue-600">{wardStats?.inProgress || 0}</span>
                   </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Work Performance Summary</CardTitle>
+              <CardDescription>Technician performance metrics for {selectedWard}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm font-medium">Avg. Technician Performance</span>
+                      <span className="text-sm text-muted-foreground">
+                        {wardStats?.avgTechPerformance || 0}/5
+                      </span>
+                    </div>
+                    <Progress value={(wardStats?.avgTechPerformance || 0) * 20} />
+                  </div>
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm font-medium">Avg. Resolution Time</span>
+                      <span className="text-sm text-muted-foreground">
+                        {wardStats?.avgTechResolutionTime || 0} hours
+                      </span>
+                    </div>
+                    <Progress value={Math.max(0, 100 - (wardStats?.avgTechResolutionTime || 0) * 2)} />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-300">Active Technicians</span>
+                    <span className="font-semibold">{wardStats?.activeTechnicians || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-300">Total Completed Issues</span>
+                    <span className="font-semibold text-green-600">{wardStats?.totalTechCompletedIssues || 0}</span>
+                  </div>
+                  {wardStats?.technicianDetails && wardStats.technicianDetails.length > 0 && (
+                    <div className="pt-2 border-t">
+                      <h5 className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Top Performer</h5>
+                      <div className="flex justify-between text-xs">
+                        <span>{wardStats.technicianDetails[0]?.name}</span>
+                        <span className="text-green-600">{wardStats.technicianDetails[0]?.performanceRating}/5</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>

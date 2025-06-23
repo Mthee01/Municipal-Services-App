@@ -950,15 +950,32 @@ export class MemStorage implements IStorage {
     const resolved = wardIssues.filter(i => i.status === "resolved").length;
     const avgRating = wardIssues.filter(i => i.rating).reduce((acc, i) => acc + (i.rating || 0), 0) / wardIssues.filter(i => i.rating).length || 0;
 
-    const categoryStats = {};
+    const categoryStats: any = {};
     wardIssues.forEach(issue => {
       categoryStats[issue.category] = (categoryStats[issue.category] || 0) + 1;
     });
 
-    const priorityStats = {};
+    const priorityStats: any = {};
     wardIssues.forEach(issue => {
       priorityStats[issue.priority] = (priorityStats[issue.priority] || 0) + 1;
     });
+
+    // Get technicians working on ward issues
+    const allTechnicians = Array.from(this.technicians.values());
+    const wardTechnicians = allTechnicians.filter(tech => 
+      wardIssues.some(issue => issue.assignedTo && issue.assignedTo.includes(tech.name))
+    );
+
+    // Calculate ward technician performance
+    const avgTechPerformance = wardTechnicians.length > 0 
+      ? wardTechnicians.reduce((acc, tech) => acc + (tech.performanceRating || 0), 0) / wardTechnicians.length
+      : 0;
+
+    const avgTechResolutionTime = wardTechnicians.length > 0 
+      ? wardTechnicians.reduce((acc, tech) => acc + (tech.avgResolutionTime || 0), 0) / wardTechnicians.length
+      : 0;
+
+    const totalTechCompletedIssues = wardTechnicians.reduce((acc, tech) => acc + (tech.completedIssues || 0), 0);
 
     return {
       totalIssues,
@@ -969,6 +986,20 @@ export class MemStorage implements IStorage {
       avgRating: Math.round(avgRating * 10) / 10,
       categoryStats,
       priorityStats,
+      // Technician performance metrics
+      activeTechnicians: wardTechnicians.length,
+      avgTechPerformance: Math.round(avgTechPerformance * 10) / 10,
+      avgTechResolutionTime: Math.round(avgTechResolutionTime * 10) / 10,
+      totalTechCompletedIssues,
+      technicianDetails: wardTechnicians.map(tech => ({
+        id: tech.id,
+        name: tech.name,
+        status: tech.status,
+        performanceRating: tech.performanceRating,
+        completedIssues: tech.completedIssues,
+        avgResolutionTime: tech.avgResolutionTime,
+        department: tech.department
+      }))
     };
   }
 
