@@ -372,14 +372,6 @@ export default function OfficialDashboard() {
                       </div>
                     </DialogContent>
                   </Dialog>
-                  
-                  <Button 
-                    onClick={() => setShowAssignModal(true)}
-                    className="bg-sa-green text-white hover:bg-green-700 text-sm px-3 py-2"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Assign Technician
-                  </Button>
                   <Button variant="outline" className="text-sm px-3 py-2">
                     <FileDown className="mr-2 h-4 w-4" />
                     Export Report
