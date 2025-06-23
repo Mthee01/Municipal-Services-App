@@ -189,17 +189,17 @@ export default function CitizenDashboard() {
       <section className="relative z-10 py-12">
         <div className="max-w-6xl mx-auto px-4">
           <Tabs defaultValue="my-issues" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-7">
-              <TabsTrigger value="my-issues">My Issues</TabsTrigger>
-              <TabsTrigger value="community">Community</TabsTrigger>
-              <TabsTrigger value="map-view">
-                <MapPin className="w-4 h-4 mr-2" />
-                Map View
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-1">
+              <TabsTrigger value="my-issues" className="text-xs md:text-sm">Issues</TabsTrigger>
+              <TabsTrigger value="community" className="text-xs md:text-sm">Community</TabsTrigger>
+              <TabsTrigger value="map-view" className="text-xs md:text-sm">
+                <MapPin className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                <span className="hidden sm:inline">Map</span>
               </TabsTrigger>
-              <TabsTrigger value="payments">Payments</TabsTrigger>
-              <TabsTrigger value="vouchers">Vouchers</TabsTrigger>
-              <TabsTrigger value="communication">Communication</TabsTrigger>
-              <TabsTrigger value="whatsapp">WhatsApp Center</TabsTrigger>
+              <TabsTrigger value="payments" className="text-xs md:text-sm">Payments</TabsTrigger>
+              <TabsTrigger value="vouchers" className="text-xs md:text-sm">Vouchers</TabsTrigger>
+              <TabsTrigger value="communication" className="text-xs md:text-sm">Support</TabsTrigger>
+              <TabsTrigger value="whatsapp" className="text-xs md:text-sm">WhatsApp</TabsTrigger>
             </TabsList>
 
             <TabsContent value="my-issues" className="space-y-6">
