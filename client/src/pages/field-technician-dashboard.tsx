@@ -190,9 +190,29 @@ export default function FieldTechnicianDashboard() {
     }
   };
 
-  // Auto-request location on component mount
+  // Check if location permissions are already granted on mount
   useEffect(() => {
-    requestLocationAccess();
+    if (navigator.geolocation && navigator.permissions) {
+      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+        if (result.state === 'granted') {
+          // Only get location if permission is already granted
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              setCurrentLocation({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              });
+            },
+            () => {
+              // Silent fail if location unavailable but permission granted
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+          );
+        }
+      }).catch(() => {
+        // Silent fail if permissions API not supported
+      });
+    }
   }, []);
 
   // Start work session mutation
