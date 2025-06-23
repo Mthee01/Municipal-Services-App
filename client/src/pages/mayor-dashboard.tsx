@@ -156,28 +156,28 @@ export default function MayorDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="tabs-list-mobile grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1">
-          <TabsTrigger value="overview" className="tabs-trigger-mobile text-xs md:text-sm px-1 sm:px-2 md:px-3">
+        <TabsList className="tabs-list-mobile">
+          <TabsTrigger value="overview" className="tabs-trigger-mobile">
             <span className="hidden md:inline">Overview</span>
             <span className="md:hidden">Home</span>
           </TabsTrigger>
-          <TabsTrigger value="departments" className="tabs-trigger-mobile text-xs md:text-sm px-1 sm:px-2 md:px-3">
+          <TabsTrigger value="departments" className="tabs-trigger-mobile">
             <span className="hidden md:inline">Departments</span>
             <span className="md:hidden">Depts</span>
           </TabsTrigger>
-          <TabsTrigger value="wards" className="tabs-trigger-mobile text-xs md:text-sm px-1 sm:px-2 md:px-3">
+          <TabsTrigger value="wards" className="tabs-trigger-mobile">
             <span className="hidden md:inline">Ward Performance</span>
             <span className="md:hidden">Wards</span>
           </TabsTrigger>
-          <TabsTrigger value="technicians" className="tabs-trigger-mobile text-xs md:text-sm px-1 sm:px-2 md:px-3">
+          <TabsTrigger value="technicians" className="tabs-trigger-mobile">
             <span className="hidden md:inline">Technician Analytics</span>
             <span className="md:hidden">Techs</span>
           </TabsTrigger>
-          <TabsTrigger value="ai-insights" className="tabs-trigger-mobile text-xs md:text-sm px-1 sm:px-2 md:px-3">
+          <TabsTrigger value="ai-insights" className="tabs-trigger-mobile">
             <span className="hidden md:inline">AI Insights</span>
             <span className="md:hidden">AI</span>
           </TabsTrigger>
-          <TabsTrigger value="gis-map" className="tabs-trigger-mobile text-xs md:text-sm px-1 sm:px-2 md:px-3">
+          <TabsTrigger value="gis-map" className="tabs-trigger-mobile">
             <span className="hidden md:inline">GIS Mapping</span>
             <span className="md:hidden">Map</span>
           </TabsTrigger>
