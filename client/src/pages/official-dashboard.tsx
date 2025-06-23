@@ -78,6 +78,7 @@ export default function OfficialDashboard() {
   });
 
   const handleAssignTechnician = (issue: Issue) => {
+    console.log("Assigning technician for issue:", issue);
     setSelectedIssue(issue);
     setShowAssignModal(true);
   };
@@ -290,7 +291,16 @@ export default function OfficialDashboard() {
                 <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
                   <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
                     <DialogTrigger asChild>
-                      <Button className="bg-sa-green text-white hover:bg-green-700 text-sm px-3 py-2">
+                      <Button 
+                        className="bg-sa-green text-white hover:bg-green-700 text-sm px-3 py-2"
+                        onClick={() => {
+                          // Pre-select the first unassigned issue for the header button
+                          const firstUnassignedIssue = filteredIssues.find(issue => !issue.assignedTo);
+                          if (firstUnassignedIssue) {
+                            setSelectedIssue(firstUnassignedIssue);
+                          }
+                        }}
+                      >
                         <Plus className="mr-2 h-4 w-4" />
                         Assign Technician
                       </Button>
@@ -299,7 +309,7 @@ export default function OfficialDashboard() {
                       <DialogHeader>
                         <DialogTitle>Assign Technician</DialogTitle>
                       </DialogHeader>
-                      {selectedIssue && (
+                      {selectedIssue ? (
                         <div className="space-y-4">
                           <div className="bg-gray-50 p-3 rounded-lg">
                             <h4 className="font-medium text-gray-900">{selectedIssue.title}</h4>
@@ -341,6 +351,11 @@ export default function OfficialDashboard() {
                               {assignTechnicianMutation.isPending ? "Assigning..." : "Assign Technician"}
                             </Button>
                           </div>
+                        </div>
+                      ) : (
+                        <div className="py-8 text-center">
+                          <p className="text-gray-600">No unassigned issues available.</p>
+                          <p className="text-sm text-gray-500 mt-2">All current issues have been assigned to technicians.</p>
                         </div>
                       )}
                     </DialogContent>
