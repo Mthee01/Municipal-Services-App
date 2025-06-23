@@ -263,23 +263,25 @@ export default function TechManagerDashboard() {
               <CardContent>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {unassignedIssues.map((issue: any) => (
-                    <div key={issue.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-sm">{issue.title}</h4>
-                        <p className="text-xs text-gray-600 dark:text-gray-300">{issue.category.replace('_', ' ')}</p>
-                        <p className="text-xs text-gray-500">{issue.location} • {issue.ward}</p>
-                        <Badge variant="outline" size="sm" className={getPriorityColor(issue.priority)}>
-                          {issue.priority}
-                        </Badge>
+                    <div key={issue.id} className="flex flex-col gap-3 p-4 border rounded-lg">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm mb-1 truncate">{issue.title}</h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">{issue.category.replace('_', ' ')}</p>
+                          <p className="text-xs text-gray-500 mb-2">{issue.location} • {issue.ward}</p>
+                          <Badge variant="outline" size="sm" className={getPriorityColor(issue.priority)}>
+                            {issue.priority}
+                          </Badge>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => findNearestTechnicians(issue)}
+                          className="ml-3 shrink-0"
+                        >
+                          <Navigation className="w-4 h-4 mr-1" />
+                          Assign
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => findNearestTechnicians(issue)}
-                        className="ml-2"
-                      >
-                        <Navigation className="w-4 h-4 mr-1" />
-                        Assign
-                      </Button>
                     </div>
                   ))}
                 </div>
@@ -343,33 +345,37 @@ export default function TechManagerDashboard() {
                   </CardTitle>
                   <CardDescription>{tech.department}</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-300">Performance</span>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 text-yellow-500" />
-                      <span className="font-semibold">{tech.performanceRating}/5</span>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-300">Performance</span>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-yellow-500" />
+                        <span className="font-semibold">{tech.performanceRating}/5</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-300">Completed Issues</span>
+                      <span className="font-semibold text-green-600">{tech.completedIssues}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-300">Avg Resolution</span>
+                      <span className="font-semibold">{tech.avgResolutionTime}h</span>
                     </div>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-300">Completed Issues</span>
-                    <span className="font-semibold text-green-600">{tech.completedIssues}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-300">Avg Resolution</span>
-                    <span className="font-semibold">{tech.avgResolutionTime}h</span>
-                  </div>
-                  <div className="text-xs text-gray-500">
+                  
+                  <div className="text-xs text-gray-500 border-t pt-2">
                     <MapPin className="w-3 h-3 inline mr-1" />
                     {tech.currentLocation}
                   </div>
-                  <div className="flex gap-2 pt-2">
+                  
+                  <div className="pt-2">
                     {tech.status === "available" && (
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleUpdateTechnicianStatus(tech.id, "maintenance")}
-                        className="flex-1"
+                        className="w-full"
                       >
                         Set Maintenance
                       </Button>
@@ -378,7 +384,7 @@ export default function TechManagerDashboard() {
                       <Button
                         size="sm"
                         onClick={() => handleUpdateTechnicianStatus(tech.id, "available")}
-                        className="flex-1"
+                        className="w-full"
                       >
                         Set Available
                       </Button>
@@ -459,21 +465,24 @@ export default function TechManagerDashboard() {
           <div className="space-y-4">
             {nearestTechnicians.length > 0 ? (
               nearestTechnicians.map((tech) => (
-                <div key={tech.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h4 className="font-semibold">{tech.name}</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">{tech.department}</p>
-                    <p className="text-xs text-gray-500">
-                      {tech.distance?.toFixed(1)}km away • {tech.performanceRating}/5 rating
-                    </p>
-                    <p className="text-xs text-gray-500">{tech.currentLocation}</p>
+                <div key={tech.id} className="flex flex-col gap-3 p-4 border rounded-lg">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold truncate">{tech.name}</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{tech.department}</p>
+                      <p className="text-xs text-gray-500">
+                        {tech.distance?.toFixed(1)}km away • {tech.performanceRating}/5 rating
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">{tech.currentLocation}</p>
+                    </div>
+                    <Button
+                      onClick={() => handleAssignTechnician(tech.id)}
+                      disabled={assignTechnicianMutation.isPending}
+                      className="shrink-0 ml-3"
+                    >
+                      Assign
+                    </Button>
                   </div>
-                  <Button
-                    onClick={() => handleAssignTechnician(tech.id)}
-                    disabled={assignTechnicianMutation.isPending}
-                  >
-                    Assign
-                  </Button>
                 </div>
               ))
             ) : (
