@@ -1,7 +1,7 @@
 import { 
   users, issues, payments, teams, technicians, wards, issueUpdates, vouchers,
   fieldReports, partsInventory, partsOrders, technicianMessages, technicianLocations,
-  chatMessages, whatsappMessages,
+  chatMessages, whatsappMessages, whatsappConversations,
   type User, type InsertUser, type Issue, type InsertIssue, 
   type Payment, type InsertPayment, type Team, type InsertTeam,
   type Technician, type InsertTechnician, type Ward, type InsertWard,
@@ -9,7 +9,7 @@ import {
   type FieldReport, type InsertFieldReport, type PartsInventory, type InsertPartsInventory,
   type PartsOrder, type InsertPartsOrder, type TechnicianMessage, type InsertTechnicianMessage,
   type TechnicianLocation, type InsertTechnicianLocation, type ChatMessage, type InsertChatMessage,
-  type WhatsappMessage, type InsertWhatsappMessage
+  type WhatsappMessage, type InsertWhatsappMessage, type WhatsappConversation, type InsertWhatsappConversation
 } from "@shared/schema";
 
 export interface IStorage {

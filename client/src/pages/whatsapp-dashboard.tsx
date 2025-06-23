@@ -130,6 +130,13 @@ export default function WhatsAppDashboard() {
     });
   };
 
+  const handleFinishConversation = (conversation: WhatsappConversation) => {
+    updateStatusMutation.mutate({
+      conversationId: conversation.id,
+      status: "finished"
+    });
+  };
+
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -141,8 +148,9 @@ export default function WhatsAppDashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "open": return "bg-green-100 text-green-800";
+      case "finished": return "bg-blue-100 text-blue-800";
       case "closed": return "bg-gray-100 text-gray-800";
-      default: return "bg-blue-100 text-blue-800";
+      default: return "bg-yellow-100 text-yellow-800";
     }
   };
 
@@ -159,9 +167,9 @@ export default function WhatsAppDashboard() {
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-88px)]">
+      <div className="flex flex-col md:flex-row h-[calc(100vh-88px)]">
         {/* Conversations List */}
-        <div className="w-1/3 bg-white border-r border-gray-200 overflow-y-auto">
+        <div className="w-full md:w-1/3 bg-white border-r border-gray-200 overflow-y-auto max-h-60 md:max-h-none">
           <div className="p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Active Conversations</h2>
             <p className="text-sm text-gray-600">{conversations.length} conversations</p>
@@ -208,7 +216,7 @@ export default function WhatsAppDashboard() {
                     </div>
                   </div>
 
-                  <div className="mt-2 flex space-x-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     {!conversation.agentId && (
                       <Button 
                         size="sm" 
@@ -218,6 +226,7 @@ export default function WhatsAppDashboard() {
                           handleAssignToMe(conversation);
                         }}
                         disabled={updateStatusMutation.isPending}
+                        className="text-xs"
                       >
                         <User className="h-3 w-3 mr-1" />
                         Assign to Me
@@ -226,15 +235,15 @@ export default function WhatsAppDashboard() {
                     {conversation.status === "open" && (
                       <Button 
                         size="sm" 
-                        variant="outline"
+                        className="bg-green-600 hover:bg-green-700 text-white text-xs"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleCloseConversation(conversation);
+                          handleFinishConversation(conversation);
                         }}
                         disabled={updateStatusMutation.isPending}
                       >
                         <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Close
+                        Finish
                       </Button>
                     )}
                   </div>
@@ -245,7 +254,7 @@ export default function WhatsAppDashboard() {
         </div>
 
         {/* Chat Interface */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           {selectedConversation ? (
             <>
               {/* Chat Header */}

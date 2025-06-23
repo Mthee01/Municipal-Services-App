@@ -253,14 +253,15 @@ export default function OfficialDashboard() {
               <h1 className="text-3xl font-bold text-gray-900">Municipal Official Dashboard</h1>
               <p className="text-gray-600 mt-1">Manage service requests and city operations</p>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
               <Link href="/whatsapp">
-                <Button variant="outline" className="flex items-center space-x-2">
+                <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2 w-full sm:w-auto">
                   <MessageCircle className="h-4 w-4" />
-                  <span>WhatsApp Center</span>
+                  <span className="hidden sm:inline">WhatsApp Center</span>
+                  <span className="sm:hidden">WhatsApp</span>
                 </Button>
               </Link>
-              <div className="text-right">
+              <div className="text-right w-full sm:w-auto">
                 <p className="text-sm text-gray-500">Welcome back</p>
                 <p className="font-semibold text-gray-900">Municipal Official</p>
               </div>
