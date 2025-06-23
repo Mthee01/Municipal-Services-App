@@ -833,6 +833,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get active work sessions for a technician
+  app.get("/api/work-sessions/active", async (req, res) => {
+    try {
+      const { technicianId } = req.query;
+      
+      if (!technicianId) {
+        return res.status(400).json({ error: "Technician ID required" });
+      }
+      
+      // Find issues that are currently in progress for this technician
+      const activeIssues = await storage.getIssuesByStatus('in_progress');
+      const technicianActiveIssues = activeIssues.filter(issue => 
+        issue.assignedTo === technicianId.toString() || 
+        issue.technicianId === parseInt(technicianId.toString())
+      );
+      
+      // Convert to work session format
+      const activeSessions = technicianActiveIssues.map(issue => ({
+        issueId: issue.id,
+        arrivalTime: issue.updatedAt, // Use last update as work start time
+        isActive: true
+      }));
+      
+      res.json(activeSessions);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to fetch active work sessions" });
+    }
+  });
+
   app.post("/api/work-sessions/complete", async (req, res) => {
     try {
       const { issueId, technicianId, completionNotes } = req.body;

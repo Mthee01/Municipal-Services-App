@@ -141,6 +141,7 @@ export class MemStorage implements IStorage {
   private technicianLocations: Map<number, TechnicianLocation>;
   private chatMessagesStore: Map<number, ChatMessage>;
   private whatsappMessagesStore: Map<number, WhatsappMessage>;
+  private activeWorkSessions: Map<number, { issueId: number; arrivalTime: Date; isActive: boolean }>;
   private currentUserId: number;
   private currentIssueId: number;
   private currentPaymentId: number;
@@ -173,6 +174,7 @@ export class MemStorage implements IStorage {
     this.technicianLocations = new Map();
     this.chatMessagesStore = new Map();
     this.whatsappMessagesStore = new Map();
+    this.activeWorkSessions = new Map();
     this.currentUserId = 1;
     this.currentIssueId = 1;
     this.currentPaymentId = 1;
@@ -467,6 +469,44 @@ export class MemStorage implements IStorage {
         resolvedAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
         rating: 4,
         feedback: "Drain cleared efficiently. Water flows properly now.",
+      },
+      {
+        id: this.currentIssueId++,
+        title: "Water pipe repair in progress",
+        description: "Main water line burst on Main Street. Repair work has started and is currently in progress.",
+        category: "water_sanitation",
+        priority: "high",
+        status: "in_progress",
+        location: "Main Street, near traffic lights",
+        ward: "Ward 1",
+        reporterName: "City Inspector",
+        reporterPhone: "0821234567",
+        assignedTo: "1",
+        photos: null,
+        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+        updatedAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+        resolvedAt: null,
+        rating: null,
+        feedback: null,
+      },
+      {
+        id: this.currentIssueId++,
+        title: "Power outage repair ongoing",
+        description: "Transformer failure affecting 50 households. Technician is currently working on restoration.",
+        category: "electricity",
+        priority: "emergency",
+        status: "in_progress",
+        location: "Residential Area Block C",
+        ward: "Ward 3",
+        reporterName: "Emergency Services",
+        reporterPhone: "0827654321",
+        assignedTo: "1",
+        photos: null,
+        createdAt: new Date(Date.now() - 90 * 60 * 1000), // 1.5 hours ago
+        updatedAt: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
+        resolvedAt: null,
+        rating: null,
+        feedback: null,
       },
     ];
 
@@ -1604,6 +1644,19 @@ export class MemStorage implements IStorage {
       this.technicianLocations.set(location.id, location);
     });
     this.currentTechnicianLocationId = 3;
+
+    // Add active work sessions for in-progress issues (issues 5 and 6)
+    this.activeWorkSessions.set(5, {
+      issueId: 5,
+      arrivalTime: new Date(Date.now() - 2 * 60 * 60 * 1000), // Started 2 hours ago
+      isActive: true
+    });
+
+    this.activeWorkSessions.set(6, {
+      issueId: 6,
+      arrivalTime: new Date(Date.now() - 90 * 60 * 1000), // Started 1.5 hours ago
+      isActive: true
+    });
   }
 
   // Chat message operations

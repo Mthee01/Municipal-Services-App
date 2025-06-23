@@ -116,6 +116,18 @@ export default function FieldTechnicianDashboard() {
     queryKey: ['/api/parts-inventory'],
   });
 
+  // Fetch active work sessions
+  const { data: fetchedActiveSessions = [] } = useQuery({
+    queryKey: ['/api/work-sessions/active', { technicianId: currentTechnicianId }],
+  });
+
+  // Combine fetched sessions with local state
+  useEffect(() => {
+    if (Array.isArray(fetchedActiveSessions) && fetchedActiveSessions.length > 0) {
+      setActiveWorkSessions(fetchedActiveSessions as WorkSession[]);
+    }
+  }, [fetchedActiveSessions]);
+
   // Get current location
   useEffect(() => {
     if (navigator.geolocation) {
@@ -147,6 +159,7 @@ export default function FieldTechnicianDashboard() {
     onSuccess: (data, issueId) => {
       setActiveWorkSessions(prev => [...prev, { issueId, arrivalTime: new Date(), isActive: true }]);
       queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-sessions/active'] });
       toast({
         title: "Work Session Started",
         description: "You have successfully started working on this issue.",
@@ -173,6 +186,7 @@ export default function FieldTechnicianDashboard() {
     onSuccess: (data, { issueId }) => {
       setActiveWorkSessions(prev => prev.filter(session => session.issueId !== issueId));
       queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-sessions/active'] });
       toast({
         title: "Work Completed",
         description: "Issue has been marked as resolved.",
