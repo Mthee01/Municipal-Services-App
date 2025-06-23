@@ -124,7 +124,11 @@ export default function FieldTechnicianDashboard() {
   // Combine fetched sessions with local state
   useEffect(() => {
     if (Array.isArray(fetchedActiveSessions) && fetchedActiveSessions.length > 0) {
-      setActiveWorkSessions(fetchedActiveSessions as WorkSession[]);
+      const sessionsWithDates = fetchedActiveSessions.map((session: any) => ({
+        ...session,
+        arrivalTime: session.arrivalTime ? new Date(session.arrivalTime) : undefined
+      }));
+      setActiveWorkSessions(sessionsWithDates as WorkSession[]);
     }
   }, [fetchedActiveSessions]);
 
