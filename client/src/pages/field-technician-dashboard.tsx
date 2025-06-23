@@ -18,7 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   MapPin, Clock, Wrench, Camera, Package, MessageSquare, Navigation, 
   CheckCircle, AlertCircle, PlayCircle, StopCircle, Upload, Send,
-  Phone, User, Calendar, MapIcon, Settings, Bell, Search, Filter
+  Phone, User, Calendar, MapIcon, Settings, Bell, Search, Filter,
+  Map, RotateCcw
 } from "lucide-react";
 
 interface Issue {
@@ -83,6 +84,8 @@ export default function FieldTechnicianDashboard() {
   const [activeWorkSessions, setActiveWorkSessions] = useState<WorkSession[]>([]);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
   const [photoCapture, setPhotoCapture] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -132,21 +135,64 @@ export default function FieldTechnicianDashboard() {
     }
   }, [fetchedActiveSessions]);
 
-  // Get current location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setCurrentLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-        },
-        (error) => {
-          console.warn("Location access denied:", error);
-        }
-      );
+  // Request location permission and get current location
+  const requestLocationAccess = async () => {
+    setLocationLoading(true);
+    setLocationError(null);
+    
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation not supported by this browser");
+      setLocationLoading(false);
+      return;
     }
+
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
+        });
+      });
+
+      setCurrentLocation({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      });
+      
+      toast({
+        title: "Location Access Granted",
+        description: "GPS tracking is now active",
+      });
+    } catch (error: any) {
+      let errorMessage = "Unable to access location";
+      
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = "Location information unavailable";
+          break;
+        case error.TIMEOUT:
+          errorMessage = "Location request timed out";
+          break;
+      }
+      
+      setLocationError(errorMessage);
+      toast({
+        title: "Location Access Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
+  // Auto-request location on component mount
+  useEffect(() => {
+    requestLocationAccess();
   }, []);
 
   // Start work session mutation
@@ -495,6 +541,9 @@ export default function FieldTechnicianDashboard() {
             <LocationTrackingPanel
               currentLocation={currentLocation}
               activeWorkSessions={activeWorkSessions}
+              locationError={locationError}
+              locationLoading={locationLoading}
+              onRequestLocation={requestLocationAccess}
             />
           </TabsContent>
         </Tabs>
@@ -1214,7 +1263,19 @@ function MessagesHistory({ messages, isLoading, currentUserId }: any) {
 }
 
 // Location Tracking Panel Component
-function LocationTrackingPanel({ currentLocation, activeWorkSessions }: any) {
+function LocationTrackingPanel({ 
+  currentLocation, 
+  activeWorkSessions, 
+  locationError, 
+  locationLoading, 
+  onRequestLocation 
+}: { 
+  currentLocation: {lat: number, lng: number} | null; 
+  activeWorkSessions: WorkSession[]; 
+  locationError: string | null;
+  locationLoading: boolean;
+  onRequestLocation: () => void;
+}) {
   return (
     <div className="grid gap-6">
       <Card>
@@ -1230,6 +1291,21 @@ function LocationTrackingPanel({ currentLocation, activeWorkSessions }: any) {
         <CardContent>
           {currentLocation ? (
             <div className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  <Navigation className="w-3 h-3 mr-1" />
+                  GPS Active
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onRequestLocation}
+                  disabled={locationLoading}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Latitude</Label>
@@ -1245,8 +1321,35 @@ function LocationTrackingPanel({ currentLocation, activeWorkSessions }: any) {
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              Location access not available
+            <div className="text-center py-8">
+              {locationLoading ? (
+                <div className="space-y-4">
+                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+                  <p className="text-gray-500">Requesting location access...</p>
+                </div>
+              ) : locationError ? (
+                <div className="space-y-4">
+                  <div className="text-red-500 mb-2">
+                    <AlertCircle className="w-8 h-8 mx-auto mb-2" />
+                    <p className="text-sm">{locationError}</p>
+                  </div>
+                  <Button onClick={onRequestLocation} variant="outline">
+                    <MapIcon className="w-4 h-4 mr-2" />
+                    Enable Location Access
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-gray-500 mb-2">
+                    <MapIcon className="w-8 h-8 mx-auto mb-2" />
+                    <p className="text-sm">Location access not available</p>
+                  </div>
+                  <Button onClick={onRequestLocation} variant="outline">
+                    <MapIcon className="w-4 h-4 mr-2" />
+                    Request Location Access
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
