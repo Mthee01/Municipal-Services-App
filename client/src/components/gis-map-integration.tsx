@@ -176,7 +176,7 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
                 {filteredIssues.slice(0, 10).map((issue, index) => (
                   <div
                     key={issue.id}
-                    className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
+                    className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group"
                     style={{
                       left: `${20 + (index % 5) * 15}%`,
                       top: `${20 + Math.floor(index / 5) * 20}%`
@@ -184,14 +184,14 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
                     onClick={() => onIssueSelect?.(issue)}
                   >
                     <div 
-                      className="gis-map-marker rounded-full border-2 border-white shadow-lg md:w-4 md:h-4 w-6 h-6"
+                      className="gis-map-marker rounded-full border-2 border-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 md:w-4 md:h-4 w-6 h-6"
                       style={{ backgroundColor: getStatusColor(issue.status) }}
                     />
-                    {/* Issue popup - mobile optimized */}
-                    <div className="gis-map-popup absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 hover:opacity-100 transition-opacity bg-white/95 p-2 rounded-lg shadow-lg text-xs z-20 max-w-48">
+                    {/* Issue popup - mobile optimized with touch support */}
+                    <div className="gis-map-popup absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-200 bg-white/95 backdrop-blur-sm p-2 rounded-lg shadow-lg text-xs z-20 max-w-48 pointer-events-none">
                       <div className="font-medium truncate">{issue.title}</div>
                       <div className="text-gray-600 truncate text-xs">{issue.location}</div>
-                      <div className="text-gray-500 text-xs">{issue.status}</div>
+                      <div className="text-gray-500 text-xs capitalize">{issue.status.replace('_', ' ')}</div>
                     </div>
                   </div>
                 ))}

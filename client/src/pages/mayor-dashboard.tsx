@@ -23,7 +23,11 @@ export default function MayorDashboard() {
     queryKey: ["/api/wards"],
   });
 
-  if (statsLoading || techLoading || wardsLoading) {
+  const { data: allIssues, isLoading: issuesLoading } = useQuery({
+    queryKey: ["/api/issues"],
+  });
+
+  if (statsLoading || techLoading || wardsLoading || issuesLoading) {
     return (
       <div className="container mx-auto p-6">
         <div className="animate-pulse space-y-4">
@@ -348,7 +352,7 @@ export default function MayorDashboard() {
 
         <TabsContent value="gis-map" className="space-y-3 md:space-y-4">
           <GISMapIntegration 
-            issues={[]} 
+            issues={allIssues || []} 
             onIssueSelect={(issue) => console.log('Selected issue:', issue)}
             height="400px"
           />
