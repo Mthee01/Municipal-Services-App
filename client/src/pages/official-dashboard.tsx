@@ -291,16 +291,18 @@ export default function OfficialDashboard() {
                 <CardTitle className="text-lg font-semibold text-gray-900">Recent Issues</CardTitle>
                 <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
                   <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
-                    <Button 
-                      onClick={() => {
-                        console.log("Assign Technician button clicked");
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        console.log("Assign Technician link clicked");
                         setShowAssignModal(true);
                       }}
-                      className="bg-sa-green text-white hover:bg-green-700 text-sm px-3 py-2 cursor-pointer"
+                      className="inline-flex items-center bg-sa-green text-white hover:bg-green-700 text-sm px-3 py-2 rounded cursor-pointer transition-colors duration-200"
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Assign Technician
-                    </Button>
+                    </a>
                     <DialogContent className="sm:max-w-lg">
                       <DialogHeader>
                         <DialogTitle>Assign Technician to Issue</DialogTitle>
