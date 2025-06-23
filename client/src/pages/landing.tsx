@@ -33,7 +33,7 @@ const registerSchema = z.object({
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
   phone: z.string().min(10, "Phone number must be at least 10 digits").optional().or(z.literal("")),
   municipalityAccountNo: z.string().min(5, "Municipality account number must be at least 5 characters").optional().or(z.literal("")),
-  role: z.enum(["citizen", "official", "admin", "ward_councillor", "mayor", "tech_manager", "field_technician"]),
+  role: z.enum(["citizen", "call_centre_agent", "admin", "ward_councillor", "mayor", "tech_manager", "field_technician"]),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -419,7 +419,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div className="text-left">
                               <strong>citizen</strong> / password<br/>
-                              <strong>official</strong> / password<br/>
+                              <strong>agent</strong> / password<br/>
                               <strong>mayor</strong> / password<br/>
                               <strong>admin</strong> / password
                             </div>
