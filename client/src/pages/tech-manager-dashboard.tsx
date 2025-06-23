@@ -33,7 +33,12 @@ export default function TechManagerDashboard() {
 
   const { data: departmentStats, isLoading: deptLoading } = useQuery({
     queryKey: ["/api/analytics/departments", selectedDepartment],
-    queryFn: () => apiRequest("GET", `/api/analytics/departments${selectedDepartment !== 'all' ? `?department=${selectedDepartment}` : ''}`),
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/analytics/departments${selectedDepartment !== 'all' ? `?department=${selectedDepartment}` : ''}`);
+      const data = await response.json();
+      console.log("Department stats response:", data);
+      return data;
+    },
   });
 
   const assignTechnicianMutation = useMutation({

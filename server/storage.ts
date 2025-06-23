@@ -1099,7 +1099,7 @@ export class MemStorage implements IStorage {
     const availableTechnicians = departmentTechnicians.filter(t => t.status === "available").length;
     const onJobTechnicians = departmentTechnicians.filter(t => t.status === "on_job").length;
     const totalIssues = departmentIssues.length;
-    const completedIssues = departmentTechnicians.reduce((acc, t) => acc + t.completedIssues, 0);
+    const completedIssues = departmentTechnicians.reduce((acc, t) => acc + (t.completedIssues || 0), 0);
 
     return {
       department: department || "All Departments",
@@ -1109,10 +1109,10 @@ export class MemStorage implements IStorage {
       totalIssues,
       completedIssues,
       avgPerformance: departmentTechnicians.length > 0 
-        ? departmentTechnicians.reduce((acc, t) => acc + t.performanceRating, 0) / departmentTechnicians.length 
+        ? departmentTechnicians.reduce((acc, t) => acc + (t.performanceRating || 0), 0) / departmentTechnicians.length 
         : 0,
       avgResolutionTime: departmentTechnicians.length > 0
-        ? departmentTechnicians.reduce((acc, t) => acc + t.avgResolutionTime, 0) / departmentTechnicians.length
+        ? departmentTechnicians.reduce((acc, t) => acc + (t.avgResolutionTime || 0), 0) / departmentTechnicians.length
         : 0,
     };
   }
