@@ -413,9 +413,22 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
 
                       <div className="mt-6 text-center">
                         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                          <p className="text-sm text-blue-700 font-medium">
-                            🚀 Demo credentials available for testing all roles
+                          <p className="text-sm text-blue-700 font-medium mb-3">
+                            🚀 Demo Credentials Available
                           </p>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="text-left">
+                              <strong>citizen</strong> / password<br/>
+                              <strong>official</strong> / password<br/>
+                              <strong>mayor</strong> / password<br/>
+                              <strong>admin</strong> / password
+                            </div>
+                            <div className="text-left">
+                              <strong>councillor</strong> / password<br/>
+                              <strong>techmanager</strong> / password<br/>
+                              <strong>technician</strong> / password
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </TabsContent>

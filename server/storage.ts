@@ -194,6 +194,82 @@ export class MemStorage implements IStorage {
   }
 
   private seedData() {
+    // Seed demo users for testing
+    const sampleUsers: User[] = [
+      {
+        id: this.currentUserId++,
+        username: "citizen",
+        password: "password",
+        name: "John Citizen",
+        email: "citizen@test.com",
+        phone: "0821234567",
+        role: "citizen",
+        municipalityAccountNo: "MC001234",
+      },
+      {
+        id: this.currentUserId++,
+        username: "official",
+        password: "password",
+        name: "Sarah Official",
+        email: "official@municipality.gov.za",
+        phone: "0827654321",
+        role: "official",
+        municipalityAccountNo: null,
+      },
+      {
+        id: this.currentUserId++,
+        username: "mayor",
+        password: "password",
+        name: "Mayor Thompson",
+        email: "mayor@municipality.gov.za",
+        phone: "0823456789",
+        role: "mayor",
+        municipalityAccountNo: null,
+      },
+      {
+        id: this.currentUserId++,
+        username: "councillor",
+        password: "password",
+        name: "Ward Councillor Smith",
+        email: "councillor@municipality.gov.za",
+        phone: "0829876543",
+        role: "ward_councillor",
+        municipalityAccountNo: null,
+      },
+      {
+        id: this.currentUserId++,
+        username: "techmanager",
+        password: "password",
+        name: "Tech Manager Jones",
+        email: "techmanager@municipality.gov.za",
+        phone: "0825678901",
+        role: "tech_manager",
+        municipalityAccountNo: null,
+      },
+      {
+        id: this.currentUserId++,
+        username: "technician",
+        password: "password",
+        name: "Field Technician Wilson",
+        email: "technician@municipality.gov.za",
+        phone: "0824567890",
+        role: "field_technician",
+        municipalityAccountNo: null,
+      },
+      {
+        id: this.currentUserId++,
+        username: "admin",
+        password: "password",
+        name: "System Administrator",
+        email: "admin@municipality.gov.za",
+        phone: "0820123456",
+        role: "admin",
+        municipalityAccountNo: null,
+      },
+    ];
+
+    sampleUsers.forEach(user => this.users.set(user.id, user));
+
     // Seed teams
     const sampleTeams: Team[] = [
       {
