@@ -114,6 +114,45 @@ export function GISMapIntegration({
     );
   };
 
+  const getCategoryIcon = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'water & sanitation':
+      case 'water_sanitation':
+        return '💧';
+      case 'electricity':
+        return '⚡';
+      case 'roads & transport':
+      case 'roads_transport':
+        return '🛣️';
+      case 'waste management':
+      case 'waste_management':
+        return '🗑️';
+      case 'safety & security':
+      case 'safety_security':
+        return '🛡️';
+      case 'housing':
+        return '🏠';
+      default:
+        return '📍';
+    }
+  };
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'open':
+      case 'reported':
+        return 'bg-red-100 text-red-800';
+      case 'in_progress':
+      case 'assigned':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'resolved':
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   useEffect(() => {
     // Initialize map (in real implementation, use Leaflet or Google Maps)
     if (mapRef.current) {
@@ -195,49 +234,100 @@ export function GISMapIntegration({
           <div className="flex-1 min-h-0">
             <div 
               ref={mapRef}
-              className="w-full bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center relative touch-manipulation h-64 sm:h-80 lg:h-96"
+              className="w-full bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 rounded-lg border-2 border-gray-300 shadow-lg relative touch-manipulation h-64 sm:h-80 lg:h-96 overflow-hidden"
+              style={{
+                backgroundImage: `radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), 
+                                  radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+                                  radial-gradient(circle at 40% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 50%)`
+              }}
             >
-              {/* Simulated Map View */}
-              <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-blue-100 rounded-lg">
-                {/* Ward boundaries (simulated) */}
+              {/* Enhanced Map View */}
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-green-50 rounded-lg">
+                {/* Street Grid Background */}
+                <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <defs>
+                    <pattern id="streets" width="10" height="10" patternUnits="userSpaceOnUse">
+                      <rect width="10" height="10" fill="transparent"/>
+                      <path d="M 0 5 L 10 5 M 5 0 L 5 10" stroke="#64748b" strokeWidth="0.5"/>
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#streets)"/>
+                  {/* Major roads */}
+                  <line x1="0" y1="33" x2="100" y2="33" stroke="#475569" strokeWidth="1" opacity="0.4"/>
+                  <line x1="0" y1="66" x2="100" y2="66" stroke="#475569" strokeWidth="1" opacity="0.4"/>
+                  <line x1="25" y1="0" x2="25" y2="100" stroke="#475569" strokeWidth="1" opacity="0.4"/>
+                  <line x1="75" y1="0" x2="75" y2="100" stroke="#475569" strokeWidth="1" opacity="0.4"/>
+                </svg>
+
+                {/* Ward boundaries with enhanced visibility */}
                 {wards.map((ward: any, index) => (
                   <div
                     key={ward.id}
-                    className="absolute border-2 border-gray-400 border-dashed rounded-lg opacity-30"
+                    className="absolute border-2 border-emerald-400 bg-emerald-50 bg-opacity-20 rounded-lg shadow-sm"
                     style={{
-                      left: `${10 + (index % 3) * 25}%`,
-                      top: `${10 + Math.floor(index / 3) * 25}%`,
-                      width: '20%',
-                      height: '20%'
+                      left: `${8 + (index % 3) * 28}%`,
+                      top: `${8 + Math.floor(index / 3) * 28}%`,
+                      width: '24%',
+                      height: '24%'
                     }}
                   >
-                    <div className="text-xs font-medium text-gray-600 p-1">
+                    <div className="text-xs font-semibold text-emerald-700 bg-white bg-opacity-80 px-1 py-0.5 rounded m-1 shadow-sm">
                       {ward.wardNumber}
                     </div>
                   </div>
                 ))}
 
-                {/* Issue markers */}
+                {/* Enhanced Issue markers */}
                 {filteredIssues.slice(0, 10).map((issue, index) => (
                   <div
                     key={`issue-${issue.id}`}
                     className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group"
                     style={{
-                      left: `${20 + (index % 5) * 15}%`,
-                      top: `${20 + Math.floor(index / 5) * 20}%`
+                      left: `${15 + (index % 5) * 16}%`,
+                      top: `${15 + Math.floor(index / 5) * 22}%`
                     }}
                     onClick={() => onIssueSelect?.(issue)}
                   >
-                    <div 
-                      className="w-4 h-4 rounded-full border-2 border-white shadow-lg hover:scale-125 transition-transform"
-                      style={{ backgroundColor: getStatusColor(issue.status) }}
-                    />
-                    {/* Issue popup on hover */}
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white p-2 rounded shadow-lg text-xs whitespace-nowrap z-20 border">
-                      <div className="font-medium">{issue.title}</div>
-                      <div className="text-gray-600">{issue.location}</div>
-                      <div className="text-gray-500 capitalize">{issue.status}</div>
-                      <div className="text-blue-600">{issue.category}</div>
+                    {/* Enhanced marker with pulse animation for urgent issues */}
+                    <div className="relative">
+                      <div 
+                        className={`w-6 h-6 rounded-full border-3 border-white shadow-lg hover:scale-125 transition-all duration-200 ${
+                          issue.priority === 'high' ? 'animate-pulse' : ''
+                        }`}
+                        style={{ backgroundColor: getStatusColor(issue.status) }}
+                      >
+                        {/* Priority indicator */}
+                        {issue.priority === 'high' && (
+                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white animate-ping" />
+                        )}
+                      </div>
+                      
+                      {/* Category icon overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-3 h-3 text-white text-xs font-bold">
+                          {getCategoryIcon(issue.category)}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Enhanced popup with better styling */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-white p-3 rounded-lg shadow-xl text-xs whitespace-nowrap z-30 border border-gray-200 min-w-48">
+                      <div className="font-semibold text-gray-900 mb-1">{issue.title}</div>
+                      <div className="text-gray-600 mb-1 flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {issue.location}
+                      </div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(issue.status)}`}>
+                          {issue.status.replace('_', ' ').toUpperCase()}
+                        </span>
+                        <span className="text-blue-600 font-medium">{issue.category}</span>
+                      </div>
+                      {issue.priority === 'high' && (
+                        <div className="text-red-600 font-semibold text-xs">⚠️ HIGH PRIORITY</div>
+                      )}
+                      {/* Tooltip arrow */}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                     </div>
                   </div>
                 ))}
