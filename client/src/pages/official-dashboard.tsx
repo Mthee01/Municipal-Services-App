@@ -216,14 +216,14 @@ export default function OfficialDashboard() {
           {/* Issue Management Table */}
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
                 <CardTitle className="text-lg font-semibold text-gray-900">Recent Issues</CardTitle>
-                <div className="flex space-x-2">
-                  <Button className="bg-sa-green text-white hover:bg-green-700">
+                <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+                  <Button className="bg-sa-green text-white hover:bg-green-700 text-sm px-3 py-2">
                     <Plus className="mr-2 h-4 w-4" />
                     Assign Technician
                   </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" className="text-sm px-3 py-2">
                     <FileDown className="mr-2 h-4 w-4" />
                     Export Report
                   </Button>
