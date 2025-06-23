@@ -32,6 +32,30 @@
   --alert-orange: hsl(14, 100%, 57%);
 }
 
+/* Hide scrollbar for mobile tabs */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mobile tab optimizations */
+@media (max-width: 640px) {
+  .mobile-tabs {
+    min-height: 44px; /* Minimum touch target size */
+  }
+  
+  .mobile-tab-trigger {
+    min-width: 80px;
+    padding: 8px 12px;
+    font-size: 12px;
+    line-height: 1.2;
+  }
+}
+
 .dark {
   --background: hsl(240, 10%, 3.9%);
   --foreground: hsl(0, 0%, 98%);

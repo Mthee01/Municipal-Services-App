@@ -189,18 +189,32 @@ export default function CitizenDashboard() {
       <section className="relative z-10 py-12">
         <div className="max-w-6xl mx-auto px-4">
           <Tabs defaultValue="my-issues" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-1">
-              <TabsTrigger value="my-issues" className="text-xs md:text-sm">Issues</TabsTrigger>
-              <TabsTrigger value="community" className="text-xs md:text-sm">Community</TabsTrigger>
-              <TabsTrigger value="map-view" className="text-xs md:text-sm">
-                <MapPin className="w-3 h-3 md:w-4 md:h-4 mr-1" />
-                <span className="hidden sm:inline">Map</span>
-              </TabsTrigger>
-              <TabsTrigger value="payments" className="text-xs md:text-sm">Payments</TabsTrigger>
-              <TabsTrigger value="vouchers" className="text-xs md:text-sm">Vouchers</TabsTrigger>
-              <TabsTrigger value="communication" className="text-xs md:text-sm">Support</TabsTrigger>
-              <TabsTrigger value="whatsapp" className="text-xs md:text-sm">WhatsApp</TabsTrigger>
-            </TabsList>
+            <div className="w-full overflow-x-auto scrollbar-hide">
+              <TabsList className="flex w-max min-w-full mobile-tabs p-1 bg-muted rounded-lg">
+                <TabsTrigger value="my-issues" className="flex-shrink-0 mobile-tab-trigger px-3 py-3 text-xs sm:text-sm whitespace-nowrap min-h-[44px] flex items-center justify-center">
+                  Issues
+                </TabsTrigger>
+                <TabsTrigger value="community" className="flex-shrink-0 mobile-tab-trigger px-3 py-3 text-xs sm:text-sm whitespace-nowrap min-h-[44px] flex items-center justify-center">
+                  Community
+                </TabsTrigger>
+                <TabsTrigger value="map-view" className="flex-shrink-0 mobile-tab-trigger px-3 py-3 text-xs sm:text-sm whitespace-nowrap min-h-[44px] flex items-center justify-center">
+                  <MapPin className="w-3 h-3 mr-1" />
+                  Map
+                </TabsTrigger>
+                <TabsTrigger value="payments" className="flex-shrink-0 mobile-tab-trigger px-3 py-3 text-xs sm:text-sm whitespace-nowrap min-h-[44px] flex items-center justify-center">
+                  Payments
+                </TabsTrigger>
+                <TabsTrigger value="vouchers" className="flex-shrink-0 mobile-tab-trigger px-3 py-3 text-xs sm:text-sm whitespace-nowrap min-h-[44px] flex items-center justify-center">
+                  Vouchers
+                </TabsTrigger>
+                <TabsTrigger value="communication" className="flex-shrink-0 mobile-tab-trigger px-3 py-3 text-xs sm:text-sm whitespace-nowrap min-h-[44px] flex items-center justify-center">
+                  Support
+                </TabsTrigger>
+                <TabsTrigger value="whatsapp" className="flex-shrink-0 mobile-tab-trigger px-3 py-3 text-xs sm:text-sm whitespace-nowrap min-h-[44px] flex items-center justify-center">
+                  WhatsApp
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="my-issues" className="space-y-6">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
