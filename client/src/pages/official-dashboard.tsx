@@ -39,6 +39,73 @@ export default function OfficialDashboard() {
     queryKey: ["/api/technicians"],
   });
 
+  const handleExportReport = () => {
+    try {
+      // Prepare CSV data
+      const csvHeaders = [
+        "Issue ID",
+        "Title", 
+        "Description",
+        "Category",
+        "Priority",
+        "Status",
+        "Location",
+        "Ward",
+        "Reporter Name",
+        "Reporter Phone",
+        "Assigned To",
+        "Created Date",
+        "Updated Date"
+      ];
+
+      const csvData = issues.map(issue => [
+        issue.id,
+        `"${issue.title}"`,
+        `"${issue.description}"`,
+        issue.category,
+        issue.priority,
+        issue.status,
+        `"${issue.location}"`,
+        issue.ward || "N/A",
+        issue.reporterName || "N/A",
+        issue.reporterPhone || "N/A",
+        issue.assignedTo || "Unassigned",
+        new Date(issue.createdAt).toLocaleDateString(),
+        new Date(issue.updatedAt).toLocaleDateString()
+      ]);
+
+      // Create CSV content
+      const csvContent = [
+        csvHeaders.join(","),
+        ...csvData.map(row => row.join(","))
+      ].join("\n");
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute("href", url);
+      link.setAttribute("download", `municipality-issues-report-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = "hidden";
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Export Successful",
+        description: "Issues report has been downloaded as CSV file.",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to generate report. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const assignTechnicianMutation = useMutation({
     mutationFn: async ({ technicianId, issueId }: { technicianId: number; issueId: number }) => {
       await apiRequest("POST", `/api/technicians/${technicianId}/assign/${issueId}`);
@@ -384,7 +451,11 @@ export default function OfficialDashboard() {
                       </div>
                     </DialogContent>
                   </Dialog>
-                  <Button variant="outline" className="text-sm px-3 py-2">
+                  <Button 
+                    variant="outline" 
+                    className="text-sm px-3 py-2"
+                    onClick={handleExportReport}
+                  >
                     <FileDown className="mr-2 h-4 w-4" />
                     Export Report
                   </Button>
