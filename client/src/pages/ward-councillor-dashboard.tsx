@@ -15,6 +15,7 @@ import { formatRelativeTime, getStatusColor, getPriorityColor } from "@/lib/util
 
 export default function WardCouncillorDashboard() {
   const [selectedWard, setSelectedWard] = useState<string>("Ward 1");
+  const [activeTab, setActiveTab] = useState<string>("issues");
   const { toast } = useToast();
 
   const { data: wards, isLoading: wardsLoading } = useQuery({
@@ -230,7 +231,7 @@ export default function WardCouncillorDashboard() {
         </Card>
       </div>
 
-      <Tabs defaultValue="issues" className="space-y-3 sm:space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3 sm:space-y-4">
         <TabsList className="grid w-full grid-cols-3 h-auto p-1">
           <TabsTrigger value="issues" className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-2">
             <span className="hidden sm:inline">Ward Issues</span>
