@@ -1,18 +1,27 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { TriangleAlert, Wrench, CheckCircle, Clock, Users, Truck, Plus, FileDown } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { TriangleAlert, Wrench, CheckCircle, Clock, Users, Truck, Plus, FileDown, X } from "lucide-react";
 import { formatRelativeTime, getStatusColor, getPriorityColor } from "@/lib/utils";
-import type { Issue, Team } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { Issue, Team, Technician } from "@shared/schema";
 import type { Statistics } from "@/lib/types";
 
 export default function OfficialDashboard() {
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [wardFilter, setWardFilter] = useState<string>("all");
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [selectedTechnician, setSelectedTechnician] = useState<string>("");
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: stats, isLoading: statsLoading } = useQuery<Statistics>({
     queryKey: ["/api/stats"],
@@ -24,6 +33,34 @@ export default function OfficialDashboard() {
 
   const { data: teams = [], isLoading: teamsLoading } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
+  });
+
+  const { data: technicians = [] } = useQuery<Technician[]>({
+    queryKey: ["/api/technicians"],
+  });
+
+  const assignTechnicianMutation = useMutation({
+    mutationFn: async ({ technicianId, issueId }: { technicianId: number; issueId: number }) => {
+      await apiRequest("POST", `/api/technicians/${technicianId}/assign/${issueId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/technicians"] });
+      toast({
+        title: "Success",
+        description: "Technician assigned successfully",
+      });
+      setShowAssignModal(false);
+      setSelectedIssue(null);
+      setSelectedTechnician("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to assign technician",
+        variant: "destructive",
+      });
+    },
   });
 
   const filteredIssues = issues.filter(issue => {
@@ -39,6 +76,38 @@ export default function OfficialDashboard() {
     if (wardFilter !== "all" && issue.ward !== wardFilter) return false;
     return true;
   });
+
+  const handleAssignTechnician = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setShowAssignModal(true);
+  };
+
+  const handleConfirmAssignment = () => {
+    if (!selectedIssue || !selectedTechnician) return;
+    
+    const technicianId = parseInt(selectedTechnician);
+    assignTechnicianMutation.mutate({
+      technicianId,
+      issueId: selectedIssue.id,
+    });
+  };
+
+  const getAvailableTechnicians = () => {
+    if (!selectedIssue) return technicians;
+    
+    // Filter technicians by department matching the issue category
+    const departmentMapping: Record<string, string> = {
+      "water_sanitation": "Water & Sanitation",
+      "electricity": "Electricity",
+      "roads_transport": "Roads & Transport",
+      "waste_management": "Waste Management",
+    };
+    
+    const requiredDepartment = departmentMapping[selectedIssue.category];
+    return technicians.filter(tech => 
+      tech.department === requiredDepartment && tech.status === "available"
+    );
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -219,10 +288,63 @@ export default function OfficialDashboard() {
               <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
                 <CardTitle className="text-lg font-semibold text-gray-900">Recent Issues</CardTitle>
                 <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
-                  <Button className="bg-sa-green text-white hover:bg-green-700 text-sm px-3 py-2">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Assign Technician
-                  </Button>
+                  <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-sa-green text-white hover:bg-green-700 text-sm px-3 py-2">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Assign Technician
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Assign Technician</DialogTitle>
+                      </DialogHeader>
+                      {selectedIssue && (
+                        <div className="space-y-4">
+                          <div className="bg-gray-50 p-3 rounded-lg">
+                            <h4 className="font-medium text-gray-900">{selectedIssue.title}</h4>
+                            <p className="text-sm text-gray-600">{selectedIssue.description}</p>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <Badge variant="outline">{selectedIssue.category.replace('_', ' ')}</Badge>
+                              <Badge variant="outline">Ward {selectedIssue.ward}</Badge>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">Select Technician</label>
+                            <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Choose a technician..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getAvailableTechnicians().map((tech) => (
+                                  <SelectItem key={tech.id} value={tech.id.toString()}>
+                                    <div className="flex flex-col items-start">
+                                      <span className="font-medium">{tech.name}</span>
+                                      <span className="text-xs text-gray-500">{tech.department} • {(tech.skills || []).join(', ') || 'No skills listed'}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="flex justify-end space-x-2 pt-4">
+                            <Button variant="outline" onClick={() => setShowAssignModal(false)}>
+                              Cancel
+                            </Button>
+                            <Button 
+                              onClick={handleConfirmAssignment}
+                              disabled={!selectedTechnician || assignTechnicianMutation.isPending}
+                              className="bg-sa-green hover:bg-green-700"
+                            >
+                              {assignTechnicianMutation.isPending ? "Assigning..." : "Assign Technician"}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </DialogContent>
+                  </Dialog>
                   <Button variant="outline" className="text-sm px-3 py-2">
                     <FileDown className="mr-2 h-4 w-4" />
                     Export Report
@@ -286,6 +408,16 @@ export default function OfficialDashboard() {
                               <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
                                 Update
                               </Button>
+                              {!issue.assignedTo && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-orange-600 hover:text-orange-700"
+                                  onClick={() => handleAssignTechnician(issue)}
+                                >
+                                  Assign
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>

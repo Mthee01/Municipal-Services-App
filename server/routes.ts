@@ -281,6 +281,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Assign technician to issue
+  app.post("/api/technicians/:technicianId/assign/:issueId", async (req, res) => {
+    try {
+      const technicianId = parseInt(req.params.technicianId);
+      const issueId = parseInt(req.params.issueId);
+
+      if (isNaN(technicianId) || isNaN(issueId)) {
+        return res.status(400).json({ message: "Invalid technician or issue ID" });
+      }
+
+      const success = await storage.assignTechnicianToIssue(technicianId, issueId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Technician or issue not found" });
+      }
+
+      res.json({ success: true, message: "Technician assigned successfully" });
+    } catch (error) {
+      console.error("Error assigning technician:", error);
+      res.status(500).json({ message: "Failed to assign technician" });
+    }
+  });
+
   // Wards endpoints
   app.get("/api/wards", async (req, res) => {
     try {
