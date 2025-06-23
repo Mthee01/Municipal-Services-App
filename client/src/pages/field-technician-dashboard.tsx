@@ -309,34 +309,43 @@ export default function FieldTechnicianDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Field Technician Dashboard</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Manage work assignments, reports, and communication</p>
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 truncate">
+              Field Technician Dashboard
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Manage work assignments, reports, and communication
+            </p>
           </div>
-          <div className="flex items-center gap-4">
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex-shrink-0">
               <Navigation className="w-3 h-3 mr-1" />
-              {currentLocation ? 'Location Active' : 'Location Unavailable'}
+              <span className="hidden sm:inline">
+                {currentLocation ? 'Location Active' : 'Location Unavailable'}
+              </span>
+              <span className="sm:hidden">
+                {currentLocation ? 'GPS On' : 'GPS Off'}
+              </span>
             </Badge>
-            <Button variant="outline" size="sm">
-              <Bell className="w-4 h-4 mr-2" />
-              Notifications
+            <Button variant="outline" size="sm" className="flex-shrink-0">
+              <Bell className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Notifications</span>
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="p-6">
-        <Tabs defaultValue="work-assignments" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="work-assignments">Work Assignments</TabsTrigger>
-            <TabsTrigger value="active-sessions">Active Sessions</TabsTrigger>
-            <TabsTrigger value="field-reports">Field Reports</TabsTrigger>
-            <TabsTrigger value="parts-ordering">Parts & Inventory</TabsTrigger>
-            <TabsTrigger value="communication">Communication</TabsTrigger>
-            <TabsTrigger value="location-tracking">Location & Travel</TabsTrigger>
+      <div className="p-4 sm:p-6">
+        <Tabs defaultValue="work-assignments" className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1">
+            <TabsTrigger value="work-assignments" className="text-xs sm:text-sm">Work Orders</TabsTrigger>
+            <TabsTrigger value="active-sessions" className="text-xs sm:text-sm">Active Work</TabsTrigger>
+            <TabsTrigger value="field-reports" className="text-xs sm:text-sm">Reports</TabsTrigger>
+            <TabsTrigger value="parts-ordering" className="text-xs sm:text-sm">Parts</TabsTrigger>
+            <TabsTrigger value="communication" className="text-xs sm:text-sm">Messages</TabsTrigger>
+            <TabsTrigger value="location-tracking" className="text-xs sm:text-sm">Location</TabsTrigger>
           </TabsList>
 
           {/* Work Assignments Tab */}
@@ -501,49 +510,58 @@ function WorkAssignmentCard({
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-semibold">{issue.title}</h3>
-              <Badge variant="outline" className={getPriorityColor(issue.priority)}>
-                {issue.priority}
-              </Badge>
-              <Badge variant="outline" className={getStatusColor(issue.status)}>
-                {issue.status}
-              </Badge>
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <h3 className="font-semibold truncate">{issue.title}</h3>
+                <Badge variant="outline" className={getPriorityColor(issue.priority)}>
+                  {issue.priority}
+                </Badge>
+                <Badge variant="outline" className={getStatusColor(issue.status)}>
+                  {issue.status}
+                </Badge>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">{issue.description}</p>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-gray-500">
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">{issue.location}</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3 flex-shrink-0" />
+                  {new Date(issue.createdAt).toLocaleDateString()}
+                </span>
+              </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{issue.description}</p>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <span className="flex items-center gap-1">
-                <MapPin className="w-3 h-3" />
-                {issue.location}
-              </span>
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {new Date(issue.createdAt).toLocaleDateString()}
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            {session ? (
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                <PlayCircle className="w-3 h-3 mr-1" />
-                Active
-              </Badge>
-            ) : (
+            
+            <div className="flex sm:flex-col gap-2 sm:min-w-[120px]">
+              {session ? (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 justify-center">
+                  <PlayCircle className="w-3 h-3 mr-1" />
+                  Active
+                </Badge>
+              ) : (
+                <Button 
+                  size="sm" 
+                  onClick={onStartWork}
+                  disabled={isStarting}
+                  className="flex-1 sm:w-full"
+                >
+                  <PlayCircle className="w-4 h-4 mr-2" />
+                  {isStarting ? 'Starting...' : 'Start Work'}
+                </Button>
+              )}
               <Button 
+                variant="outline" 
                 size="sm" 
-                onClick={onStartWork}
-                disabled={isStarting}
+                onClick={onViewDetails}
+                className="flex-1 sm:w-full"
               >
-                <PlayCircle className="w-4 h-4 mr-2" />
-                {isStarting ? 'Starting...' : 'Start Work'}
+                <Search className="w-4 h-4 mr-2" />
+                Details
               </Button>
-            )}
-            <Button variant="outline" size="sm" onClick={onViewDetails}>
-              <Search className="w-4 h-4 mr-2" />
-              Details
-            </Button>
+            </div>
           </div>
         </div>
       </CardContent>
@@ -1206,44 +1224,66 @@ function LocationTrackingPanel({ currentLocation, activeWorkSessions }: any) {
 function IssueDetailsDialog({ issue, onClose }: { issue: Issue; onClose: () => void }) {
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{issue.title}</DialogTitle>
-          <DialogDescription>
-            Issue #{issue.id} - {issue.location}
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-lg font-semibold truncate">{issue.title}</DialogTitle>
+          <DialogDescription className="flex items-center gap-2 text-sm">
+            <span>Issue #{issue.id}</span>
+            <span>•</span>
+            <span className="flex items-center gap-1">
+              <MapPin className="w-3 h-3" />
+              {issue.location}
+            </span>
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Category</Label>
-              <p className="text-sm">{issue.category}</p>
+        
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Category</Label>
+              <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded">{issue.category}</p>
             </div>
-            <div>
-              <Label>Priority</Label>
-              <Badge variant="outline" className={getPriorityColor(issue.priority)}>
-                {issue.priority}
-              </Badge>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Priority</Label>
+              <div>
+                <Badge variant="outline" className={getPriorityColor(issue.priority)}>
+                  {issue.priority}
+                </Badge>
+              </div>
             </div>
-            <div>
-              <Label>Status</Label>
-              <Badge variant="outline" className={getStatusColor(issue.status)}>
-                {issue.status}
-              </Badge>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Status</Label>
+              <div>
+                <Badge variant="outline" className={getStatusColor(issue.status)}>
+                  {issue.status}
+                </Badge>
+              </div>
             </div>
-            <div>
-              <Label>Ward</Label>
-              <p className="text-sm">{issue.ward || 'Not specified'}</p>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Ward</Label>
+              <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded">{issue.ward || 'Not specified'}</p>
             </div>
           </div>
-          <div>
-            <Label>Description</Label>
-            <p className="text-sm">{issue.description}</p>
+          
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Description</Label>
+            <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+              <p className="text-sm leading-relaxed">{issue.description}</p>
+            </div>
           </div>
-          <div>
-            <Label>Created</Label>
-            <p className="text-sm">{new Date(issue.createdAt).toLocaleString()}</p>
+          
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Created Date</Label>
+            <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded">
+              {new Date(issue.createdAt).toLocaleString()}
+            </p>
           </div>
+        </div>
+        
+        <div className="flex justify-end gap-3 pt-6 border-t mt-6">
+          <Button variant="outline" onClick={onClose} className="min-w-[100px]">
+            Close
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
