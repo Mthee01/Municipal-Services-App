@@ -357,7 +357,7 @@ export default function FieldTechnicianDashboard() {
 
       <div className="p-4 sm:p-6">
         <Tabs defaultValue="work-assignments" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1">
+          <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-1">
             <TabsTrigger value="work-assignments" className="text-xs sm:text-sm">Work Orders</TabsTrigger>
             <TabsTrigger value="active-sessions" className="text-xs sm:text-sm">Active Work</TabsTrigger>
             <TabsTrigger value="field-reports" className="text-xs sm:text-sm">Reports</TabsTrigger>
