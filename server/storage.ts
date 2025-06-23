@@ -118,6 +118,9 @@ export interface IStorage {
   createWhatsappMessage(message: InsertWhatsappMessage): Promise<WhatsappMessage>;
   updateWhatsappMessageStatus(messageId: string, status: string): Promise<boolean>;
 
+  // Active work sessions operations
+  getActiveWorkSessions(): Promise<{ issueId: number; arrivalTime: Date; isActive: boolean }[]>;
+  
   // Analytics operations
   getWardStats(wardNumber?: string): Promise<any>;
   getTechnicianPerformance(): Promise<any>;
@@ -1657,6 +1660,11 @@ export class MemStorage implements IStorage {
       arrivalTime: new Date(Date.now() - 90 * 60 * 1000), // Started 1.5 hours ago
       isActive: true
     });
+  }
+
+  // Active work sessions operations
+  async getActiveWorkSessions(): Promise<{ issueId: number; arrivalTime: Date; isActive: boolean }[]> {
+    return Array.from(this.activeWorkSessions.values());
   }
 
   // Chat message operations

@@ -833,28 +833,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get active work sessions for a technician
+  // Get active work sessions for current technician
   app.get("/api/work-sessions/active", async (req, res) => {
     try {
-      const { technicianId } = req.query;
-      
-      if (!technicianId) {
-        return res.status(400).json({ error: "Technician ID required" });
-      }
+      // For demo purposes, use technician ID 1 (field technician)
+      const technicianId = 1;
       
       // Find issues that are currently in progress for this technician
       const activeIssues = await storage.getIssuesByStatus('in_progress');
       const technicianActiveIssues = activeIssues.filter(issue => 
-        issue.assignedTo === technicianId.toString() || 
-        issue.technicianId === parseInt(technicianId.toString())
+        issue.assignedTo === technicianId.toString()
       );
       
-      // Convert to work session format
-      const activeSessions = technicianActiveIssues.map(issue => ({
-        issueId: issue.id,
-        arrivalTime: issue.updatedAt, // Use last update as work start time
-        isActive: true
-      }));
+      // Get stored active work sessions from storage
+      const storedSessions = await storage.getActiveWorkSessions();
+      
+      // Convert to work session format with actual arrival times
+      const activeSessions = technicianActiveIssues.map(issue => {
+        const storedSession = storedSessions.find(s => s.issueId === issue.id);
+        return {
+          issueId: issue.id,
+          arrivalTime: storedSession?.arrivalTime || issue.updatedAt,
+          isActive: true
+        };
+      });
       
       res.json(activeSessions);
     } catch (error) {
