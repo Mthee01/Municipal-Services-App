@@ -195,25 +195,49 @@ export default function MayorDashboard() {
                 <CardDescription className="text-xs md:text-sm">Current workload distribution</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={departmentData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, value }) => `${name}: ${value}`}
-                      outerRadius={60}
-                      fill="#8884d8"
-                      dataKey="completed"
-                    >
-                      {departmentData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <div className="flex flex-col space-y-4">
+                  {/* Pie Chart Container */}
+                  <div className="w-full">
+                    <ResponsiveContainer width="100%" height={160}>
+                      <PieChart>
+                        <Pie
+                          data={departmentData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={false}
+                          outerRadius={50}
+                          innerRadius={20}
+                          fill="#8884d8"
+                          dataKey="completed"
+                        >
+                          {departmentData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value, name) => [value, name]}
+                          labelStyle={{ fontSize: '12px' }}
+                          contentStyle={{ fontSize: '12px' }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  {/* Mobile-friendly Legend */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {departmentData.map((entry, index) => (
+                      <div key={entry.name} className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full flex-shrink-0" 
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                        <span className="truncate flex-1">{entry.name}</span>
+                        <span className="font-semibold flex-shrink-0">{entry.completed}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -223,13 +247,23 @@ export default function MayorDashboard() {
                 <CardDescription className="text-xs md:text-sm">Issues reported per ward</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={wardPerformanceData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" fontSize={10} />
-                    <YAxis fontSize={10} />
-                    <Tooltip />
-                    <Bar dataKey="issues" fill="#0ea5e9" />
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={wardPerformanceData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="name" 
+                      fontSize={9}
+                      angle={-45}
+                      textAnchor="end"
+                      height={50}
+                      interval={0}
+                    />
+                    <YAxis fontSize={9} width={30} />
+                    <Tooltip 
+                      contentStyle={{ fontSize: '11px', padding: '8px' }}
+                      labelStyle={{ fontSize: '10px' }}
+                    />
+                    <Bar dataKey="issues" fill="#0ea5e9" radius={[2, 2, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
