@@ -1325,6 +1325,15 @@ function IssueDetailsDialog({ issue, onClose }: { issue: Issue; onClose: () => v
               {new Date(issue.createdAt).toLocaleString()}
             </p>
           </div>
+
+          {(issue.status === 'resolved' || issue.status === 'completed') && issue.resolvedAt && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Closing Date</Label>
+              <p className="text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 p-2 rounded border border-blue-200 dark:border-blue-800">
+                {new Date(issue.resolvedAt).toLocaleString()}
+              </p>
+            </div>
+          )}
         </div>
         
         <div className="flex justify-end gap-3 pt-6 border-t mt-6">
