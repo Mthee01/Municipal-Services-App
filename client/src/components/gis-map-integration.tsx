@@ -95,15 +95,15 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
 
   return (
     <Card className="w-full">
-      <CardHeader className="pb-2 md:pb-6">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-          <CardTitle className="flex items-center gap-2 text-sm md:text-base">
-            <MapPin className="h-4 w-4 md:h-5 md:w-5" />
+      <CardHeader className="pb-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
             Municipal Services GIS Map
           </CardTitle>
           <div className="flex items-center gap-2">
             <Select value={selectedLayer} onValueChange={setSelectedLayer}>
-              <SelectTrigger className="w-full md:w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Select layer" />
               </SelectTrigger>
               <SelectContent>
@@ -125,28 +125,28 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
         </div>
       </CardHeader>
       
-      <CardContent className="p-2 md:p-6">
-        {/* Mobile controls row */}
-        <div className="flex items-center justify-between gap-2 mb-3 md:hidden">
-          <div className="flex gap-1">
-            <Button variant="outline" size="sm" className="p-2">
+      <CardContent className="p-3 sm:p-4 lg:p-6">
+        {/* Mobile controls - horizontal layout */}
+        <div className="flex items-center justify-between mb-4 sm:hidden">
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
               <ZoomIn className="h-3 w-3" />
             </Button>
-            <Button variant="outline" size="sm" className="p-2">
+            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
               <ZoomOut className="h-3 w-3" />
             </Button>
-            <Button variant="outline" size="sm" className="p-2">
+            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
               <Navigation className="h-3 w-3" />
             </Button>
           </div>
-          <div className="text-xs text-gray-600">
+          <div className="text-xs text-gray-600 font-medium">
             {filteredIssues.length} issues
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-3 md:gap-4">
-          {/* Desktop Map Controls */}
-          <div className="hidden md:flex flex-col gap-2">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          {/* Desktop controls - vertical layout */}
+          <div className="hidden sm:flex flex-col gap-2">
             <Button variant="outline" size="sm">
               <ZoomIn className="h-4 w-4" />
             </Button>
@@ -161,14 +161,13 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
             </Button>
           </div>
 
-          {/* Map Container */}
-          <div className="flex-1">
+          {/* Map Container - responsive sizing */}
+          <div className="flex-1 min-w-0">
             <div 
               ref={mapRef}
-              className="gis-map-mobile w-full bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center relative"
+              className="w-full bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center relative"
               style={{ 
-                height: typeof window !== 'undefined' && window.innerWidth < 768 ? "300px" : height,
-                minHeight: "250px"
+                height: "clamp(250px, 40vh, 500px)"
               }}
             >
               {/* Simulated Map View */}
@@ -210,57 +209,90 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
               </div>
             </div>
 
-            {/* Map Legend */}
-            <div className="mt-4 flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
+            {/* Map Legend - responsive positioning */}
+            <div className="mt-3 sm:mt-4 flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-500" />
                 <span>Open Issues</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
+              <div className="flex items-center gap-1 sm:gap-2">
+                <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-yellow-500" />
                 <span>In Progress</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500" />
+              <div className="flex items-center gap-1 sm:gap-2">
+                <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500" />
                 <span>Resolved</span>
               </div>
             </div>
           </div>
 
-          {/* Layer Controls */}
-          <div className="w-48 space-y-2">
-            <h4 className="font-medium text-sm flex items-center gap-2">
-              <Layers className="h-4 w-4" />
-              Map Layers
-            </h4>
-            {mapLayers.map(layer => (
-              <div 
-                key={layer.id}
-                className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer"
-                onClick={() => toggleLayer(layer.id)}
-              >
-                <input 
-                  type="checkbox" 
-                  checked={layer.visible}
-                  onChange={() => toggleLayer(layer.id)}
-                  className="rounded"
-                />
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: layer.color }}
-                />
-                <span className="text-sm">{layer.name}</span>
+          {/* Layer Controls - responsive sidebar */}
+          <div className="w-full sm:w-64 lg:w-48 mt-4 sm:mt-0">
+            <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-3">
+              <h4 className="font-medium text-sm flex items-center gap-2">
+                <Layers className="h-4 w-4" />
+                Map Layers
+              </h4>
+              
+              {/* Mobile: Simplified view */}
+              <div className="sm:hidden">
+                <p className="text-xs text-gray-600 mb-2">
+                  {mapLayers.filter(l => l.visible).length} of {mapLayers.length} layers visible
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {mapLayers.map(layer => (
+                    <label 
+                      key={layer.id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input 
+                        type="checkbox" 
+                        checked={layer.visible}
+                        onChange={() => toggleLayer(layer.id)}
+                        className="rounded text-xs"
+                      />
+                      <div 
+                        className="w-2 h-2 rounded-full" 
+                        style={{ backgroundColor: layer.color }}
+                      />
+                      <span className="text-xs truncate">{layer.name.split(' ')[0]}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            ))}
-            
-            <div className="border-t pt-2 mt-4">
-              <div className="text-sm text-gray-600">
-                <div>Zoom: {zoomLevel}x</div>
-                <div>Center: {centerLocation.address}</div>
-                <div className="mt-2">
-                  <Badge variant="outline" className="text-xs">
-                    Real-time Updates
-                  </Badge>
+
+              {/* Desktop: Full view */}
+              <div className="hidden sm:block space-y-2">
+                {mapLayers.map(layer => (
+                  <div 
+                    key={layer.id}
+                    className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 cursor-pointer"
+                    onClick={() => toggleLayer(layer.id)}
+                  >
+                    <input 
+                      type="checkbox" 
+                      checked={layer.visible}
+                      onChange={() => toggleLayer(layer.id)}
+                      className="rounded"
+                    />
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: layer.color }}
+                    />
+                    <span className="text-sm">{layer.name}</span>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="border-t pt-2 space-y-1">
+                <div className="text-xs sm:text-sm text-gray-600">
+                  <div>Zoom: {zoomLevel}x</div>
+                  <div className="hidden sm:block">Center: {centerLocation.address}</div>
+                  <div className="mt-2">
+                    <Badge variant="outline" className="text-xs">
+                      Real-time Updates
+                    </Badge>
+                  </div>
                 </div>
               </div>
             </div>
