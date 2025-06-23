@@ -506,16 +506,17 @@ export default function AdminDashboard() {
 
             <Card>
               <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Last Active</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                <div className="overflow-x-auto">
+                  <Table className="min-w-full">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[200px]">User</TableHead>
+                        <TableHead className="min-w-[120px]">Role</TableHead>
+                        <TableHead className="min-w-[100px]">Status</TableHead>
+                        <TableHead className="min-w-[120px]">Last Active</TableHead>
+                        <TableHead className="min-w-[320px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
                   <TableBody>
                     {usersLoading ? (
                       <TableRow>
@@ -532,33 +533,33 @@ export default function AdminDashboard() {
                     ) : (
                       users.map((user) => (
                         <TableRow key={user.id}>
-                          <TableCell>
+                          <TableCell className="min-w-[200px]">
                             <div>
                               <div className="font-medium">{user.name}</div>
                               <div className="text-sm text-gray-500">{user.email}</div>
                               <div className="text-xs text-gray-400">@{user.username}</div>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="min-w-[120px]">
                             <div className="flex items-center space-x-2">
                               {getRoleIcon(user.role)}
                               <span className="text-sm">{roleConfig[user.role]?.label}</span>
                             </div>
                           </TableCell>
-                          <TableCell>{getStatusBadge(user.status)}</TableCell>
-                          <TableCell className="text-sm text-gray-500">
-                            {user.lastActive || "Never"}
+                          <TableCell className="min-w-[100px]">{getStatusBadge(user.status)}</TableCell>
+                          <TableCell className="text-sm text-gray-500 min-w-[120px]">
+                            {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : "Never"}
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
+                          <TableCell className="min-w-[280px]">
+                            <div className="flex items-center gap-2 justify-start">
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => openEditDialog(user)}
-                                className="flex items-center space-x-1"
+                                className="flex items-center gap-1 px-3 py-1 h-8 whitespace-nowrap"
                               >
                                 <Edit className="w-3 h-3" />
-                                <span>Edit</span>
+                                <span className="text-xs">Edit</span>
                               </Button>
                               
                               <Select
@@ -567,7 +568,7 @@ export default function AdminDashboard() {
                                   handleToggleStatus(user, status)
                                 }
                               >
-                                <SelectTrigger className="w-28 h-8">
+                                <SelectTrigger className="w-20 h-8 text-xs">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -579,7 +580,12 @@ export default function AdminDashboard() {
 
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button variant="destructive" size="sm">
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm" 
+                                    className="h-8 w-8 p-0 flex-shrink-0"
+                                    title="Delete user"
+                                  >
                                     <Trash2 className="w-3 h-3" />
                                   </Button>
                                 </AlertDialogTrigger>
@@ -607,7 +613,8 @@ export default function AdminDashboard() {
                       ))
                     )}
                   </TableBody>
-                </Table>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
 
