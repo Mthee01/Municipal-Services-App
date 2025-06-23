@@ -80,23 +80,23 @@ export default function OfficialDashboard() {
 
   // State
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
-  const [filterPriority, setFilterPriority] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterPriority, setFilterPriority] = useState("all");
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [selectedTechnician, setSelectedTechnician] = useState("");
 
   // Queries
-  const { data: issues = [], isLoading: issuesLoading } = useQuery({
+  const { data: issues = [], isLoading: issuesLoading } = useQuery<Issue[]>({
     queryKey: ["/api/issues"]
   });
 
-  const { data: technicians = [], isLoading: techniciansLoading } = useQuery({
+  const { data: technicians = [], isLoading: techniciansLoading } = useQuery<Technician[]>({
     queryKey: ["/api/technicians"]
   });
 
-  const { data: teams = [], isLoading: teamsLoading } = useQuery({
+  const { data: teams = [], isLoading: teamsLoading } = useQuery<Team[]>({
     queryKey: ["/api/teams"]
   });
 
@@ -131,9 +131,9 @@ export default function OfficialDashboard() {
       const matchesSearch = issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           issue.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           issue.location.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = !filterCategory || issue.category === filterCategory;
-      const matchesStatus = !filterStatus || issue.status === filterStatus;
-      const matchesPriority = !filterPriority || issue.priority === filterPriority;
+      const matchesCategory = filterCategory === "all" || issue.category === filterCategory;
+      const matchesStatus = filterStatus === "all" || issue.status === filterStatus;
+      const matchesPriority = filterPriority === "all" || issue.priority === filterPriority;
       
       return matchesSearch && matchesCategory && matchesStatus && matchesPriority;
     });
@@ -337,7 +337,7 @@ export default function OfficialDashboard() {
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   <SelectItem value="water_sanitation">Water & Sanitation</SelectItem>
                   <SelectItem value="electricity">Electricity</SelectItem>
                   <SelectItem value="roads_transport">Roads & Transport</SelectItem>
@@ -350,7 +350,7 @@ export default function OfficialDashboard() {
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="open">Open</SelectItem>
                   <SelectItem value="assigned">Assigned</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
@@ -363,7 +363,7 @@ export default function OfficialDashboard() {
                   <SelectValue placeholder="Priority" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Priority</SelectItem>
+                  <SelectItem value="all">All Priority</SelectItem>
                   <SelectItem value="critical">Critical</SelectItem>
                   <SelectItem value="high">High</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
