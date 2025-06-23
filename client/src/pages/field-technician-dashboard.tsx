@@ -712,8 +712,8 @@ function WorkAssignmentCard({
         </div>
 
         {/* Action buttons section */}
-        <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4">
-          <div className="flex flex-col gap-3">
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3 mt-2">
+          <div className="flex flex-col gap-2">
             {issue.status === 'resolved' || issue.status === 'completed' ? (
               <>
                 <div className="flex items-center justify-center p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-md">
@@ -724,7 +724,7 @@ function WorkAssignmentCard({
                   variant="outline" 
                   size="sm" 
                   onClick={onViewDetails}
-                  className="w-full min-h-[48px] px-4 py-3 text-sm font-medium"
+                  className="w-full min-h-[40px] px-4 py-2 text-sm font-medium"
                 >
                   <Search className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span>View Details</span>
@@ -740,7 +740,7 @@ function WorkAssignmentCard({
                   variant="outline" 
                   size="sm" 
                   onClick={onViewDetails}
-                  className="w-full min-h-[48px] px-4 py-3 text-sm font-medium"
+                  className="w-full min-h-[40px] px-4 py-2 text-sm font-medium"
                 >
                   <Search className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span>View Details</span>
@@ -752,7 +752,7 @@ function WorkAssignmentCard({
                   size="sm" 
                   onClick={onStartWork}
                   disabled={isStarting}
-                  className="w-full min-h-[48px] px-4 py-3 text-sm font-medium"
+                  className="w-full min-h-[40px] px-4 py-2 text-sm font-medium"
                 >
                   <PlayCircle className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span>{isStarting ? 'Starting...' : 'Start Work'}</span>
@@ -761,7 +761,7 @@ function WorkAssignmentCard({
                   variant="outline" 
                   size="sm" 
                   onClick={onViewDetails}
-                  className="w-full min-h-[48px] px-4 py-3 text-sm font-medium"
+                  className="w-full min-h-[40px] px-4 py-2 text-sm font-medium"
                 >
                   <Search className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span>View Details</span>
