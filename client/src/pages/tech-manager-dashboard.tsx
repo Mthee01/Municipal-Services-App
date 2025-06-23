@@ -19,15 +19,15 @@ export default function TechManagerDashboard() {
   const [nearestTechnicians, setNearestTechnicians] = useState<any[]>([]);
   const { toast } = useToast();
 
-  const { data: technicians, isLoading: techLoading } = useQuery({
+  const { data: technicians = [], isLoading: techLoading } = useQuery({
     queryKey: ["/api/technicians"],
   });
 
-  const { data: issues, isLoading: issuesLoading } = useQuery({
+  const { data: issues = [], isLoading: issuesLoading } = useQuery({
     queryKey: ["/api/issues"],
   });
 
-  const { data: techPerformance, isLoading: perfLoading } = useQuery({
+  const { data: techPerformance = [], isLoading: perfLoading } = useQuery({
     queryKey: ["/api/analytics/technicians"],
   });
 
@@ -116,16 +116,19 @@ export default function TechManagerDashboard() {
   }
 
   const departments = ["Water & Sanitation", "Electricity", "Roads & Transport", "Waste Management"];
+  const techniciansList = Array.isArray(technicians) ? technicians : [];
+  const issuesList = Array.isArray(issues) ? issues : [];
+
   const filteredTechnicians = selectedDepartment === "all" 
-    ? (technicians || [])
-    : (technicians || []).filter((tech: any) => tech.department === selectedDepartment);
+    ? techniciansList
+    : techniciansList.filter((tech: any) => tech.department === selectedDepartment);
 
-  const unassignedIssues = (issues || []).filter((issue: any) => !issue.assignedTo && issue.status === "open");
-  const assignedIssues = (issues || []).filter((issue: any) => issue.assignedTo && issue.status !== "resolved");
+  const unassignedIssues = issuesList.filter((issue: any) => !issue.assignedTo && issue.status === "open");
+  const assignedIssues = issuesList.filter((issue: any) => issue.assignedTo && issue.status !== "resolved");
 
-  const availableTechs = (technicians || []).filter((tech: any) => tech.status === "available").length;
-  const onJobTechs = (technicians || []).filter((tech: any) => tech.status === "on_job").length;
-  const avgPerformance = (technicians || []).reduce((acc: number, tech: any) => acc + (tech.performanceRating || 0), 0) / Math.max((technicians || []).length, 1);
+  const availableTechs = techniciansList.filter((tech: any) => tech.status === "available").length;
+  const onJobTechs = techniciansList.filter((tech: any) => tech.status === "on_job").length;
+  const avgPerformance = techniciansList.reduce((acc: number, tech: any) => acc + (tech.performanceRating || 0), 0) / Math.max(techniciansList.length, 1);
 
   const handleAssignTechnician = (technicianId: number) => {
     if (selectedIssue) {
@@ -167,21 +170,8 @@ export default function TechManagerDashboard() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Technical Manager Dashboard</h1>
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">Technician allocation and performance management</p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Select department" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Departments</SelectItem>
-              {departments.map((dept) => (
-                <SelectItem key={dept} value={dept}>
-                  {dept}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 justify-center">
+        <div className="flex items-center">
+          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
             <Wrench className="w-4 h-4 mr-1" />
             Technical View
           </Badge>
@@ -282,7 +272,7 @@ export default function TechManagerDashboard() {
                           <h4 className="font-semibold text-sm mb-1 truncate">{issue.title}</h4>
                           <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">{issue.category.replace('_', ' ')}</p>
                           <p className="text-xs text-gray-500 mb-2">{issue.location} • {issue.ward}</p>
-                          <Badge variant="outline" size="sm" className={getPriorityColor(issue.priority)}>
+                          <Badge variant="outline" className={getPriorityColor(issue.priority)}>
                             {issue.priority}
                           </Badge>
                         </div>
@@ -417,7 +407,7 @@ export default function TechManagerDashboard() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={techPerformance?.slice(0, 10)}>
+                <BarChart data={(techPerformance as any[])?.slice(0, 10) || []}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
                   <YAxis />

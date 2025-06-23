@@ -81,9 +81,6 @@ export default function OfficialDashboard() {
 
   // State
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterPriority, setFilterPriority] = useState("all");
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [selectedTechnician, setSelectedTechnician] = useState("");
@@ -132,16 +129,11 @@ export default function OfficialDashboard() {
   // Filtered issues
   const filteredIssues = useMemo(() => {
     return issues.filter((issue: Issue) => {
-      const matchesSearch = issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          issue.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          issue.location.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = filterCategory === "all" || issue.category === filterCategory;
-      const matchesStatus = filterStatus === "all" || issue.status === filterStatus;
-      const matchesPriority = filterPriority === "all" || issue.priority === filterPriority;
-      
-      return matchesSearch && matchesCategory && matchesStatus && matchesPriority;
+      return issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             issue.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             issue.location.toLowerCase().includes(searchTerm.toLowerCase());
     });
-  }, [issues, searchTerm, filterCategory, filterStatus, filterPriority]);
+  }, [issues, searchTerm]);
 
   // Handle assign technician
   const handleAssignTechnician = (issue: Issue) => {
@@ -374,45 +366,14 @@ export default function OfficialDashboard() {
               </div>
             </div>
             
-            <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
-              <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="water_sanitation">Water & Sanitation</SelectItem>
-                  <SelectItem value="electricity">Electricity</SelectItem>
-                  <SelectItem value="roads_transport">Roads & Transport</SelectItem>
-                  <SelectItem value="waste_management">Waste Management</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-full sm:w-32">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="assigned">Assigned</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={filterPriority} onValueChange={setFilterPriority}>
-                <SelectTrigger className="w-full sm:w-32">
-                  <SelectValue placeholder="Priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priority</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center">
+              <Button
+                onClick={handleExportReport}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <FileDown className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
             </div>
           </div>
         </div>

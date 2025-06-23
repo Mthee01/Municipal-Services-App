@@ -119,24 +119,10 @@ export default function WardCouncillorDashboard() {
             </p>
           </div>
           
-          {/* Mobile-friendly controls */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-            <Select value={selectedWard} onValueChange={setSelectedWard}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Select ward" />
-              </SelectTrigger>
-              <SelectContent>
-                {wards?.map((ward: any) => (
-                  <SelectItem key={ward.id} value={ward.wardNumber}>
-                    {ward.wardNumber} - {ward.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 self-start sm:self-auto">
-              <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-              <span className="text-xs sm:text-sm">Ward Level</span>
+          <div className="flex items-center">
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              <MapPin className="w-4 h-4 mr-1" />
+              Ward Level
             </Badge>
           </div>
         </div>
