@@ -393,12 +393,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let technicians = await storage.getTechniciansByStatus("available");
       
+      // Prioritize technicians from the requested department, but include others if needed
+      let departmentTechnicians: any[] = [];
+      let otherTechnicians: any[] = [];
+      
       if (department) {
-        technicians = technicians.filter(tech => tech.department === department);
+        departmentTechnicians = technicians.filter(tech => tech.department === department);
+        otherTechnicians = technicians.filter(tech => tech.department !== department);
+      } else {
+        departmentTechnicians = technicians;
       }
 
-      // Calculate distances and sort by nearest
-      const techniciansWithDistance = technicians
+      // Calculate distances for department technicians first
+      const departmentTechsWithDistance = departmentTechnicians
         .filter(tech => tech.latitude && tech.longitude)
         .map(tech => {
           const distance = calculateDistance(
@@ -407,11 +414,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
             parseFloat(tech.latitude!),
             parseFloat(tech.longitude!)
           );
-          return { ...tech, distance };
+          return { ...tech, distance, estimatedArrival: Math.ceil(distance * 2.5) };
         })
         .sort((a, b) => a.distance - b.distance);
 
-      res.json(techniciansWithDistance);
+      // Calculate distances for other technicians
+      const otherTechsWithDistance = otherTechnicians
+        .filter(tech => tech.latitude && tech.longitude)
+        .map(tech => {
+          const distance = calculateDistance(
+            parseFloat(latitude),
+            parseFloat(longitude),
+            parseFloat(tech.latitude!),
+            parseFloat(tech.longitude!)
+          );
+          return { ...tech, distance, estimatedArrival: Math.ceil(distance * 2.5) };
+        })
+        .sort((a, b) => a.distance - b.distance);
+
+      // Combine results - department technicians first, then others
+      const allTechniciansWithDistance = [...departmentTechsWithDistance, ...otherTechsWithDistance];
+      
+      // Return top 5 closest technicians
+      res.json(allTechniciansWithDistance.slice(0, 5));
     } catch (error) {
       res.status(500).json({ message: "Failed to find nearest technicians" });
     }
