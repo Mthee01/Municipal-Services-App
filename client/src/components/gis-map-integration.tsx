@@ -3,13 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Layers, ZoomIn, ZoomOut, Navigation, Filter } from "lucide-react";
+import { MapPin, Layers, ZoomIn, ZoomOut, Navigation, Filter, RefreshCw, Users, ChevronDown, ChevronUp } from "lucide-react";
 import type { Issue } from "@shared/schema";
 
 interface GISMapProps {
   issues: Issue[];
+  technicians?: any[];
+  wards?: any[];
   onIssueSelect?: (issue: Issue) => void;
+  onTechnicianSelect?: (technician: any) => void;
   height?: string;
+  showFilters?: boolean;
+  showLegend?: boolean;
 }
 
 interface MapLayer {
@@ -25,7 +30,16 @@ interface GeoLocation {
   address: string;
 }
 
-export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: GISMapProps) {
+export function GISMapIntegration({ 
+  issues, 
+  technicians = [], 
+  wards = [], 
+  onIssueSelect, 
+  onTechnicianSelect,
+  height = "500px",
+  showFilters = false,
+  showLegend = false 
+}: GISMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [selectedLayer, setSelectedLayer] = useState<string>("all");
   const [zoomLevel, setZoomLevel] = useState(12);
@@ -35,6 +49,7 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
     address: "Johannesburg, South Africa"
   });
   
+  const [layersExpanded, setLayersExpanded] = useState(false);
   const [mapLayers, setMapLayers] = useState<MapLayer[]>([
     { id: "water_sanitation", name: "Water & Sanitation", visible: true, color: "#3B82F6" },
     { id: "electricity", name: "Electricity", visible: true, color: "#EAB308" },
@@ -66,12 +81,26 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
     ? issuesWithCoordinates 
     : issuesWithCoordinates.filter(issue => issue.category === selectedLayer);
 
+  const techniciansWithCoordinates = technicians.map(tech => ({
+    ...tech,
+    coordinates: geocodeLocation(tech.currentLocation || "Johannesburg, South Africa")
+  }));
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "open": return "#EF4444";
       case "in_progress": return "#F59E0B";
       case "resolved": return "#10B981";
       default: return "#6B7280";
+    }
+  };
+
+  const getTechnicianStatusColor = (status: string) => {
+    switch (status) {
+      case "available": return "#10B981";
+      case "busy": return "#F59E0B";
+      case "offline": return "#6B7280";
+      default: return "#8B5CF6";
     }
   };
 
@@ -96,67 +125,103 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
   return (
     <Card className="w-full">
       <CardHeader>
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <CardTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
-            Municipal Services GIS Map
+            <span className="text-base sm:text-lg">Municipal Services GIS Map</span>
           </CardTitle>
-          <div className="flex items-center gap-2">
-            <Select value={selectedLayer} onValueChange={setSelectedLayer}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Select layer" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {mapLayers.map(layer => (
-                  <SelectItem key={layer.id} value={layer.id}>
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: layer.color }}
-                      />
-                      {layer.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          
+          {/* Mobile-responsive filter controls */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            {showFilters && (
+              <Select value={selectedLayer} onValueChange={setSelectedLayer}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Select layer" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {mapLayers.map(layer => (
+                    <SelectItem key={layer.id} value={layer.id}>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: layer.color }}
+                        />
+                        {layer.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            
+            {/* Statistics summary for mobile */}
+            <div className="flex justify-between sm:justify-start gap-4 text-xs text-gray-600 sm:hidden">
+              <span>{filteredIssues.length} Issues</span>
+              <span>{techniciansWithCoordinates.length} Technicians</span>
+              <span>{wards.length} Wards</span>
+            </div>
           </div>
         </div>
       </CardHeader>
       
       <CardContent>
-        <div className="flex gap-4">
-          {/* Map Controls */}
-          <div className="flex flex-col gap-2">
-            <Button variant="outline" size="sm">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Mobile Controls - Horizontal on mobile */}
+          <div className="flex lg:flex-col gap-2 lg:w-auto w-full justify-center lg:justify-start">
+            <Button variant="outline" size="sm" onClick={() => setZoomLevel(prev => Math.min(prev + 1, 20))}>
               <ZoomIn className="h-4 w-4" />
+              <span className="ml-1 hidden sm:inline">Zoom In</span>
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setZoomLevel(prev => Math.max(prev - 1, 1))}>
               <ZoomOut className="h-4 w-4" />
+              <span className="ml-1 hidden sm:inline">Zoom Out</span>
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setCenterLocation({
+              lat: -26.2041,
+              lng: 28.0473,
+              address: "Johannesburg, South Africa"
+            })}>
               <Navigation className="h-4 w-4" />
+              <span className="ml-1 hidden sm:inline">Center</span>
             </Button>
             <Button variant="outline" size="sm">
-              <Layers className="h-4 w-4" />
+              <RefreshCw className="h-4 w-4" />
+              <span className="ml-1 hidden sm:inline">Refresh</span>
             </Button>
           </div>
 
           {/* Map Container */}
-          <div className="flex-1">
+          <div className="flex-1 min-h-0">
             <div 
               ref={mapRef}
-              className="w-full bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center relative"
-              style={{ height }}
+              className="w-full bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center relative touch-manipulation h-64 sm:h-80 lg:h-96"
             >
               {/* Simulated Map View */}
               <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-blue-100 rounded-lg">
-                {/* Simulated issue markers */}
+                {/* Ward boundaries (simulated) */}
+                {wards.map((ward: any, index) => (
+                  <div
+                    key={ward.id}
+                    className="absolute border-2 border-gray-400 border-dashed rounded-lg opacity-30"
+                    style={{
+                      left: `${10 + (index % 3) * 25}%`,
+                      top: `${10 + Math.floor(index / 3) * 25}%`,
+                      width: '20%',
+                      height: '20%'
+                    }}
+                  >
+                    <div className="text-xs font-medium text-gray-600 p-1">
+                      {ward.wardNumber}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Issue markers */}
                 {filteredIssues.slice(0, 10).map((issue, index) => (
                   <div
-                    key={issue.id}
-                    className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
+                    key={`issue-${issue.id}`}
+                    className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group"
                     style={{
                       left: `${20 + (index % 5) * 15}%`,
                       top: `${20 + Math.floor(index / 5) * 20}%`
@@ -168,10 +233,38 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
                       style={{ backgroundColor: getStatusColor(issue.status) }}
                     />
                     {/* Issue popup on hover */}
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 hover:opacity-100 transition-opacity bg-white p-2 rounded shadow-lg text-xs whitespace-nowrap z-10">
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white p-2 rounded shadow-lg text-xs whitespace-nowrap z-20 border">
                       <div className="font-medium">{issue.title}</div>
                       <div className="text-gray-600">{issue.location}</div>
-                      <div className="text-gray-500">{issue.status}</div>
+                      <div className="text-gray-500 capitalize">{issue.status}</div>
+                      <div className="text-blue-600">{issue.category}</div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Technician markers */}
+                {techniciansWithCoordinates.slice(0, 8).map((technician, index) => (
+                  <div
+                    key={`tech-${technician.id}`}
+                    className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group"
+                    style={{
+                      left: `${25 + (index % 4) * 18}%`,
+                      top: `${15 + Math.floor(index / 4) * 30}%`
+                    }}
+                    onClick={() => onTechnicianSelect?.(technician)}
+                  >
+                    <div 
+                      className="w-6 h-6 rounded-full border-2 border-white shadow-lg hover:scale-125 transition-transform flex items-center justify-center text-white text-xs font-bold"
+                      style={{ backgroundColor: getTechnicianStatusColor(technician.status) }}
+                    >
+                      T
+                    </div>
+                    {/* Technician popup on hover */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white p-2 rounded shadow-lg text-xs whitespace-nowrap z-20 border">
+                      <div className="font-medium">{technician.name}</div>
+                      <div className="text-gray-600">{technician.department}</div>
+                      <div className="text-gray-500 capitalize">{technician.status}</div>
+                      <div className="text-blue-600">{technician.currentLocation}</div>
                     </div>
                   </div>
                 ))}
@@ -190,52 +283,99 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
             </div>
 
             {/* Map Legend */}
-            <div className="mt-4 flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <span>Open Issues</span>
+            {showLegend && (
+              <div className="mt-4 space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <h5 className="font-medium text-sm">Issue Status</h5>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-red-500" />
+                        <span>Open Issues</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                        <span>In Progress</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-green-500" />
+                        <span>Resolved</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h5 className="font-medium text-sm">Technician Status</h5>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-xs">T</div>
+                        <span>Available</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-xs">T</div>
+                        <span>Busy</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-gray-500 flex items-center justify-center text-white font-bold text-xs">T</div>
+                        <span>Offline</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 pt-2 border-t">
+                  Click markers for details • Dashed lines show ward boundaries
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <span>In Progress</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span>Resolved</span>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Layer Controls */}
-          <div className="w-48 space-y-2">
-            <h4 className="font-medium text-sm flex items-center gap-2">
-              <Layers className="h-4 w-4" />
-              Map Layers
-            </h4>
-            {mapLayers.map(layer => (
-              <div 
-                key={layer.id}
-                className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer"
-                onClick={() => toggleLayer(layer.id)}
-              >
-                <input 
-                  type="checkbox" 
-                  checked={layer.visible}
-                  onChange={() => toggleLayer(layer.id)}
-                  className="rounded"
-                />
+          {/* Layer Controls - Responsive */}
+          <div className="lg:w-48 w-full space-y-2">
+            <Button
+              variant="ghost"
+              className="w-full justify-between p-2 h-auto lg:hidden"
+              onClick={() => setLayersExpanded(!layersExpanded)}
+            >
+              <span className="font-medium text-sm flex items-center gap-2">
+                <Layers className="h-4 w-4" />
+                Map Layers
+              </span>
+              {layersExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+            
+            <div className="hidden lg:block">
+              <h4 className="font-medium text-sm flex items-center gap-2">
+                <Layers className="h-4 w-4" />
+                Map Layers
+              </h4>
+            </div>
+            
+            {/* Mobile: Collapsible, Desktop: Always visible */}
+            <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:space-y-0 ${!layersExpanded && 'hidden lg:grid'}`}>
+              {mapLayers.map(layer => (
                 <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: layer.color }}
-                />
-                <span className="text-sm">{layer.name}</span>
-              </div>
-            ))}
+                  key={layer.id}
+                  className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer text-xs sm:text-sm"
+                  onClick={() => toggleLayer(layer.id)}
+                >
+                  <input 
+                    type="checkbox" 
+                    checked={layer.visible}
+                    onChange={() => toggleLayer(layer.id)}
+                    className="rounded flex-shrink-0"
+                  />
+                  <div 
+                    className="w-3 h-3 rounded-full flex-shrink-0" 
+                    style={{ backgroundColor: layer.color }}
+                  />
+                  <span className="truncate">{layer.name}</span>
+                </div>
+              ))}
+            </div>
             
             <div className="border-t pt-2 mt-4">
-              <div className="text-sm text-gray-600">
+              <div className="text-xs sm:text-sm text-gray-600 space-y-1">
                 <div>Zoom: {zoomLevel}x</div>
-                <div>Center: {centerLocation.address}</div>
+                <div className="truncate">Center: {centerLocation.address}</div>
                 <div className="mt-2">
                   <Badge variant="outline" className="text-xs">
                     Real-time Updates

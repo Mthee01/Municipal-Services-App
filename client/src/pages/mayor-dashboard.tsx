@@ -23,7 +23,11 @@ export default function MayorDashboard() {
     queryKey: ["/api/wards"],
   });
 
-  if (statsLoading || techLoading || wardsLoading) {
+  const { data: issues, isLoading: issuesLoading } = useQuery({
+    queryKey: ["/api/issues"],
+  });
+
+  if (statsLoading || techLoading || wardsLoading || issuesLoading) {
     return (
       <div className="container mx-auto p-6">
         <div className="animate-pulse space-y-4">
@@ -347,12 +351,30 @@ export default function MayorDashboard() {
         </TabsContent>
 
         <TabsContent value="gis-map" className="space-y-4">
-          {/* Get issues data for GIS mapping */}
-          <GISMapIntegration 
-            issues={[]} 
-            onIssueSelect={(issue) => console.log('Selected issue:', issue)}
-            height="600px"
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle>GIS Mapping & Issue Visualization</CardTitle>
+              <CardDescription>Interactive map showing issue locations and technician routes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <GISMapIntegration 
+                issues={issues || []} 
+                technicians={technicianPerformance || []}
+                wards={wards || []}
+                onIssueSelect={(issue) => {
+                  console.log('Selected issue:', issue);
+                  // Could add modal or sidebar with issue details
+                }}
+                onTechnicianSelect={(technician) => {
+                  console.log('Selected technician:', technician);
+                  // Could show technician route and current assignments
+                }}
+                height="500px"
+                showFilters={true}
+                showLegend={true}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
