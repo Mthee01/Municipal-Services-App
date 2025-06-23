@@ -80,14 +80,18 @@ export default function TechManagerDashboard() {
         department,
       });
 
-      setNearestTechnicians(response);
+      const technicianData = await response.json();
+      console.log("Nearest technicians data:", technicianData);
+      setNearestTechnicians(Array.isArray(technicianData) ? technicianData : []);
       setSelectedIssue(issue);
     } catch (error) {
+      console.error("Error finding technicians:", error);
       toast({
         title: "Error finding technicians",
         description: "Could not locate nearest available technicians",
         variant: "destructive",
       });
+      setNearestTechnicians([]);
     }
   };
 
