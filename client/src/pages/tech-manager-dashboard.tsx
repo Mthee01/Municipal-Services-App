@@ -160,15 +160,15 @@ export default function TechManagerDashboard() {
         />
       </div>
 
-    <div className="relative z-10 container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Technical Manager Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-300">Technician allocation and performance management</p>
+    <div className="relative z-10 container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Technical Manager Dashboard</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">Technician allocation and performance management</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Select department" />
             </SelectTrigger>
             <SelectContent>
@@ -180,7 +180,7 @@ export default function TechManagerDashboard() {
               ))}
             </SelectContent>
           </Select>
-          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 justify-center">
             <Wrench className="w-4 h-4 mr-1" />
             Technical View
           </Badge>
@@ -188,7 +188,7 @@ export default function TechManagerDashboard() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Available Technicians</CardTitle>
@@ -243,15 +243,27 @@ export default function TechManagerDashboard() {
       </div>
 
       <Tabs defaultValue="assignments" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="assignments">Issue Assignments</TabsTrigger>
-          <TabsTrigger value="technicians">Technician Management</TabsTrigger>
-          <TabsTrigger value="performance">Performance Analytics</TabsTrigger>
-          <TabsTrigger value="departments">Department Overview</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+          <TabsTrigger value="assignments" className="text-xs sm:text-sm p-2 sm:p-3">
+            <span className="hidden sm:inline">Issue Assignments</span>
+            <span className="sm:hidden">Issues</span>
+          </TabsTrigger>
+          <TabsTrigger value="technicians" className="text-xs sm:text-sm p-2 sm:p-3">
+            <span className="hidden sm:inline">Technician Management</span>
+            <span className="sm:hidden">Technicians</span>
+          </TabsTrigger>
+          <TabsTrigger value="performance" className="text-xs sm:text-sm p-2 sm:p-3">
+            <span className="hidden sm:inline">Performance Analytics</span>
+            <span className="sm:hidden">Analytics</span>
+          </TabsTrigger>
+          <TabsTrigger value="departments" className="text-xs sm:text-sm p-2 sm:p-3">
+            <span className="hidden sm:inline">Department Overview</span>
+            <span className="sm:hidden">Departments</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="assignments" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -333,7 +345,7 @@ export default function TechManagerDashboard() {
         </TabsContent>
 
         <TabsContent value="technicians" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {filteredTechnicians?.map((tech: any) => (
               <Card key={tech.id}>
                 <CardHeader>
@@ -426,26 +438,26 @@ export default function TechManagerDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="text-center p-4 border rounded-lg">
-                  <Users className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-                  <p className="text-2xl font-bold">{departmentStats?.totalTechnicians || 0}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Total Technicians</p>
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="text-center p-3 sm:p-4 border rounded-lg">
+                  <Users className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-blue-600" />
+                  <p className="text-lg sm:text-2xl font-bold">{departmentStats?.totalTechnicians || 0}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Total Technicians</p>
                 </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-600" />
-                  <p className="text-2xl font-bold text-green-600">{departmentStats?.availableTechnicians || 0}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Available</p>
+                <div className="text-center p-3 sm:p-4 border rounded-lg">
+                  <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-green-600" />
+                  <p className="text-lg sm:text-2xl font-bold text-green-600">{departmentStats?.availableTechnicians || 0}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Available</p>
                 </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <Clock className="w-8 h-8 mx-auto mb-2 text-orange-600" />
-                  <p className="text-2xl font-bold text-orange-600">{departmentStats?.onJobTechnicians || 0}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">On Job</p>
+                <div className="text-center p-3 sm:p-4 border rounded-lg">
+                  <Clock className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-orange-600" />
+                  <p className="text-lg sm:text-2xl font-bold text-orange-600">{departmentStats?.onJobTechnicians || 0}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">On Job</p>
                 </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <Star className="w-8 h-8 mx-auto mb-2 text-purple-600" />
-                  <p className="text-2xl font-bold text-purple-600">{departmentStats?.avgPerformance?.toFixed(1) || 0}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Avg Performance</p>
+                <div className="text-center p-3 sm:p-4 border rounded-lg">
+                  <Star className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-purple-600" />
+                  <p className="text-lg sm:text-2xl font-bold text-purple-600">{departmentStats?.avgPerformance?.toFixed(1) || 0}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Avg Performance</p>
                 </div>
               </div>
             </CardContent>
@@ -455,7 +467,7 @@ export default function TechManagerDashboard() {
 
       {/* Assignment Dialog */}
       <Dialog open={!!selectedIssue} onOpenChange={() => setSelectedIssue(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl mx-3 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Assign Technician</DialogTitle>
             <DialogDescription>
