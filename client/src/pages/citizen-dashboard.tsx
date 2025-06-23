@@ -14,6 +14,7 @@ import { RealTimeNotifications } from "@/components/real-time-notifications";
 import { GISMapIntegration } from "@/components/gis-map-integration";
 import Chatbot from "@/components/chatbot";
 import WhatsAppIntegration from "@/components/whatsapp-integration";
+import CitizenWhatsAppCenter from "@/components/citizen-whatsapp-center";
 import type { Issue } from "@shared/schema";
 
 const categories = [
@@ -188,7 +189,7 @@ export default function CitizenDashboard() {
       <section className="relative z-10 py-12">
         <div className="max-w-6xl mx-auto px-4">
           <Tabs defaultValue="my-issues" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="my-issues">My Issues</TabsTrigger>
               <TabsTrigger value="community">Community</TabsTrigger>
               <TabsTrigger value="map-view">
@@ -198,6 +199,7 @@ export default function CitizenDashboard() {
               <TabsTrigger value="payments">Payments</TabsTrigger>
               <TabsTrigger value="vouchers">Vouchers</TabsTrigger>
               <TabsTrigger value="communication">Communication</TabsTrigger>
+              <TabsTrigger value="whatsapp">WhatsApp Center</TabsTrigger>
             </TabsList>
 
             <TabsContent value="my-issues" className="space-y-6">
@@ -322,6 +324,15 @@ export default function CitizenDashboard() {
                   <RealTimeNotifications userRole="citizen" />
                 </div>
               </div>
+            </TabsContent>
+
+            {/* WhatsApp Center Tab */}
+            <TabsContent value="whatsapp" className="space-y-6">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">WhatsApp Communication Center</h2>
+                <p className="text-gray-600">Get immediate assistance from our call center agents via WhatsApp</p>
+              </div>
+              <CitizenWhatsAppCenter userId={1} />
             </TabsContent>
           </Tabs>
         </div>

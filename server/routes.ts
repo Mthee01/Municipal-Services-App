@@ -1098,6 +1098,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get conversations for a specific phone number (citizen view)
+  app.get('/api/whatsapp/conversations', async (req, res) => {
+    try {
+      const phoneNumber = req.query.phoneNumber as string;
+      if (!phoneNumber) {
+        return res.status(400).json({ error: 'Phone number is required' });
+      }
+      const conversations = await storage.getWhatsappConversationsByPhone(phoneNumber);
+      res.json(conversations);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get messages for a specific conversation
+  app.get('/api/whatsapp/messages', async (req, res) => {
+    try {
+      const conversationId = parseInt(req.query.conversationId as string);
+      if (!conversationId) {
+        return res.status(400).json({ error: 'Conversation ID is required' });
+      }
+      const messages = await storage.getWhatsappMessagesByConversation(conversationId);
+      res.json(messages);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Start a new conversation (citizen initiated)
+  app.post('/api/whatsapp/start-conversation', async (req, res) => {
+    try {
+      const { citizenId, phoneNumber, subject, issueCategory, agentId } = req.body;
+      
+      const conversation = await storage.createWhatsappConversation({
+        citizenId,
+        phoneNumber,
+        subject,
+        status: 'open',
+        agentId: agentId || null,
+        issueId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastMessageAt: new Date(),
+        closedAt: null
+      });
+
+      // Send initial message from citizen
+      await storage.createWhatsappMessage({
+        phoneNumber,
+        message: `Hi, I need help with ${issueCategory}: ${subject}`,
+        direction: 'inbound',
+        timestamp: new Date(),
+        agentId: null,
+        status: 'sent',
+        messageType: 'text',
+        userId: citizenId,
+        issueId: null,
+        messageId: `msg-${Date.now()}`,
+        webhookData: null,
+        templateName: null
+      });
+
+      res.json(conversation);
+    } catch (error: any) {
+      console.error('Error starting conversation:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Send message in existing conversation
+  app.post('/api/whatsapp/send-message', async (req, res) => {
+    try {
+      const { phoneNumber, message, conversationId, direction, userId, messageType = 'text' } = req.body;
+      
+      const newMessage = await storage.createWhatsappMessage({
+        phoneNumber,
+        message,
+        direction,
+        timestamp: new Date(),
+        agentId: direction === 'outbound' ? userId : null,
+        status: 'sent',
+        messageType,
+        userId: direction === 'inbound' ? userId : null,
+        issueId: null,
+        messageId: `msg-${Date.now()}`,
+        webhookData: null,
+        templateName: null
+      });
+
+      // Update conversation last message time
+      if (conversationId) {
+        await storage.updateWhatsappConversation(conversationId, {
+          lastMessageAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
+
+      res.json({ success: true, message: newMessage });
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Export report via email
   app.post("/api/export-report", async (req, res) => {
     try {

@@ -1733,10 +1733,28 @@ export class MemStorage implements IStorage {
     return newConversation;
   }
 
-  async getWhatsappMessagesByConversation(citizenId: number): Promise<WhatsappMessage[]> {
+  async getWhatsappMessagesByConversation(conversationId: number): Promise<WhatsappMessage[]> {
+    // For conversation-based messages, we need to filter by phone number and conversation timeframe
+    const conversation = this.whatsappConversationsStore.get(conversationId);
+    if (!conversation) return [];
+    
     return Array.from(this.whatsappMessagesStore.values())
-      .filter(msg => msg.userId === citizenId)
+      .filter(msg => msg.phoneNumber === conversation.phoneNumber)
       .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  }
+
+  async getWhatsappConversationsByPhone(phoneNumber: string): Promise<WhatsappConversation[]> {
+    return Array.from(this.whatsappConversationsStore.values())
+      .filter(conv => conv.phoneNumber === phoneNumber)
+      .sort((a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime());
+  }
+
+  async updateWhatsappConversation(conversationId: number, updates: Partial<WhatsappConversation>): Promise<void> {
+    const conversation = this.whatsappConversationsStore.get(conversationId);
+    if (conversation) {
+      Object.assign(conversation, updates);
+      conversation.updatedAt = new Date();
+    }
   }
 
   async updateWhatsappConversationStatus(conversationId: number, status: string, agentId?: number): Promise<void> {
