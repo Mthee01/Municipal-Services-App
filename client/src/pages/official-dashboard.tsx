@@ -1,268 +1,373 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { TriangleAlert, Wrench, CheckCircle, Clock, Users, Truck, Plus, FileDown, X } from "lucide-react";
-import { formatRelativeTime, getStatusColor, getPriorityColor } from "@/lib/utils";
-import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Issue, Team, Technician } from "@shared/schema";
-import type { Statistics } from "@/lib/types";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Wrench,
+  DropletIcon as Water,
+  Zap,
+  Car,
+  Trash2,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  MapPin,
+  Search,
+  Filter,
+  Plus,
+  FileDown,
+  Truck,
+  TriangleAlert
+} from "lucide-react";
+import type { Issue, Technician, Team } from "@shared/schema";
+
+// Helper functions
+const formatRelativeTime = (date: Date) => {
+  const now = new Date();
+  const diff = now.getTime() - new Date(date).getTime();
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(hours / 24);
+  
+  if (days > 0) return `${days}d ago`;
+  if (hours > 0) return `${hours}h ago`;
+  return 'Just now';
+};
+
+const getPriorityColor = (priority: string) => {
+  switch (priority) {
+    case 'critical': return 'bg-red-100 text-red-800';
+    case 'high': return 'bg-orange-100 text-orange-800';
+    case 'medium': return 'bg-yellow-100 text-yellow-800';
+    case 'low': return 'bg-green-100 text-green-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'open': return 'bg-blue-100 text-blue-800';
+    case 'assigned': return 'bg-yellow-100 text-yellow-800';
+    case 'in_progress': return 'bg-orange-100 text-orange-800';
+    case 'resolved': return 'bg-green-100 text-green-800';
+    case 'closed': return 'bg-gray-100 text-gray-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
+
+const getCategoryIcon = (category: string) => {
+  switch (category) {
+    case 'water_sanitation': return <Water className="h-4 w-4 text-blue-600" />;
+    case 'electricity': return <Zap className="h-4 w-4 text-yellow-600" />;
+    case 'roads_transport': return <Car className="h-4 w-4 text-gray-600" />;
+    case 'waste_management': return <Trash2 className="h-4 w-4 text-green-600" />;
+    default: return <AlertTriangle className="h-4 w-4 text-orange-600" />;
+  }
+};
 
 export default function OfficialDashboard() {
-  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
-  const [wardFilter, setWardFilter] = useState<string>("all");
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-  const [selectedTechnician, setSelectedTechnician] = useState<string>("");
-  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: stats, isLoading: statsLoading } = useQuery<Statistics>({
-    queryKey: ["/api/stats"],
+  // State
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterPriority, setFilterPriority] = useState("");
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [selectedTechnician, setSelectedTechnician] = useState("");
+
+  // Queries
+  const { data: issues = [], isLoading: issuesLoading } = useQuery({
+    queryKey: ["/api/issues"]
   });
 
-  const { data: issues = [], isLoading: issuesLoading } = useQuery<Issue[]>({
-    queryKey: ["/api/issues"],
+  const { data: technicians = [], isLoading: techniciansLoading } = useQuery({
+    queryKey: ["/api/technicians"]
   });
 
-  const { data: teams = [], isLoading: teamsLoading } = useQuery<Team[]>({
-    queryKey: ["/api/teams"],
+  const { data: teams = [], isLoading: teamsLoading } = useQuery({
+    queryKey: ["/api/teams"]
   });
 
-  const { data: technicians = [] } = useQuery<Technician[]>({
-    queryKey: ["/api/technicians"],
-  });
-
-  const handleExportReport = () => {
-    try {
-      // Prepare CSV data
-      const csvHeaders = [
-        "Issue ID",
-        "Title", 
-        "Description",
-        "Category",
-        "Priority",
-        "Status",
-        "Location",
-        "Ward",
-        "Reporter Name",
-        "Reporter Phone",
-        "Assigned To",
-        "Created Date",
-        "Updated Date"
-      ];
-
-      const csvData = issues.map(issue => [
-        issue.id,
-        `"${issue.title}"`,
-        `"${issue.description}"`,
-        issue.category,
-        issue.priority,
-        issue.status,
-        `"${issue.location}"`,
-        issue.ward || "N/A",
-        issue.reporterName || "N/A",
-        issue.reporterPhone || "N/A",
-        issue.assignedTo || "Unassigned",
-        new Date(issue.createdAt).toLocaleDateString(),
-        new Date(issue.updatedAt).toLocaleDateString()
-      ]);
-
-      // Create CSV content
-      const csvContent = [
-        csvHeaders.join(","),
-        ...csvData.map(row => row.join(","))
-      ].join("\n");
-
-      // Create and download file
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      
-      link.setAttribute("href", url);
-      link.setAttribute("download", `municipality-issues-report-${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = "hidden";
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast({
-        title: "Export Successful",
-        description: "Issues report has been downloaded as CSV file.",
-      });
-    } catch (error) {
-      toast({
-        title: "Export Failed",
-        description: "Failed to generate report. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
+  // Mutations
   const assignTechnicianMutation = useMutation({
-    mutationFn: async ({ technicianId, issueId }: { technicianId: number; issueId: number }) => {
-      await apiRequest("POST", `/api/technicians/${technicianId}/assign/${issueId}`);
+    mutationFn: async (data: { issueId: number; technicianId: number }) => {
+      return apiRequest("POST", "/api/issues/assign", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
       queryClient.invalidateQueries({ queryKey: ["/api/technicians"] });
-      toast({
-        title: "Success",
-        description: "Technician assigned successfully",
-      });
       setShowAssignModal(false);
       setSelectedIssue(null);
       setSelectedTechnician("");
-    },
-    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to assign technician",
-        variant: "destructive",
+        title: "Success",
+        description: "Technician assigned successfully!",
       });
     },
-  });
-
-  const filteredIssues = issues.filter(issue => {
-    if (departmentFilter !== "all") {
-      const departmentMapping: Record<string, string[]> = {
-        "water_sanitation": ["water_sanitation"],
-        "electricity": ["electricity"],
-        "roads_transport": ["roads_transport"],
-        "waste_management": ["waste_management"],
-      };
-      if (!departmentMapping[departmentFilter]?.includes(issue.category)) return false;
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to assign technician",
+        variant: "destructive",
+      });
     }
-    if (wardFilter !== "all" && issue.ward !== wardFilter) return false;
-    return true;
   });
 
+  // Filtered issues
+  const filteredIssues = useMemo(() => {
+    return issues.filter((issue: Issue) => {
+      const matchesSearch = issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          issue.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          issue.location.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = !filterCategory || issue.category === filterCategory;
+      const matchesStatus = !filterStatus || issue.status === filterStatus;
+      const matchesPriority = !filterPriority || issue.priority === filterPriority;
+      
+      return matchesSearch && matchesCategory && matchesStatus && matchesPriority;
+    });
+  }, [issues, searchTerm, filterCategory, filterStatus, filterPriority]);
+
+  // Handle assign technician
   const handleAssignTechnician = (issue: Issue) => {
-    console.log("Assigning technician for issue:", issue);
     setSelectedIssue(issue);
     setShowAssignModal(true);
   };
 
   const handleConfirmAssignment = () => {
-    if (!selectedIssue || !selectedTechnician) return;
-    
-    const technicianId = parseInt(selectedTechnician);
-    assignTechnicianMutation.mutate({
-      technicianId,
-      issueId: selectedIssue.id,
+    if (selectedIssue && selectedTechnician) {
+      assignTechnicianMutation.mutate({
+        issueId: selectedIssue.id,
+        technicianId: parseInt(selectedTechnician)
+      });
+    }
+  };
+
+  // Handle export report
+  const handleExportReport = () => {
+    const csvContent = [
+      ['ID', 'Title', 'Category', 'Priority', 'Status', 'Location', 'Ward', 'Assigned To', 'Created', 'Reporter'],
+      ...filteredIssues.map(issue => [
+        issue.id,
+        `"${issue.title}"`,
+        issue.category.replace('_', ' '),
+        issue.priority,
+        issue.status.replace('_', ' '),
+        `"${issue.location}"`,
+        issue.ward || 'N/A',
+        issue.assignedTo || 'Unassigned',
+        new Date(issue.createdAt).toLocaleDateString(),
+        issue.reporterName || 'Anonymous'
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `issues-report-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Export Complete",
+      description: "Issues report has been downloaded successfully.",
     });
   };
 
-  const getAvailableTechnicians = () => {
-    if (!selectedIssue) return technicians;
-    
-    // Filter technicians by department matching the issue category
-    const departmentMapping: Record<string, string> = {
-      "water_sanitation": "Water & Sanitation",
-      "electricity": "Electricity",
-      "roads_transport": "Roads & Transport",
-      "waste_management": "Waste Management",
-      "safety_security": "Safety & Security",
+  // Statistics calculations
+  const stats = useMemo(() => {
+    const totalIssues = issues.length;
+    const openIssues = issues.filter((issue: Issue) => issue.status === 'open').length;
+    const assignedIssues = issues.filter((issue: Issue) => issue.status === 'assigned').length;
+    const resolvedIssues = issues.filter((issue: Issue) => issue.status === 'resolved').length;
+    const criticalIssues = issues.filter((issue: Issue) => issue.priority === 'critical').length;
+
+    return {
+      totalIssues,
+      openIssues,
+      assignedIssues,
+      resolvedIssues,
+      criticalIssues,
+      resolutionRate: totalIssues > 0 ? Math.round((resolvedIssues / totalIssues) * 100) : 0
     };
-    
-    const requiredDepartment = departmentMapping[selectedIssue.category];
-    return technicians.filter(tech => 
-      tech.department === requiredDepartment && tech.status === "available"
-    );
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "open":
-        return <TriangleAlert className="h-5 w-5 text-red-500" />;
-      case "in_progress":
-        return <Wrench className="h-5 w-5 text-yellow-500" />;
-      case "resolved":
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      default:
-        return <Clock className="h-5 w-5 text-gray-500" />;
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case "water_sanitation":
-        return "💧";
-      case "electricity":
-        return "⚡";
-      case "roads_transport":
-        return "🚗";
-      case "waste_management":
-        return "🗑️";
-      case "safety_security":
-        return "🛡️";
-      case "housing":
-        return "🏠";
-      default:
-        return "❓";
-    }
-  };
+  }, [issues]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative overflow-hidden">
-      {/* Background geometric patterns */}
-      <div className="absolute inset-0 z-0">
-        {/* Animated geometric shapes */}
-        <div className="absolute top-20 left-10 w-64 h-64 bg-gradient-to-br from-blue-400/40 to-purple-400/40 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-green-400/40 to-blue-400/40 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
-        <div className="absolute -bottom-32 left-20 w-80 h-80 bg-gradient-to-br from-purple-400/40 to-pink-400/40 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
-        <div className="absolute top-60 left-1/2 w-96 h-96 bg-gradient-to-br from-orange-400/30 to-red-400/30 rounded-full mix-blend-multiply filter blur-2xl animate-pulse delay-3000"></div>
-        <div className="absolute bottom-40 right-10 w-60 h-60 bg-gradient-to-br from-cyan-400/35 to-teal-400/35 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-4000"></div>
-        
-        {/* Additional decorative patterns */}
-        <div 
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `
-              radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
-              radial-gradient(circle at 75% 75%, rgba(34, 197, 94, 0.3) 0%, transparent 50%),
-              radial-gradient(circle at 50% 10%, rgba(168, 85, 247, 0.2) 0%, transparent 50%)
-            `
-          }}
-        />
-      </div>
-      {/* Dashboard Header */}
-      <section className="relative z-10 bg-white/80 backdrop-blur-sm border-b border-gray-200 py-6">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">ADA Smart Munic Dashboard</h2>
-              <p className="text-gray-600">Call Centre Operations & Citizen Request Management</p>
+              <h1 className="text-3xl font-bold text-gray-900">Municipal Official Dashboard</h1>
+              <p className="text-gray-600 mt-1">Manage service requests and city operations</p>
             </div>
-            <div className="flex flex-wrap gap-4">
-              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="All Departments" />
+            <div className="text-right">
+              <p className="text-sm text-gray-500">Welcome back</p>
+              <p className="font-semibold text-gray-900">Municipal Official</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Statistics Overview */}
+      <section className="py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+            <Card className="bg-white">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Issues</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.totalIssues}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="h-6 w-6 text-blue-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Open Issues</p>
+                    <p className="text-2xl font-bold text-red-600">{stats.openIssues}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <Clock className="h-6 w-6 text-red-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Assigned</p>
+                    <p className="text-2xl font-bold text-yellow-600">{stats.assignedIssues}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <Users className="h-6 w-6 text-yellow-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Resolved</p>
+                    <p className="text-2xl font-bold text-green-600">{stats.resolvedIssues}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle className="h-6 w-6 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Critical</p>
+                    <p className="text-2xl font-bold text-red-600">{stats.criticalIssues}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <TriangleAlert className="h-6 w-6 text-red-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Resolution Rate</p>
+                    <p className="text-2xl font-bold text-green-600">{stats.resolutionRate}%</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <TrendingUp className="h-6 w-6 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Filters and Search */}
+      <section className="py-4 bg-white border-t border-b">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col space-y-4 lg:flex-row lg:space-y-0 lg:space-x-4 lg:items-center">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search issues by title, description, or location..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Departments</SelectItem>
+                  <SelectItem value="">All Categories</SelectItem>
                   <SelectItem value="water_sanitation">Water & Sanitation</SelectItem>
                   <SelectItem value="electricity">Electricity</SelectItem>
                   <SelectItem value="roads_transport">Roads & Transport</SelectItem>
                   <SelectItem value="waste_management">Waste Management</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={wardFilter} onValueChange={setWardFilter}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="All Wards" />
+
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-full sm:w-32">
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Wards</SelectItem>
-                  <SelectItem value="Ward 1">Ward 1</SelectItem>
-                  <SelectItem value="Ward 2">Ward 2</SelectItem>
-                  <SelectItem value="Ward 3">Ward 3</SelectItem>
+                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="assigned">Assigned</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filterPriority} onValueChange={setFilterPriority}>
+                <SelectTrigger className="w-full sm:w-32">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Priority</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -270,196 +375,13 @@ export default function OfficialDashboard() {
         </div>
       </section>
 
-      {/* Key Metrics */}
-      <section className="py-8 bg-gray-50">
+      {/* Recent Issues Table */}
+      <section className="py-8">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">Open Issues</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {statsLoading ? "..." : stats?.openIssues || 0}
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                    <TriangleAlert className="h-6 w-6 text-red-500" />
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <span className="text-sm text-red-600">Needs attention</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">In Progress</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {statsLoading ? "..." : stats?.inProgress || 0}
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                    <Wrench className="h-6 w-6 text-yellow-500" />
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <span className="text-sm text-yellow-600">Being worked on</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">Resolved Today</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {statsLoading ? "..." : stats?.resolvedToday || 0}
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckCircle className="h-6 w-6 text-green-500" />
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <span className="text-sm text-green-600">Great progress!</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">Avg Resolution</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {statsLoading ? "..." : `${stats?.avgResolution || 0} days`}
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Clock className="h-6 w-6 text-blue-500" />
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <span className="text-sm text-green-600">Improving</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Issue Management Table */}
           <Card>
             <CardHeader>
               <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
                 <CardTitle className="text-lg font-semibold text-gray-900">Recent Issues</CardTitle>
-                <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
-                  <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
-                    <a
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        console.log("Assign Technician link clicked");
-                        setShowAssignModal(true);
-                      }}
-                      className="inline-flex items-center bg-sa-green text-white hover:bg-green-700 text-sm px-3 py-2 rounded cursor-pointer transition-colors duration-200"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Assign Technician
-                    </a>
-                    <DialogContent className="sm:max-w-lg">
-                      <DialogHeader>
-                        <DialogTitle>Assign Technician to Issue</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">Select Issue</label>
-                          <Select 
-                            value={selectedIssue?.id.toString() || ""} 
-                            onValueChange={(value) => {
-                              const issue = filteredIssues.find(i => i.id.toString() === value);
-                              if (issue) setSelectedIssue(issue);
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Choose an issue to assign..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {filteredIssues.filter(issue => !issue.assignedTo).map((issue) => (
-                                <SelectItem key={issue.id} value={issue.id.toString()}>
-                                  <div className="flex flex-col items-start">
-                                    <span className="font-medium">{issue.title}</span>
-                                    <span className="text-xs text-gray-500">{issue.category.replace('_', ' ')} • Ward {issue.ward}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {selectedIssue && (
-                          <>
-                            <div className="bg-gray-50 p-3 rounded-lg">
-                              <h4 className="font-medium text-gray-900">{selectedIssue.title}</h4>
-                              <p className="text-sm text-gray-600">{selectedIssue.description}</p>
-                              <div className="flex items-center space-x-2 mt-2">
-                                <Badge variant="outline">{selectedIssue.category.replace('_', ' ')}</Badge>
-                                <Badge variant="outline">Ward {selectedIssue.ward}</Badge>
-                              </div>
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-gray-700">Select Technician</label>
-                              <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Choose a technician..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {getAvailableTechnicians().map((tech) => (
-                                    <SelectItem key={tech.id} value={tech.id.toString()}>
-                                      <div className="flex flex-col items-start">
-                                        <span className="font-medium">{tech.name}</span>
-                                        <span className="text-xs text-gray-500">{tech.department} • {(tech.skills || []).join(', ') || 'No skills listed'}</span>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </>
-                        )}
-                        
-                        <div className="flex justify-end space-x-2 pt-4">
-                          <Button variant="outline" onClick={() => {
-                            setShowAssignModal(false);
-                            setSelectedIssue(null);
-                            setSelectedTechnician("");
-                          }}>
-                            Cancel
-                          </Button>
-                          <Button 
-                            onClick={handleConfirmAssignment}
-                            disabled={!selectedIssue || !selectedTechnician || assignTechnicianMutation.isPending}
-                            className="bg-sa-green hover:bg-green-700"
-                          >
-                            {assignTechnicianMutation.isPending ? "Assigning..." : "Assign Technician"}
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                  <Button 
-                    variant="outline" 
-                    className="text-sm px-3 py-2"
-                    onClick={handleExportReport}
-                  >
-                    <FileDown className="mr-2 h-4 w-4" />
-                    Export Report
-                  </Button>
-                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -485,18 +407,13 @@ export default function OfficialDashboard() {
                       {filteredIssues.slice(0, 10).map((issue) => (
                         <TableRow key={issue.id} className="hover:bg-gray-50">
                           <TableCell>
-                            <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                <span className="text-lg">{getCategoryIcon(issue.category)}</span>
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">{issue.title}</div>
-                                <div className="text-sm text-gray-500">#{issue.id}</div>
-                              </div>
+                            <div className="flex flex-col">
+                              <span className="font-medium text-gray-900">{issue.title}</span>
+                              <span className="text-sm text-gray-600">{issue.location}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="capitalize">
-                            {issue.category.replace("_", " & ")}
+                          <TableCell>
+                            <span className="text-sm text-gray-700">{issue.category.replace('_', ' ')}</span>
                           </TableCell>
                           <TableCell>
                             <Badge className={getPriorityColor(issue.priority)}>
@@ -505,36 +422,36 @@ export default function OfficialDashboard() {
                           </TableCell>
                           <TableCell>
                             <Badge className={getStatusColor(issue.status)}>
-                              {issue.status.replace("_", " ")}
+                              {issue.status.replace('_', ' ')}
                             </Badge>
                           </TableCell>
-                          <TableCell>{issue.assignedTo || "Unassigned"}</TableCell>
-                          <TableCell>{formatRelativeTime(issue.createdAt)}</TableCell>
                           <TableCell>
-                            <div className="flex space-x-2">
-                              <Button variant="ghost" size="sm" className="text-sa-green hover:text-green-700">
-                                View
+                            <span className="text-sm text-gray-700">
+                              {issue.assignedTo || 'Unassigned'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs text-gray-500">
+                              {formatRelativeTime(issue.createdAt)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {!issue.assignedTo && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleAssignTechnician(issue)}
+                                className="text-xs"
+                              >
+                                Assign
                               </Button>
-                              <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-                                Update
-                              </Button>
-                              {!issue.assignedTo && (
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="text-orange-600 hover:text-orange-700"
-                                  onClick={() => handleAssignTechnician(issue)}
-                                >
-                                  Assign
-                                </Button>
-                              )}
-                            </div>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
-                  
+
                   {filteredIssues.length === 0 && (
                     <div className="text-center py-8">
                       <p className="text-gray-600">No issues match your filters.</p>
@@ -546,6 +463,112 @@ export default function OfficialDashboard() {
           </Card>
         </div>
       </section>
+
+      {/* Action Buttons */}
+      <section className="py-4 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4 justify-center">
+            <Button
+              onClick={() => setShowAssignModal(true)}
+              className="bg-sa-green hover:bg-green-700 text-white"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Assign Technician
+            </Button>
+            <Button 
+              variant="outline" 
+              className="text-sm px-4 py-2"
+              onClick={handleExportReport}
+            >
+              <FileDown className="mr-2 h-4 w-4" />
+              Export Report
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Assign Technician Modal */}
+      <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Assign Technician to Issue</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Select Issue</label>
+              <Select 
+                value={selectedIssue?.id.toString() || ""} 
+                onValueChange={(value) => {
+                  const issue = filteredIssues.find(i => i.id.toString() === value);
+                  if (issue) setSelectedIssue(issue);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose an issue to assign..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredIssues.filter(issue => !issue.assignedTo).map((issue) => (
+                    <SelectItem key={issue.id} value={issue.id.toString()}>
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">{issue.title}</span>
+                        <span className="text-xs text-gray-500">{issue.category.replace('_', ' ')} • Ward {issue.ward}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedIssue && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Select Technician</label>
+                <Select 
+                  value={selectedTechnician} 
+                  onValueChange={setSelectedTechnician}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a technician..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {technicians
+                      .filter(tech => tech.status === "available")
+                      .map((tech) => (
+                        <SelectItem key={tech.id} value={tech.id.toString()}>
+                          <div className="flex flex-col">
+                            <span>{tech.name} - {tech.department}</span>
+                            <span className="text-xs text-gray-500">
+                              Skills: {tech.skills?.join(", ") || "General"}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowAssignModal(false);
+                  setSelectedIssue(null);
+                  setSelectedTechnician("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleConfirmAssignment}
+                disabled={!selectedIssue || !selectedTechnician || assignTechnicianMutation.isPending}
+                className="bg-sa-green hover:bg-green-700"
+              >
+                {assignTechnicianMutation.isPending ? "Assigning..." : "Assign Technician"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Resource Management */}
       <section className="py-8 bg-white">
@@ -622,17 +645,33 @@ export default function OfficialDashboard() {
 
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                        <Truck className="h-5 w-5 text-red-500" />
+                      <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <Wrench className="h-5 w-5 text-yellow-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">Waste Truck #12</p>
-                        <p className="text-sm text-gray-600">Maintenance Bay</p>
+                        <p className="font-medium text-gray-900">Service Van #12</p>
+                        <p className="text-sm text-gray-600">Ward 7 - Electrical Team</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge className="bg-yellow-100 text-yellow-800">In Service</Badge>
+                      <p className="text-xs text-gray-500 mt-1">GPS: 2 min ago</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                        <TriangleAlert className="h-5 w-5 text-red-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">Emergency Vehicle #01</p>
+                        <p className="text-sm text-gray-600">Municipal Garage</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <Badge className="bg-red-100 text-red-800">Maintenance</Badge>
-                      <p className="text-xs text-gray-500 mt-1">Since: 2 hours ago</p>
+                      <p className="text-xs text-gray-500 mt-1">Updated: 1 hour ago</p>
                     </div>
                   </div>
                 </div>
