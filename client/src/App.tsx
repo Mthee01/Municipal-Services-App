@@ -200,10 +200,7 @@ function App() {
                   {/* Language Selector */}
                   <LanguageSelector />
                   
-                  {/* User Role Toggle - Only show for admin users */}
-                  {currentRole === "admin" && (
-                    <RoleToggle currentRole={currentRole} onRoleChange={handleRoleChange} />
-                  )}
+
                   
                   {/* Current User Role Display */}
                   <div className="bg-gray-100 px-3 py-1 rounded-full">
