@@ -547,34 +547,47 @@ function WorkAssignmentCard({
           </div>
         </div>
 
-        {/* Fixed buttons section */}
+        {/* Action buttons section - always visible */}
         <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4">
           <div className="flex flex-col gap-3">
             {session ? (
-              <div className="flex items-center justify-center p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 rounded-md">
-                <PlayCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span className="text-sm font-medium">Work In Progress</span>
-              </div>
+              <>
+                <div className="flex items-center justify-center p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 rounded-md">
+                  <PlayCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="text-sm font-medium">Work In Progress</span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onViewDetails}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm font-medium"
+                >
+                  <Search className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span>View Details</span>
+                </Button>
+              </>
             ) : (
-              <Button 
-                size="sm" 
-                onClick={onStartWork}
-                disabled={isStarting}
-                className="w-full min-h-[48px] px-4 py-3 text-sm font-medium"
-              >
-                <PlayCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span>{isStarting ? 'Starting...' : 'Start Work'}</span>
-              </Button>
+              <>
+                <Button 
+                  size="sm" 
+                  onClick={onStartWork}
+                  disabled={isStarting}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm font-medium"
+                >
+                  <PlayCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span>{isStarting ? 'Starting...' : 'Start Work'}</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onViewDetails}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm font-medium"
+                >
+                  <Search className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span>View Details</span>
+                </Button>
+              </>
             )}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onViewDetails}
-              className="w-full min-h-[48px] px-4 py-3 text-sm font-medium"
-            >
-              <Search className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span>View Details</span>
-            </Button>
           </div>
         </div>
       </CardContent>
