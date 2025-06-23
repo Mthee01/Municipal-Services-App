@@ -271,8 +271,11 @@ export function GISMapIntegration({
                       height: '24%'
                     }}
                   >
-                    <div className="text-xs font-semibold text-emerald-700 bg-white bg-opacity-80 px-1 py-0.5 rounded m-1 shadow-sm">
+                    <div className="absolute -top-2 left-2 text-xs font-bold text-emerald-800 bg-white px-2 py-1 rounded-md border border-emerald-300 shadow-md z-10">
                       {ward.wardNumber}
+                    </div>
+                    <div className="absolute top-1 left-1 text-xs font-medium text-emerald-600 opacity-75">
+                      {ward.name}
                     </div>
                   </div>
                 ))}
