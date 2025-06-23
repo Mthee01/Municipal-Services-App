@@ -291,76 +291,95 @@ export default function OfficialDashboard() {
                 <CardTitle className="text-lg font-semibold text-gray-900">Recent Issues</CardTitle>
                 <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
                   <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
-                    <DialogTrigger asChild>
-                      <Button 
-                        className="bg-sa-green text-white hover:bg-green-700 text-sm px-3 py-2"
-                        onClick={() => {
-                          // Pre-select the first unassigned issue for the header button
-                          const firstUnassignedIssue = filteredIssues.find(issue => !issue.assignedTo);
-                          if (firstUnassignedIssue) {
-                            setSelectedIssue(firstUnassignedIssue);
-                          }
-                        }}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Assign Technician
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
+                    <DialogContent className="sm:max-w-lg">
                       <DialogHeader>
-                        <DialogTitle>Assign Technician</DialogTitle>
+                        <DialogTitle>Assign Technician to Issue</DialogTitle>
                       </DialogHeader>
-                      {selectedIssue ? (
-                        <div className="space-y-4">
-                          <div className="bg-gray-50 p-3 rounded-lg">
-                            <h4 className="font-medium text-gray-900">{selectedIssue.title}</h4>
-                            <p className="text-sm text-gray-600">{selectedIssue.description}</p>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <Badge variant="outline">{selectedIssue.category.replace('_', ' ')}</Badge>
-                              <Badge variant="outline">Ward {selectedIssue.ward}</Badge>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Select Issue</label>
+                          <Select 
+                            value={selectedIssue?.id.toString() || ""} 
+                            onValueChange={(value) => {
+                              const issue = filteredIssues.find(i => i.id.toString() === value);
+                              if (issue) setSelectedIssue(issue);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choose an issue to assign..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {filteredIssues.filter(issue => !issue.assignedTo).map((issue) => (
+                                <SelectItem key={issue.id} value={issue.id.toString()}>
+                                  <div className="flex flex-col items-start">
+                                    <span className="font-medium">{issue.title}</span>
+                                    <span className="text-xs text-gray-500">{issue.category.replace('_', ' ')} • Ward {issue.ward}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {selectedIssue && (
+                          <>
+                            <div className="bg-gray-50 p-3 rounded-lg">
+                              <h4 className="font-medium text-gray-900">{selectedIssue.title}</h4>
+                              <p className="text-sm text-gray-600">{selectedIssue.description}</p>
+                              <div className="flex items-center space-x-2 mt-2">
+                                <Badge variant="outline">{selectedIssue.category.replace('_', ' ')}</Badge>
+                                <Badge variant="outline">Ward {selectedIssue.ward}</Badge>
+                              </div>
                             </div>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Select Technician</label>
-                            <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Choose a technician..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {getAvailableTechnicians().map((tech) => (
-                                  <SelectItem key={tech.id} value={tech.id.toString()}>
-                                    <div className="flex flex-col items-start">
-                                      <span className="font-medium">{tech.name}</span>
-                                      <span className="text-xs text-gray-500">{tech.department} • {(tech.skills || []).join(', ') || 'No skills listed'}</span>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div className="flex justify-end space-x-2 pt-4">
-                            <Button variant="outline" onClick={() => setShowAssignModal(false)}>
-                              Cancel
-                            </Button>
-                            <Button 
-                              onClick={handleConfirmAssignment}
-                              disabled={!selectedTechnician || assignTechnicianMutation.isPending}
-                              className="bg-sa-green hover:bg-green-700"
-                            >
-                              {assignTechnicianMutation.isPending ? "Assigning..." : "Assign Technician"}
-                            </Button>
-                          </div>
+                            
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">Select Technician</label>
+                              <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Choose a technician..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {getAvailableTechnicians().map((tech) => (
+                                    <SelectItem key={tech.id} value={tech.id.toString()}>
+                                      <div className="flex flex-col items-start">
+                                        <span className="font-medium">{tech.name}</span>
+                                        <span className="text-xs text-gray-500">{tech.department} • {(tech.skills || []).join(', ') || 'No skills listed'}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </>
+                        )}
+                        
+                        <div className="flex justify-end space-x-2 pt-4">
+                          <Button variant="outline" onClick={() => {
+                            setShowAssignModal(false);
+                            setSelectedIssue(null);
+                            setSelectedTechnician("");
+                          }}>
+                            Cancel
+                          </Button>
+                          <Button 
+                            onClick={handleConfirmAssignment}
+                            disabled={!selectedIssue || !selectedTechnician || assignTechnicianMutation.isPending}
+                            className="bg-sa-green hover:bg-green-700"
+                          >
+                            {assignTechnicianMutation.isPending ? "Assigning..." : "Assign Technician"}
+                          </Button>
                         </div>
-                      ) : (
-                        <div className="py-8 text-center">
-                          <p className="text-gray-600">No unassigned issues available.</p>
-                          <p className="text-sm text-gray-500 mt-2">All current issues have been assigned to technicians.</p>
-                        </div>
-                      )}
+                      </div>
                     </DialogContent>
                   </Dialog>
+                  
+                  <Button 
+                    onClick={() => setShowAssignModal(true)}
+                    className="bg-sa-green text-white hover:bg-green-700 text-sm px-3 py-2"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Assign Technician
+                  </Button>
                   <Button variant="outline" className="text-sm px-3 py-2">
                     <FileDown className="mr-2 h-4 w-4" />
                     Export Report
