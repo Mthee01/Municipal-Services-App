@@ -1,0 +1,828 @@
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { 
+  Users, 
+  Shield, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Settings, 
+  Database,
+  BarChart3,
+  Activity,
+  UserCheck,
+  Crown,
+  Briefcase,
+  Wrench,
+  Phone,
+  LogOut
+} from "lucide-react";
+
+// User creation form schema
+const createUserSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  role: z.enum(["citizen", "call_centre_agent", "admin", "ward_councillor", "mayor", "tech_manager", "field_technician"]),
+  municipalityAccountNo: z.string().optional(),
+});
+
+type CreateUserData = z.infer<typeof createUserSchema>;
+
+const roleConfig = {
+  citizen: { icon: UserCheck, label: "Citizen", color: "bg-blue-500" },
+  call_centre_agent: { icon: Phone, label: "Call Centre Agent", color: "bg-green-500" },
+  admin: { icon: Shield, label: "Administrator", color: "bg-red-500" },
+  ward_councillor: { icon: Crown, label: "Ward Councillor", color: "bg-purple-500" },
+  mayor: { icon: Crown, label: "Mayor", color: "bg-gold-500" },
+  tech_manager: { icon: Briefcase, label: "Tech Manager", color: "bg-orange-500" },
+  field_technician: { icon: Wrench, label: "Field Technician", color: "bg-teal-500" },
+};
+
+interface User {
+  id: number;
+  username: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: keyof typeof roleConfig;
+  municipalityAccountNo?: string;
+  createdAt: string;
+  lastActive?: string;
+  status: "active" | "inactive" | "suspended";
+}
+
+interface SystemStats {
+  totalUsers: number;
+  activeUsers: number;
+  totalIssues: number;
+  resolvedIssues: number;
+  pendingIssues: number;
+  totalTeams: number;
+  activeTechnicians: number;
+  systemUptime: string;
+}
+
+export default function AdminDashboard() {
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [showEditUser, setShowEditUser] = useState(false);
+  const { toast } = useToast();
+
+  // Fetch users
+  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
+    queryKey: ['/api/admin/users'],
+    retry: false,
+  });
+
+  // Fetch system statistics
+  const { data: stats } = useQuery<SystemStats>({
+    queryKey: ['/api/admin/stats'],
+    retry: false,
+  });
+
+  // Create user form
+  const createForm = useForm<CreateUserData>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+      name: "",
+      email: "",
+      phone: "",
+      role: "citizen",
+      municipalityAccountNo: "",
+    },
+  });
+
+  // Edit user form
+  const editForm = useForm<Partial<CreateUserData>>({
+    resolver: zodResolver(createUserSchema.partial()),
+    defaultValues: {},
+  });
+
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (data: CreateUserData) => {
+      const response = await apiRequest("POST", "/api/admin/users", data);
+      if (!response.ok) throw new Error("Failed to create user");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "User Created",
+        description: "New user has been successfully created.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+      setShowCreateUser(false);
+      createForm.reset();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update user mutation
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<CreateUserData> }) => {
+      const response = await apiRequest("PUT", `/api/admin/users/${id}`, data);
+      if (!response.ok) throw new Error("Failed to update user");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "User Updated",
+        description: "User has been successfully updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      setShowEditUser(false);
+      setSelectedUser(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/admin/users/${id}`);
+      if (!response.ok) throw new Error("Failed to delete user");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "User Deleted",
+        description: "User has been successfully deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Toggle user status mutation
+  const toggleUserStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: "active" | "inactive" | "suspended" }) => {
+      const response = await apiRequest("PATCH", `/api/admin/users/${id}/status`, { status });
+      if (!response.ok) throw new Error("Failed to update user status");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Status Updated",
+        description: "User status has been successfully updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateUser = (data: CreateUserData) => {
+    createUserMutation.mutate(data);
+  };
+
+  const handleEditUser = () => {
+    if (!selectedUser) return;
+    const data = editForm.getValues();
+    updateUserMutation.mutate({ id: selectedUser.id, data });
+  };
+
+  const handleDeleteUser = (user: User) => {
+    deleteUserMutation.mutate(user.id);
+  };
+
+  const handleToggleStatus = (user: User, newStatus: "active" | "inactive" | "suspended") => {
+    toggleUserStatusMutation.mutate({ id: user.id, status: newStatus });
+  };
+
+  const openEditDialog = (user: User) => {
+    setSelectedUser(user);
+    editForm.reset({
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      municipalityAccountNo: user.municipalityAccountNo || "",
+    });
+    setShowEditUser(true);
+  };
+
+  const getRoleIcon = (role: keyof typeof roleConfig) => {
+    const IconComponent = roleConfig[role]?.icon || Shield;
+    return <IconComponent className="w-4 h-4" />;
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusColors = {
+      active: "bg-green-500",
+      inactive: "bg-gray-500",
+      suspended: "bg-red-500",
+    };
+    return (
+      <Badge className={`${statusColors[status as keyof typeof statusColors]} text-white`}>
+        {status}
+      </Badge>
+    );
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("municipalAuth");
+    sessionStorage.removeItem("municipalAuth");
+    window.location.href = "/";
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-4">
+              <Shield className="w-8 h-8 text-red-500" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Administrator Dashboard</h1>
+                <p className="text-sm text-gray-500">Full System Access & User Management</p>
+              </div>
+            </div>
+            <Button variant="outline" onClick={handleLogout} className="flex items-center space-x-2">
+              <LogOut className="w-4 h-4" />
+              <span>Logout</span>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">System Overview</TabsTrigger>
+            <TabsTrigger value="users">User Management</TabsTrigger>
+            <TabsTrigger value="permissions">Roles & Permissions</TabsTrigger>
+            <TabsTrigger value="settings">System Settings</TabsTrigger>
+          </TabsList>
+
+          {/* System Overview */}
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {stats?.activeUsers || 0} active users
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Issues</CardTitle>
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.totalIssues || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {stats?.resolvedIssues || 0} resolved
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Teams</CardTitle>
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.totalTeams || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {stats?.activeTechnicians || 0} technicians
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">System Status</CardTitle>
+                  <Database className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">Online</div>
+                  <p className="text-xs text-muted-foreground">
+                    Uptime: {stats?.systemUptime || "24h"}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* User Management */}
+          <TabsContent value="users" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">User Management</h2>
+              <Dialog open={showCreateUser} onOpenChange={setShowCreateUser}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center space-x-2">
+                    <Plus className="w-4 h-4" />
+                    <span>Add User</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Create New User</DialogTitle>
+                  </DialogHeader>
+                  <Form {...createForm}>
+                    <form onSubmit={createForm.handleSubmit(handleCreateUser)} className="space-y-4">
+                      <FormField
+                        control={createForm.control}
+                        name="username"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Username</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input type="password" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Full Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Role</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a role" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Object.entries(roleConfig).map(([value, config]) => (
+                                  <SelectItem key={value} value={value}>
+                                    <div className="flex items-center space-x-2">
+                                      {getRoleIcon(value as keyof typeof roleConfig)}
+                                      <span>{config.label}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="municipalityAccountNo"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Municipality Account No. (Optional)</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex space-x-2">
+                        <Button 
+                          type="submit" 
+                          disabled={createUserMutation.isPending}
+                          className="flex-1"
+                        >
+                          {createUserMutation.isPending ? "Creating..." : "Create User"}
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setShowCreateUser(false)}
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Last Active</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {usersLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8">
+                          Loading users...
+                        </TableCell>
+                      </TableRow>
+                    ) : users.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8">
+                          No users found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      users.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{user.name}</div>
+                              <div className="text-sm text-gray-500">{user.email}</div>
+                              <div className="text-xs text-gray-400">@{user.username}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              {getRoleIcon(user.role)}
+                              <span className="text-sm">{roleConfig[user.role]?.label}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(user.status)}</TableCell>
+                          <TableCell className="text-sm text-gray-500">
+                            {user.lastActive || "Never"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditDialog(user)}
+                                className="flex items-center space-x-1"
+                              >
+                                <Edit className="w-3 h-3" />
+                                <span>Edit</span>
+                              </Button>
+                              
+                              <Select
+                                value={user.status}
+                                onValueChange={(status: "active" | "inactive" | "suspended") => 
+                                  handleToggleStatus(user, status)
+                                }
+                              >
+                                <SelectTrigger className="w-28 h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="active">Active</SelectItem>
+                                  <SelectItem value="inactive">Inactive</SelectItem>
+                                  <SelectItem value="suspended">Suspended</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="destructive" size="sm">
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete User</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete {user.name}? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={() => handleDeleteUser(user)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Edit User Dialog */}
+            <Dialog open={showEditUser} onOpenChange={setShowEditUser}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Edit User: {selectedUser?.name}</DialogTitle>
+                </DialogHeader>
+                <Form {...editForm}>
+                  <form onSubmit={editForm.handleSubmit(handleEditUser)} className="space-y-4">
+                    <FormField
+                      control={editForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Role</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.entries(roleConfig).map(([value, config]) => (
+                                <SelectItem key={value} value={value}>
+                                  <div className="flex items-center space-x-2">
+                                    {getRoleIcon(value as keyof typeof roleConfig)}
+                                    <span>{config.label}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex space-x-2">
+                      <Button 
+                        type="submit" 
+                        disabled={updateUserMutation.isPending}
+                        className="flex-1"
+                      >
+                        {updateUserMutation.isPending ? "Updating..." : "Update User"}
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setShowEditUser(false)}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </TabsContent>
+
+          {/* Roles & Permissions */}
+          <TabsContent value="permissions" className="space-y-6">
+            <h2 className="text-xl font-semibold">Roles & Permissions</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Object.entries(roleConfig).map(([role, config]) => (
+                <Card key={role}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      {getRoleIcon(role as keyof typeof roleConfig)}
+                      <span>{config.label}</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      {role === "admin" && (
+                        <>
+                          <div>• Full system access</div>
+                          <div>• User management</div>
+                          <div>• System configuration</div>
+                          <div>• All dashboard access</div>
+                        </>
+                      )}
+                      {role === "mayor" && (
+                        <>
+                          <div>• Municipal oversight</div>
+                          <div>• Strategic planning</div>
+                          <div>• Policy decisions</div>
+                          <div>• Performance analytics</div>
+                        </>
+                      )}
+                      {role === "ward_councillor" && (
+                        <>
+                          <div>• Ward management</div>
+                          <div>• Citizen representation</div>
+                          <div>• Issue tracking</div>
+                          <div>• Community engagement</div>
+                        </>
+                      )}
+                      {role === "tech_manager" && (
+                        <>
+                          <div>• Team management</div>
+                          <div>• Work assignment</div>
+                          <div>• Resource allocation</div>
+                          <div>• Performance monitoring</div>
+                        </>
+                      )}
+                      {role === "field_technician" && (
+                        <>
+                          <div>• Issue resolution</div>
+                          <div>• Field reporting</div>
+                          <div>• Time tracking</div>
+                          <div>• Mobile access</div>
+                        </>
+                      )}
+                      {role === "call_centre_agent" && (
+                        <>
+                          <div>• Customer support</div>
+                          <div>• Issue logging</div>
+                          <div>• Communication hub</div>
+                          <div>• WhatsApp management</div>
+                        </>
+                      )}
+                      {role === "citizen" && (
+                        <>
+                          <div>• Issue reporting</div>
+                          <div>• Service requests</div>
+                          <div>• Payment management</div>
+                          <div>• Communication access</div>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* System Settings */}
+          <TabsContent value="settings" className="space-y-6">
+            <h2 className="text-xl font-semibold">System Settings</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Settings className="w-5 h-5" />
+                  <span>Configuration</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-sm text-gray-600">
+                  System configuration options will be available in future updates.
+                  Current system is running optimally with default settings.
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium">Database Status</h4>
+                    <p className="text-sm text-green-600">Connected and operational</p>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium">API Status</h4>
+                    <p className="text-sm text-green-600">All endpoints active</p>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium">WebSocket</h4>
+                    <p className="text-sm text-green-600">Real-time communication active</p>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium">File Storage</h4>
+                    <p className="text-sm text-green-600">Upload system operational</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+}

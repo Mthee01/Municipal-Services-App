@@ -581,6 +581,182 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin API endpoints
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      // Mock user data for admin dashboard
+      const mockUsers = [
+        {
+          id: 1,
+          username: "admin",
+          name: "System Administrator",
+          email: "admin@municipality.gov.za",
+          phone: "0820123456",
+          role: "admin",
+          municipalityAccountNo: null,
+          createdAt: "2024-01-01T00:00:00Z",
+          lastActive: "2024-06-23T12:00:00Z",
+          status: "active"
+        },
+        {
+          id: 2,
+          username: "citizen",
+          name: "John Citizen",
+          email: "citizen@test.com",
+          phone: "0821234567",
+          role: "citizen",
+          municipalityAccountNo: "MC001234",
+          createdAt: "2024-01-15T00:00:00Z",
+          lastActive: "2024-06-23T11:30:00Z",
+          status: "active"
+        },
+        {
+          id: 3,
+          username: "agent",
+          name: "Sarah Agent",
+          email: "agent@municipality.gov.za",
+          phone: "0827654321",
+          role: "call_centre_agent",
+          municipalityAccountNo: null,
+          createdAt: "2024-02-01T00:00:00Z",
+          lastActive: "2024-06-23T10:45:00Z",
+          status: "active"
+        },
+        {
+          id: 4,
+          username: "mayor",
+          name: "Mayor Thompson",
+          email: "mayor@municipality.gov.za",
+          phone: "0823456789",
+          role: "mayor",
+          municipalityAccountNo: null,
+          createdAt: "2024-01-01T00:00:00Z",
+          lastActive: "2024-06-22T16:30:00Z",
+          status: "active"
+        },
+        {
+          id: 5,
+          username: "councillor",
+          name: "Ward Councillor Smith",
+          email: "councillor@municipality.gov.za",
+          phone: "0829876543",
+          role: "ward_councillor",
+          municipalityAccountNo: null,
+          createdAt: "2024-01-10T00:00:00Z",
+          lastActive: "2024-06-23T09:15:00Z",
+          status: "active"
+        },
+        {
+          id: 6,
+          username: "techmanager",
+          name: "Tech Manager Jones",
+          email: "techmanager@municipality.gov.za",
+          phone: "0825678901",
+          role: "tech_manager",
+          municipalityAccountNo: null,
+          createdAt: "2024-01-20T00:00:00Z",
+          lastActive: "2024-06-23T08:00:00Z",
+          status: "active"
+        },
+        {
+          id: 7,
+          username: "technician",
+          name: "Field Technician Wilson",
+          email: "technician@municipality.gov.za",
+          phone: "0824567890",
+          role: "field_technician",
+          municipalityAccountNo: null,
+          createdAt: "2024-02-15T00:00:00Z",
+          lastActive: "2024-06-23T07:30:00Z",
+          status: "active"
+        }
+      ];
+      
+      res.json(mockUsers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.get("/api/admin/stats", async (req, res) => {
+    try {
+      const stats = {
+        totalUsers: 7,
+        activeUsers: 7,
+        totalIssues: await storage.getIssues().then(issues => issues.length),
+        resolvedIssues: await storage.getIssuesByStatus("resolved").then(issues => issues.length),
+        pendingIssues: await storage.getIssuesByStatus("pending").then(issues => issues.length),
+        totalTeams: await storage.getTeams().then(teams => teams.length),
+        activeTechnicians: await storage.getTechnicians().then(techs => techs.filter(t => t.status === "available").length),
+        systemUptime: "48h 23m"
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch system statistics" });
+    }
+  });
+
+  app.post("/api/admin/users", async (req, res) => {
+    try {
+      const userData = req.body;
+      
+      // Simulate user creation
+      const newUser = {
+        id: Date.now(), // Simple ID generation
+        ...userData,
+        createdAt: new Date().toISOString(),
+        status: "active",
+        lastActive: null
+      };
+      
+      res.json({ success: true, user: newUser });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  app.put("/api/admin/users/:id", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      // Simulate user update
+      const updatedUser = {
+        id: userId,
+        ...updateData,
+        updatedAt: new Date().toISOString()
+      };
+      
+      res.json({ success: true, user: updatedUser });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  app.delete("/api/admin/users/:id", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Simulate user deletion
+      res.json({ success: true, message: `User ${userId} deleted successfully` });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id/status", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      // Simulate status update
+      res.json({ success: true, message: `User ${userId} status updated to ${status}` });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user status" });
+    }
+  });
+
   app.post("/api/auth/register", async (req, res) => {
     try {
       const result = insertUserSchema.safeParse(req.body);

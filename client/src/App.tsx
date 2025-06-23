@@ -17,6 +17,7 @@ import WardCouncillorDashboard from "@/pages/ward-councillor-dashboard";
 import TechManagerDashboard from "@/pages/tech-manager-dashboard";
 import FieldTechnicianDashboard from "@/pages/field-technician-dashboard";
 import WhatsAppDashboard from "@/pages/whatsapp-dashboard";
+import AdminDashboard from "@/pages/admin-dashboard";
 import NotFound from "@/pages/not-found";
 import type { UserRole } from "@/lib/types";
 
@@ -106,8 +107,10 @@ function App() {
         setLocation("/");
         break;
       case "call_centre_agent":
-      case "admin":
         setLocation("/official");
+        break;
+      case "admin":
+        setLocation("/admin");
         break;
       case "mayor":
         setLocation("/mayor");
@@ -134,8 +137,10 @@ function App() {
         setLocation("/");
         break;
       case "call_centre_agent":
-      case "admin":
         setLocation("/official");
+        break;
+      case "admin":
+        setLocation("/admin");
         break;
       case "mayor":
         setLocation("/mayor");
@@ -263,10 +268,16 @@ function App() {
                 <Route path="/field-technician" component={FieldTechnicianDashboard} />
               )}
               
+              {/* Admin Dashboard - Only for administrators */}
+              {currentRole === "admin" && (
+                <Route path="/admin" component={AdminDashboard} />
+              )}
+              
               {/* Default route based on user role */}
               <Route path="/">
                 {currentRole === "citizen" && <CitizenDashboard />}
-                {(currentRole === "call_centre_agent" || currentRole === "admin") && <OfficialDashboard />}
+                {currentRole === "call_centre_agent" && <OfficialDashboard />}
+                {currentRole === "admin" && <AdminDashboard />}
                 {currentRole === "mayor" && <MayorDashboard />}
                 {currentRole === "ward_councillor" && <WardCouncillorDashboard />}
                 {currentRole === "tech_manager" && <TechManagerDashboard />}
