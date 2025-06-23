@@ -17,6 +17,10 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
+  updateUserStatus(id: number, status: string): Promise<User | undefined>;
 
   // Issue operations
   getIssues(): Promise<Issue[]>;
@@ -179,6 +183,7 @@ export class MemStorage implements IStorage {
     this.technicianLocations = new Map();
     this.chatMessagesStore = new Map();
     this.whatsappMessagesStore = new Map();
+    this.whatsappConversationsStore = new Map();
     this.activeWorkSessions = new Map();
     this.currentUserId = 1;
     this.currentIssueId = 1;
@@ -195,6 +200,7 @@ export class MemStorage implements IStorage {
     this.currentTechnicianLocationId = 1;
     this.currentChatMessageId = 1;
     this.currentWhatsappMessageId = 1;
+    this.currentWhatsappConversationId = 1;
 
     this.seedData();
     this.seedFieldTechnicianData();
@@ -743,6 +749,42 @@ export class MemStorage implements IStorage {
     };
     this.users.set(id, user);
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values()).sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+
+    const updatedUser: User = {
+      ...user,
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    return this.users.delete(id);
+  }
+
+  async updateUserStatus(id: number, status: string): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+
+    const updatedUser: User = {
+      ...user,
+      status: status as any,
+      updatedAt: new Date(),
+    };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
   // Issue operations

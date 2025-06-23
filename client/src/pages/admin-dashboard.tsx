@@ -295,12 +295,14 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">System Overview</TabsTrigger>
-            <TabsTrigger value="users">User Management</TabsTrigger>
-            <TabsTrigger value="permissions">Roles & Permissions</TabsTrigger>
-            <TabsTrigger value="settings">System Settings</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto">
+            <TabsList className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground min-w-max w-full">
+              <TabsTrigger value="overview" className="px-3 py-1.5 text-sm whitespace-nowrap">Overview</TabsTrigger>
+              <TabsTrigger value="users" className="px-3 py-1.5 text-sm whitespace-nowrap">Users</TabsTrigger>
+              <TabsTrigger value="permissions" className="px-3 py-1.5 text-sm whitespace-nowrap">Roles</TabsTrigger>
+              <TabsTrigger value="settings" className="px-3 py-1.5 text-sm whitespace-nowrap">Settings</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* System Overview */}
           <TabsContent value="overview" className="space-y-6">

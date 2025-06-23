@@ -584,115 +584,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin API endpoints
   app.get("/api/admin/users", async (req, res) => {
     try {
-      // Mock user data for admin dashboard
-      const mockUsers = [
-        {
-          id: 1,
-          username: "admin",
-          name: "System Administrator",
-          email: "admin@municipality.gov.za",
-          phone: "0820123456",
-          role: "admin",
-          municipalityAccountNo: null,
-          createdAt: "2024-01-01T00:00:00Z",
-          lastActive: "2024-06-23T12:00:00Z",
-          status: "active"
-        },
-        {
-          id: 2,
-          username: "citizen",
-          name: "John Citizen",
-          email: "citizen@test.com",
-          phone: "0821234567",
-          role: "citizen",
-          municipalityAccountNo: "MC001234",
-          createdAt: "2024-01-15T00:00:00Z",
-          lastActive: "2024-06-23T11:30:00Z",
-          status: "active"
-        },
-        {
-          id: 3,
-          username: "agent",
-          name: "Sarah Agent",
-          email: "agent@municipality.gov.za",
-          phone: "0827654321",
-          role: "call_centre_agent",
-          municipalityAccountNo: null,
-          createdAt: "2024-02-01T00:00:00Z",
-          lastActive: "2024-06-23T10:45:00Z",
-          status: "active"
-        },
-        {
-          id: 4,
-          username: "mayor",
-          name: "Mayor Thompson",
-          email: "mayor@municipality.gov.za",
-          phone: "0823456789",
-          role: "mayor",
-          municipalityAccountNo: null,
-          createdAt: "2024-01-01T00:00:00Z",
-          lastActive: "2024-06-22T16:30:00Z",
-          status: "active"
-        },
-        {
-          id: 5,
-          username: "councillor",
-          name: "Ward Councillor Smith",
-          email: "councillor@municipality.gov.za",
-          phone: "0829876543",
-          role: "ward_councillor",
-          municipalityAccountNo: null,
-          createdAt: "2024-01-10T00:00:00Z",
-          lastActive: "2024-06-23T09:15:00Z",
-          status: "active"
-        },
-        {
-          id: 6,
-          username: "techmanager",
-          name: "Tech Manager Jones",
-          email: "techmanager@municipality.gov.za",
-          phone: "0825678901",
-          role: "tech_manager",
-          municipalityAccountNo: null,
-          createdAt: "2024-01-20T00:00:00Z",
-          lastActive: "2024-06-23T08:00:00Z",
-          status: "active"
-        },
-        {
-          id: 7,
-          username: "technician",
-          name: "Field Technician Wilson",
-          email: "technician@municipality.gov.za",
-          phone: "0824567890",
-          role: "field_technician",
-          municipalityAccountNo: null,
-          createdAt: "2024-02-15T00:00:00Z",
-          lastActive: "2024-06-23T07:30:00Z",
-          status: "active"
-        }
-      ];
+      const users = await storage.getAllUsers();
       
-      res.json(mockUsers);
+      const formattedUsers = users.map(user => ({
+        ...user,
+        status: "active",
+        lastActive: user.updatedAt ? user.updatedAt.toISOString() : null
+      }));
+      
+      res.json(formattedUsers);
     } catch (error) {
+      console.error("Error fetching users:", error);
       res.status(500).json({ message: "Failed to fetch users" });
     }
   });
 
   app.get("/api/admin/stats", async (req, res) => {
     try {
+      const users = await storage.getAllUsers();
+      const issues = await storage.getIssues();
+      const resolvedIssues = await storage.getIssuesByStatus("resolved");
+      const pendingIssues = await storage.getIssuesByStatus("pending");
+      const teams = await storage.getTeams();
+      const technicians = await storage.getTechnicians();
+
       const stats = {
-        totalUsers: 7,
-        activeUsers: 7,
-        totalIssues: await storage.getIssues().then(issues => issues.length),
-        resolvedIssues: await storage.getIssuesByStatus("resolved").then(issues => issues.length),
-        pendingIssues: await storage.getIssuesByStatus("pending").then(issues => issues.length),
-        totalTeams: await storage.getTeams().then(teams => teams.length),
-        activeTechnicians: await storage.getTechnicians().then(techs => techs.filter(t => t.status === "available").length),
+        totalUsers: users.length,
+        activeUsers: users.length, // All users are considered active for now
+        totalIssues: issues.length,
+        resolvedIssues: resolvedIssues.length,
+        pendingIssues: pendingIssues.length,
+        totalTeams: teams.length,
+        activeTechnicians: technicians.filter(t => t.status === "available").length,
         systemUptime: "48h 23m"
       };
       
       res.json(stats);
     } catch (error) {
+      console.error("Error fetching admin stats:", error);
       res.status(500).json({ message: "Failed to fetch system statistics" });
     }
   });
@@ -701,17 +630,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userData = req.body;
       
-      // Simulate user creation
-      const newUser = {
-        id: Date.now(), // Simple ID generation
-        ...userData,
-        createdAt: new Date().toISOString(),
+      // Validate required fields
+      if (!userData.username || !userData.password || !userData.name || !userData.email || !userData.phone || !userData.role) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(userData.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      // Create user with real database operation
+      const newUser = await storage.createUser({
+        username: userData.username,
+        password: userData.password,
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        role: userData.role,
+        municipalityAccountNo: userData.municipalityAccountNo || null
+      });
+      
+      const formattedUser = {
+        ...newUser,
         status: "active",
         lastActive: null
       };
       
-      res.json({ success: true, user: newUser });
+      res.json({ success: true, user: formattedUser });
     } catch (error) {
+      console.error("Error creating user:", error);
       res.status(500).json({ message: "Failed to create user" });
     }
   });
@@ -721,15 +670,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.id);
       const updateData = req.body;
       
-      // Simulate user update
-      const updatedUser = {
-        id: userId,
-        ...updateData,
-        updatedAt: new Date().toISOString()
+      // Check if user exists
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Update user with real database operation
+      const updatedUser = await storage.updateUser(userId, {
+        username: updateData.username,
+        name: updateData.name,
+        email: updateData.email,
+        phone: updateData.phone,
+        role: updateData.role,
+        municipalityAccountNo: updateData.municipalityAccountNo || null
+      });
+      
+      const formattedUser = {
+        ...updatedUser,
+        status: "active",
+        lastActive: updatedUser.updatedAt ? updatedUser.updatedAt.toISOString() : null
       };
       
-      res.json({ success: true, user: updatedUser });
+      res.json({ success: true, user: formattedUser });
     } catch (error) {
+      console.error("Error updating user:", error);
       res.status(500).json({ message: "Failed to update user" });
     }
   });
@@ -738,9 +703,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.id);
       
-      // Simulate user deletion
+      // Check if user exists
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Delete user with real database operation
+      await storage.deleteUser(userId);
+      
       res.json({ success: true, message: `User ${userId} deleted successfully` });
     } catch (error) {
+      console.error("Error deleting user:", error);
       res.status(500).json({ message: "Failed to delete user" });
     }
   });
