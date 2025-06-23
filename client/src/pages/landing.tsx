@@ -586,7 +586,12 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
 
                           <Button
                             type="submit"
-                            className="w-full bg-gradient-to-r from-sa-green to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                            style={{
+                              background: 'linear-gradient(to right, hsl(147, 100%, 24%), #16a34a)',
+                              color: 'white',
+                              border: 'none'
+                            }}
+                            className="w-full font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                             disabled={registerMutation.isPending}
                           >
                             {registerMutation.isPending ? (
