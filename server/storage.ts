@@ -398,7 +398,7 @@ export class MemStorage implements IStorage {
         description: "Street light has been out for over a week, creating safety concerns for pedestrians at night.",
         category: "electricity",
         priority: "medium",
-        status: "assigned",
+        status: "resolved",
         location: "Corner of Oak and Pine Streets",
         ward: "Ward 1",
         reporterName: "Peter Jones",
@@ -407,9 +407,9 @@ export class MemStorage implements IStorage {
         photos: null,
         createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
         updatedAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
-        resolvedAt: null,
-        rating: null,
-        feedback: null,
+        resolvedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+        rating: 5,
+        feedback: "Fixed quickly and professionally. Thank you!",
       },
       {
         id: this.currentIssueId++,
@@ -455,7 +455,7 @@ export class MemStorage implements IStorage {
         description: "Storm drain is completely blocked with debris, causing water to pool during rain.",
         category: "water_sanitation",
         priority: "medium",
-        status: "in_progress",
+        status: "resolved",
         location: "Valley Road near the bridge",
         ward: "Ward 1",
         reporterName: "Michael Davis",
@@ -464,9 +464,9 @@ export class MemStorage implements IStorage {
         photos: null,
         createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
         updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-        resolvedAt: null,
-        rating: null,
-        feedback: null,
+        resolvedAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
+        rating: 4,
+        feedback: "Drain cleared efficiently. Water flows properly now.",
       },
     ];
 
