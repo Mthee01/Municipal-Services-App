@@ -102,6 +102,7 @@ export default function OfficialDashboard() {
       "electricity": "Electricity",
       "roads_transport": "Roads & Transport",
       "waste_management": "Waste Management",
+      "safety_security": "Safety & Security",
     };
     
     const requiredDepartment = departmentMapping[selectedIssue.category];
