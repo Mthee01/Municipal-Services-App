@@ -86,6 +86,9 @@ export default function FieldTechnicianDashboard() {
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [isRealTimeTracking, setIsRealTimeTracking] = useState(false);
+  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
+  const watchIdRef = useRef<number | null>(null);
   const [photoCapture, setPhotoCapture] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -135,7 +138,82 @@ export default function FieldTechnicianDashboard() {
     }
   }, [fetchedActiveSessions]);
 
-  // Request location permission and get current location
+  // Start real-time location tracking
+  const startRealTimeTracking = () => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation not supported by this browser");
+      return;
+    }
+
+    setLocationLoading(true);
+    setLocationError(null);
+    setIsRealTimeTracking(true);
+
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0 // Always get fresh location
+    };
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        setCurrentLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setLocationAccuracy(position.coords.accuracy);
+        setLocationLoading(false);
+        setLocationError(null);
+      },
+      (error) => {
+        let errorMessage = "Unable to access location";
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information unavailable";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out";
+            break;
+        }
+        
+        setLocationError(errorMessage);
+        setLocationLoading(false);
+        toast({
+          title: "Location Tracking Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      },
+      options
+    );
+
+    watchIdRef.current = watchId;
+    
+    toast({
+      title: "Real-time Tracking Started",
+      description: "Your location is now being tracked continuously",
+    });
+  };
+
+  // Stop real-time location tracking
+  const stopRealTimeTracking = () => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    setIsRealTimeTracking(false);
+    
+    toast({
+      title: "Tracking Stopped",
+      description: "Real-time location tracking has been disabled",
+    });
+  };
+
+  // Request location permission and get current location (one-time)
   const requestLocationAccess = async () => {
     setLocationLoading(true);
     setLocationError(null);
@@ -159,10 +237,11 @@ export default function FieldTechnicianDashboard() {
         lat: position.coords.latitude,
         lng: position.coords.longitude
       });
+      setLocationAccuracy(position.coords.accuracy);
       
       toast({
         title: "Location Access Granted",
-        description: "GPS tracking is now active",
+        description: "GPS location retrieved successfully",
       });
     } catch (error: any) {
       let errorMessage = "Unable to access location";
@@ -202,6 +281,7 @@ export default function FieldTechnicianDashboard() {
                 lat: position.coords.latitude,
                 lng: position.coords.longitude
               });
+              setLocationAccuracy(position.coords.accuracy);
             },
             () => {
               // Silent fail if location unavailable but permission granted
@@ -213,6 +293,15 @@ export default function FieldTechnicianDashboard() {
         // Silent fail if permissions API not supported
       });
     }
+  }, []);
+
+  // Cleanup location watcher on component unmount
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
   }, []);
 
   // Start work session mutation
@@ -564,6 +653,10 @@ export default function FieldTechnicianDashboard() {
               locationError={locationError}
               locationLoading={locationLoading}
               onRequestLocation={requestLocationAccess}
+              isRealTimeTracking={isRealTimeTracking}
+              locationAccuracy={locationAccuracy}
+              onStartRealTimeTracking={startRealTimeTracking}
+              onStopRealTimeTracking={stopRealTimeTracking}
             />
           </TabsContent>
         </Tabs>
@@ -1288,13 +1381,21 @@ function LocationTrackingPanel({
   activeWorkSessions, 
   locationError, 
   locationLoading, 
-  onRequestLocation 
+  onRequestLocation,
+  isRealTimeTracking,
+  locationAccuracy,
+  onStartRealTimeTracking,
+  onStopRealTimeTracking
 }: { 
   currentLocation: {lat: number, lng: number} | null; 
   activeWorkSessions: WorkSession[]; 
   locationError: string | null;
   locationLoading: boolean;
   onRequestLocation: () => void;
+  isRealTimeTracking: boolean;
+  locationAccuracy: number | null;
+  onStartRealTimeTracking: () => void;
+  onStopRealTimeTracking: () => void;
 }) {
   return (
     <div className="grid gap-6">
@@ -1312,19 +1413,43 @@ function LocationTrackingPanel({
           {currentLocation ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-4">
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className={`${isRealTimeTracking ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
                   <Navigation className="w-3 h-3 mr-1" />
-                  GPS Active
+                  {isRealTimeTracking ? 'Real-time Tracking' : 'GPS Active'}
                 </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onRequestLocation}
-                  disabled={locationLoading}
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Refresh
-                </Button>
+                <div className="flex gap-2">
+                  {!isRealTimeTracking ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onRequestLocation}
+                        disabled={locationLoading}
+                      >
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Refresh
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={onStartRealTimeTracking}
+                        disabled={locationLoading}
+                      >
+                        <Navigation className="w-4 h-4 mr-2" />
+                        Start Live Tracking
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={onStopRealTimeTracking}
+                    >
+                      <StopCircle className="w-4 h-4 mr-2" />
+                      Stop Tracking
+                    </Button>
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -1336,6 +1461,20 @@ function LocationTrackingPanel({
                   <p className="text-sm font-mono">{currentLocation.lng.toFixed(6)}</p>
                 </div>
               </div>
+              {locationAccuracy && (
+                <div className="pt-2 border-t">
+                  <Label>Accuracy</Label>
+                  <p className="text-sm text-gray-600">±{Math.round(locationAccuracy)} meters</p>
+                </div>
+              )}
+              {isRealTimeTracking && (
+                <div className="pt-2 border-t">
+                  <div className="flex items-center gap-2 text-sm text-blue-600">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    Location updating continuously
+                  </div>
+                </div>
+              )}
               <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
                 <p className="text-gray-500">Map visualization would appear here</p>
               </div>
