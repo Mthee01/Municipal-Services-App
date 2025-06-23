@@ -64,7 +64,11 @@ export default function WardCouncillorDashboard() {
   }
 
   const currentWard = wards?.find((w: any) => w.wardNumber === selectedWard);
-  const wardIssues = issues?.filter((issue: any) => issue.ward === selectedWard) || [];
+  
+  // Ensure we have valid data before filtering
+  const allIssues = issues || [];
+  const wardIssues = allIssues.filter((issue: any) => issue.ward === selectedWard);
+  
   const wardTechnicians = technicians?.filter((tech: any) => 
     wardIssues.some((issue: any) => issue.assignedTo === tech.name)
   ) || [];
