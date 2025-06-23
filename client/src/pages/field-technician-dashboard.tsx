@@ -547,10 +547,26 @@ function WorkAssignmentCard({
           </div>
         </div>
 
-        {/* Action buttons section - always visible */}
+        {/* Action buttons section */}
         <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4">
           <div className="flex flex-col gap-3">
-            {session ? (
+            {issue.status === 'resolved' || issue.status === 'completed' ? (
+              <>
+                <div className="flex items-center justify-center p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-md">
+                  <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="text-sm font-medium">Issue Resolved</span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onViewDetails}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm font-medium"
+                >
+                  <Search className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span>View Details</span>
+                </Button>
+              </>
+            ) : session ? (
               <>
                 <div className="flex items-center justify-center p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 rounded-md">
                   <PlayCircle className="w-4 h-4 mr-2 flex-shrink-0" />
