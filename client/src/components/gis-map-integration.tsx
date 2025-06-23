@@ -95,15 +95,15 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
+      <CardHeader className="pb-2 md:pb-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+          <CardTitle className="flex items-center gap-2 text-sm md:text-base">
+            <MapPin className="h-4 w-4 md:h-5 md:w-5" />
             Municipal Services GIS Map
           </CardTitle>
           <div className="flex items-center gap-2">
             <Select value={selectedLayer} onValueChange={setSelectedLayer}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full md:w-48">
                 <SelectValue placeholder="Select layer" />
               </SelectTrigger>
               <SelectContent>
@@ -125,10 +125,28 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
         </div>
       </CardHeader>
       
-      <CardContent>
-        <div className="flex gap-4">
-          {/* Map Controls */}
-          <div className="flex flex-col gap-2">
+      <CardContent className="p-2 md:p-6">
+        {/* Mobile controls row */}
+        <div className="flex items-center justify-between gap-2 mb-3 md:hidden">
+          <div className="flex gap-1">
+            <Button variant="outline" size="sm" className="p-2">
+              <ZoomIn className="h-3 w-3" />
+            </Button>
+            <Button variant="outline" size="sm" className="p-2">
+              <ZoomOut className="h-3 w-3" />
+            </Button>
+            <Button variant="outline" size="sm" className="p-2">
+              <Navigation className="h-3 w-3" />
+            </Button>
+          </div>
+          <div className="text-xs text-gray-600">
+            {filteredIssues.length} issues
+          </div>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+          {/* Desktop Map Controls */}
+          <div className="hidden md:flex flex-col gap-2">
             <Button variant="outline" size="sm">
               <ZoomIn className="h-4 w-4" />
             </Button>
@@ -147,12 +165,15 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
           <div className="flex-1">
             <div 
               ref={mapRef}
-              className="w-full bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center relative"
-              style={{ height }}
+              className="gis-map-mobile w-full bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center relative"
+              style={{ 
+                height: typeof window !== 'undefined' && window.innerWidth < 768 ? "300px" : height,
+                minHeight: "250px"
+              }}
             >
               {/* Simulated Map View */}
               <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-blue-100 rounded-lg">
-                {/* Simulated issue markers */}
+                {/* Simulated issue markers - larger on mobile */}
                 {filteredIssues.slice(0, 10).map((issue, index) => (
                   <div
                     key={issue.id}
@@ -164,14 +185,14 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
                     onClick={() => onIssueSelect?.(issue)}
                   >
                     <div 
-                      className="w-4 h-4 rounded-full border-2 border-white shadow-lg hover:scale-125 transition-transform"
+                      className="gis-map-marker rounded-full border-2 border-white shadow-lg md:w-4 md:h-4 w-6 h-6"
                       style={{ backgroundColor: getStatusColor(issue.status) }}
                     />
-                    {/* Issue popup on hover */}
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 hover:opacity-100 transition-opacity bg-white p-2 rounded shadow-lg text-xs whitespace-nowrap z-10">
-                      <div className="font-medium">{issue.title}</div>
-                      <div className="text-gray-600">{issue.location}</div>
-                      <div className="text-gray-500">{issue.status}</div>
+                    {/* Issue popup - mobile optimized */}
+                    <div className="gis-map-popup absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 hover:opacity-100 transition-opacity bg-white/95 p-2 rounded-lg shadow-lg text-xs z-20 max-w-48">
+                      <div className="font-medium truncate">{issue.title}</div>
+                      <div className="text-gray-600 truncate text-xs">{issue.location}</div>
+                      <div className="text-gray-500 text-xs">{issue.status}</div>
                     </div>
                   </div>
                 ))}

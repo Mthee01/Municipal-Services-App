@@ -119,6 +119,53 @@
     }
   }
 
+  /* Mobile-optimized GIS map styles */
+  .gis-map-mobile {
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .gis-map-marker {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .gis-map-marker:hover,
+  .gis-map-marker:active {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .gis-map-popup {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  @media (max-width: 768px) {
+    .gis-map-marker {
+      width: 24px !important;
+      height: 24px !important;
+      border-width: 3px;
+    }
+    
+    .gis-map-popup {
+      font-size: 0.75rem;
+      max-width: 180px;
+      padding: 8px;
+      margin-bottom: 8px;
+    }
+    
+    .gis-map-controls {
+      padding: 4px;
+    }
+    
+    .gis-map-controls button {
+      min-width: 32px;
+      min-height: 32px;
+    }
+  }
+
   /* Fix tab text compression on mobile */
   .tabs-trigger-mobile {
     min-width: fit-content !important;

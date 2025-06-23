@@ -346,12 +346,11 @@ export default function MayorDashboard() {
           <AIAnalyticsDashboard userRole="mayor" />
         </TabsContent>
 
-        <TabsContent value="gis-map" className="space-y-4">
-          {/* Get issues data for GIS mapping */}
+        <TabsContent value="gis-map" className="space-y-3 md:space-y-4">
           <GISMapIntegration 
             issues={[]} 
             onIssueSelect={(issue) => console.log('Selected issue:', issue)}
-            height="600px"
+            height="400px"
           />
         </TabsContent>
       </Tabs>
