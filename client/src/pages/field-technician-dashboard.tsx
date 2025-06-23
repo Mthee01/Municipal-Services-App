@@ -307,7 +307,7 @@ export default function FieldTechnicianDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -329,7 +329,7 @@ export default function FieldTechnicianDashboard() {
                 {currentLocation ? 'GPS On' : 'GPS Off'}
               </span>
             </Badge>
-            <Button variant="outline" size="sm" className="flex-shrink-0">
+            <Button variant="outline" size="sm" className="flex-shrink-0 min-w-[44px] sm:min-w-[120px] px-2 sm:px-3">
               <Bell className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">Notifications</span>
             </Button>
@@ -535,31 +535,31 @@ function WorkAssignmentCard({
               </div>
             </div>
             
-            <div className="flex sm:flex-col gap-2 sm:min-w-[120px]">
+            <div className="flex sm:flex-col gap-2 sm:min-w-[140px] flex-shrink-0">
               {session ? (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 justify-center">
-                  <PlayCircle className="w-3 h-3 mr-1" />
-                  Active
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 justify-center whitespace-nowrap px-3 py-1">
+                  <PlayCircle className="w-3 h-3 mr-1 flex-shrink-0" />
+                  <span>Active</span>
                 </Badge>
               ) : (
                 <Button 
                   size="sm" 
                   onClick={onStartWork}
                   disabled={isStarting}
-                  className="flex-1 sm:w-full"
+                  className="flex-1 sm:w-full whitespace-nowrap min-h-[32px] px-3"
                 >
-                  <PlayCircle className="w-4 h-4 mr-2" />
-                  {isStarting ? 'Starting...' : 'Start Work'}
+                  <PlayCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span>{isStarting ? 'Starting...' : 'Start Work'}</span>
                 </Button>
               )}
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={onViewDetails}
-                className="flex-1 sm:w-full"
+                className="flex-1 sm:w-full whitespace-nowrap min-h-[32px] px-3"
               >
-                <Search className="w-4 h-4 mr-2" />
-                Details
+                <Search className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>Details</span>
               </Button>
             </div>
           </div>
@@ -614,10 +614,10 @@ function ActiveSessionCard({
           <Button 
             onClick={() => onComplete(completionNotes)}
             disabled={isCompleting || !completionNotes.trim()}
-            className="w-full"
+            className="w-full min-h-[44px] text-sm"
           >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            {isCompleting ? 'Completing...' : 'Complete Work'}
+            <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+            <span>{isCompleting ? 'Completing...' : 'Complete Work'}</span>
           </Button>
         </div>
       </CardContent>
@@ -759,17 +759,18 @@ function FieldReportForm({
             />
           </div>
 
-          <div>
+          <div className="space-y-3">
             <Label>Photos ({photoCapture.length}/5)</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={photoCapture.length >= 5}
+                className="min-h-[44px] text-sm whitespace-nowrap"
               >
-                <Camera className="w-4 h-4 mr-2" />
-                Add Photos
+                <Camera className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>Add Photos</span>
               </Button>
               <input
                 ref={fileInputRef}
@@ -781,9 +782,9 @@ function FieldReportForm({
               />
             </div>
             {photoCapture.length > 0 && (
-              <div className="mt-2 grid grid-cols-3 gap-2">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {photoCapture.map((file, index) => (
-                  <div key={index} className="text-xs bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                  <div key={index} className="text-xs bg-gray-100 dark:bg-gray-700 p-3 rounded truncate">
                     {file.name}
                   </div>
                 ))}
@@ -791,9 +792,13 @@ function FieldReportForm({
             )}
           </div>
 
-          <Button type="submit" disabled={isSubmitting || !formData.issueId || !formData.description} className="w-full">
-            <Upload className="w-4 h-4 mr-2" />
-            {isSubmitting ? 'Submitting...' : 'Submit Report'}
+          <Button 
+            type="submit" 
+            disabled={isSubmitting || !formData.issueId || !formData.description} 
+            className="w-full min-h-[48px] text-sm"
+          >
+            <Upload className="w-4 h-4 mr-2 flex-shrink-0" />
+            <span>{isSubmitting ? 'Submitting...' : 'Submit Report'}</span>
           </Button>
         </form>
       </CardContent>
@@ -935,9 +940,9 @@ function PartsOrderForm({ onSubmit, isSubmitting, partsInventory }: any) {
             />
           </div>
 
-          <Button type="submit" disabled={isSubmitting} className="w-full">
-            <Package className="w-4 h-4 mr-2" />
-            {isSubmitting ? 'Submitting...' : 'Submit Order'}
+          <Button type="submit" disabled={isSubmitting} className="w-full min-h-[48px] text-sm">
+            <Package className="w-4 h-4 mr-2 flex-shrink-0" />
+            <span>{isSubmitting ? 'Submitting...' : 'Submit Order'}</span>
           </Button>
         </form>
       </CardContent>

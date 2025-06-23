@@ -178,6 +178,33 @@
     line-height: 1rem !important;
   }
 
+  /* Mobile-optimized button styles to prevent text overlap */
+  .btn-mobile-safe {
+    @apply min-h-[44px] px-3 py-2 text-sm whitespace-nowrap flex items-center justify-center gap-2;
+  }
+
+  .btn-mobile-safe .btn-icon {
+    @apply flex-shrink-0 w-4 h-4;
+  }
+
+  .btn-mobile-safe .btn-text {
+    @apply truncate max-w-full;
+  }
+
+  /* Touch-friendly interactive elements */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Prevent content overflow on small screens */
+  .mobile-content {
+    @apply break-words overflow-hidden;
+  }
+
+  .mobile-badge {
+    @apply text-xs px-2 py-1 whitespace-nowrap flex-shrink-0 inline-flex items-center;
+  }
+
   /* Mobile tab layout - ensure proper spacing */
   @media (max-width: 640px) {
     .tabs-list-mobile {
