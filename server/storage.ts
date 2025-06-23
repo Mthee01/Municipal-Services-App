@@ -1715,4 +1715,254 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+
+export class DatabaseStorage implements IStorage {
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  // Issue operations
+  async getIssues(): Promise<Issue[]> {
+    return await db.select().from(issues);
+  }
+
+  async getIssue(id: number): Promise<Issue | undefined> {
+    const [issue] = await db.select().from(issues).where(eq(issues.id, id));
+    return issue || undefined;
+  }
+
+  async getIssuesByStatus(status: string): Promise<Issue[]> {
+    return await db.select().from(issues).where(eq(issues.status, status));
+  }
+
+  async getIssuesByCategory(category: string): Promise<Issue[]> {
+    return await db.select().from(issues).where(eq(issues.category, category));
+  }
+
+  async getIssuesByWard(ward: string): Promise<Issue[]> {
+    return await db.select().from(issues).where(eq(issues.ward, ward));
+  }
+
+  async createIssue(issue: InsertIssue): Promise<Issue> {
+    const [createdIssue] = await db
+      .insert(issues)
+      .values(issue)
+      .returning();
+    return createdIssue;
+  }
+
+  async updateIssue(id: number, updates: Partial<Issue>): Promise<Issue | undefined> {
+    const [updatedIssue] = await db
+      .update(issues)
+      .set(updates)
+      .where(eq(issues.id, id))
+      .returning();
+    return updatedIssue || undefined;
+  }
+
+  async deleteIssue(id: number): Promise<boolean> {
+    const result = await db.delete(issues).where(eq(issues.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Payment operations
+  async getPayments(): Promise<Payment[]> {
+    return await db.select().from(payments);
+  }
+
+  async getPayment(id: number): Promise<Payment | undefined> {
+    const [payment] = await db.select().from(payments).where(eq(payments.id, id));
+    return payment || undefined;
+  }
+
+  async getPaymentsByType(type: string): Promise<Payment[]> {
+    return await db.select().from(payments).where(eq(payments.type, type));
+  }
+
+  async createPayment(payment: InsertPayment): Promise<Payment> {
+    const [createdPayment] = await db
+      .insert(payments)
+      .values(payment)
+      .returning();
+    return createdPayment;
+  }
+
+  async updatePayment(id: number, updates: Partial<Payment>): Promise<Payment | undefined> {
+    const [updatedPayment] = await db
+      .update(payments)
+      .set(updates)
+      .where(eq(payments.id, id))
+      .returning();
+    return updatedPayment || undefined;
+  }
+
+  // Team operations
+  async getTeams(): Promise<Team[]> {
+    return await db.select().from(teams);
+  }
+
+  async getTeam(id: number): Promise<Team | undefined> {
+    const [team] = await db.select().from(teams).where(eq(teams.id, id));
+    return team || undefined;
+  }
+
+  async getTeamsByDepartment(department: string): Promise<Team[]> {
+    return await db.select().from(teams).where(eq(teams.department, department));
+  }
+
+  async createTeam(team: InsertTeam): Promise<Team> {
+    const [createdTeam] = await db
+      .insert(teams)
+      .values(team)
+      .returning();
+    return createdTeam;
+  }
+
+  async updateTeam(id: number, updates: Partial<Team>): Promise<Team | undefined> {
+    const [updatedTeam] = await db
+      .update(teams)
+      .set(updates)
+      .where(eq(teams.id, id))
+      .returning();
+    return updatedTeam || undefined;
+  }
+
+  // Technician operations
+  async getTechnicians(): Promise<Technician[]> {
+    return await db.select().from(technicians);
+  }
+
+  async getTechnician(id: number): Promise<Technician | undefined> {
+    const [technician] = await db.select().from(technicians).where(eq(technicians.id, id));
+    return technician || undefined;
+  }
+
+  async getTechniciansByDepartment(department: string): Promise<Technician[]> {
+    return await db.select().from(technicians).where(eq(technicians.department, department));
+  }
+
+  async getTechniciansByStatus(status: string): Promise<Technician[]> {
+    return await db.select().from(technicians).where(eq(technicians.status, status));
+  }
+
+  async createTechnician(technician: InsertTechnician): Promise<Technician> {
+    const [createdTechnician] = await db
+      .insert(technicians)
+      .values(technician)
+      .returning();
+    return createdTechnician;
+  }
+
+  async updateTechnician(id: number, updates: Partial<Technician>): Promise<Technician | undefined> {
+    const [updatedTechnician] = await db
+      .update(technicians)
+      .set(updates)
+      .where(eq(technicians.id, id))
+      .returning();
+    return updatedTechnician || undefined;
+  }
+
+  async assignTechnicianToIssue(technicianId: number, issueId: number): Promise<boolean> {
+    try {
+      const [technician] = await db.select().from(technicians).where(eq(technicians.id, technicianId));
+      if (!technician) return false;
+
+      await db
+        .update(issues)
+        .set({ assignedTo: technician.name })
+        .where(eq(issues.id, issueId));
+
+      await db
+        .update(technicians)
+        .set({ status: "on_job" })
+        .where(eq(technicians.id, technicianId));
+
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async getWards(): Promise<Ward[]> { return []; }
+  async getWard(id: number): Promise<Ward | undefined> { return undefined; }
+  async getWardByNumber(wardNumber: string): Promise<Ward | undefined> { return undefined; }
+  async createWard(ward: InsertWard): Promise<Ward> { throw new Error("Not implemented"); }
+  async updateWard(id: number, updates: Partial<Ward>): Promise<Ward | undefined> { return undefined; }
+
+  async getIssueUpdates(issueId: number): Promise<IssueUpdate[]> { return []; }
+  async createIssueUpdate(update: InsertIssueUpdate): Promise<IssueUpdate> { throw new Error("Not implemented"); }
+
+  async getVouchers(): Promise<Voucher[]> { return []; }
+  async getVoucher(id: number): Promise<Voucher | undefined> { return undefined; }
+  async getVouchersByType(type: string): Promise<Voucher[]> { return []; }
+  async getVoucherByCode(code: string): Promise<Voucher | undefined> { return undefined; }
+  async createVoucher(voucher: InsertVoucher): Promise<Voucher> { throw new Error("Not implemented"); }
+  async updateVoucher(id: number, updates: Partial<Voucher>): Promise<Voucher | undefined> { return undefined; }
+  async useVoucher(voucherCode: string): Promise<boolean> { return false; }
+
+  async getFieldReports(): Promise<FieldReport[]> { return []; }
+  async getFieldReport(id: number): Promise<FieldReport | undefined> { return undefined; }
+  async getFieldReportsByTechnician(technicianId: number): Promise<FieldReport[]> { return []; }
+  async getFieldReportsByIssue(issueId: number): Promise<FieldReport[]> { return []; }
+  async createFieldReport(report: InsertFieldReport): Promise<FieldReport> { throw new Error("Not implemented"); }
+  async updateFieldReport(id: number, updates: Partial<FieldReport>): Promise<FieldReport | undefined> { return undefined; }
+
+  async getPartsInventory(): Promise<PartsInventory[]> { return []; }
+  async getPartsInventoryItem(id: number): Promise<PartsInventory | undefined> { return undefined; }
+  async getPartsInventoryByCategory(category: string): Promise<PartsInventory[]> { return []; }
+  async createPartsInventoryItem(item: InsertPartsInventory): Promise<PartsInventory> { throw new Error("Not implemented"); }
+  async updatePartsInventoryItem(id: number, updates: Partial<PartsInventory>): Promise<PartsInventory | undefined> { return undefined; }
+
+  async getPartsOrders(): Promise<PartsOrder[]> { return []; }
+  async getPartsOrder(id: number): Promise<PartsOrder | undefined> { return undefined; }
+  async getPartsOrdersByTechnician(technicianId: number): Promise<PartsOrder[]> { return []; }
+  async getPartsOrdersByStatus(status: string): Promise<PartsOrder[]> { return []; }
+  async createPartsOrder(order: InsertPartsOrder): Promise<PartsOrder> { throw new Error("Not implemented"); }
+  async updatePartsOrder(id: number, updates: Partial<PartsOrder>): Promise<PartsOrder | undefined> { return undefined; }
+
+  async getTechnicianMessages(): Promise<TechnicianMessage[]> { return []; }
+  async getTechnicianMessage(id: number): Promise<TechnicianMessage | undefined> { return undefined; }
+  async getTechnicianMessagesByUser(userId: number): Promise<TechnicianMessage[]> { return []; }
+  async getTechnicianMessagesBetweenUsers(fromUserId: number, toUserId: number): Promise<TechnicianMessage[]> { return []; }
+  async createTechnicianMessage(message: InsertTechnicianMessage): Promise<TechnicianMessage> { throw new Error("Not implemented"); }
+  async updateTechnicianMessage(id: number, updates: Partial<TechnicianMessage>): Promise<TechnicianMessage | undefined> { return undefined; }
+
+  async getTechnicianLocations(): Promise<TechnicianLocation[]> { return []; }
+  async getTechnicianLocation(id: number): Promise<TechnicianLocation | undefined> { return undefined; }
+  async getTechnicianLocationsByTechnician(technicianId: number): Promise<TechnicianLocation[]> { return []; }
+  async createTechnicianLocation(location: InsertTechnicianLocation): Promise<TechnicianLocation> { throw new Error("Not implemented"); }
+  async getLatestTechnicianLocation(technicianId: number): Promise<TechnicianLocation | undefined> { return undefined; }
+
+  async getActiveWorkSessions(): Promise<{ issueId: number; arrivalTime: Date; isActive: boolean }[]> { return []; }
+
+  async getChatMessages(sessionId: string): Promise<ChatMessage[]> { return []; }
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> { throw new Error("Not implemented"); }
+
+  async getWhatsappMessages(phoneNumber?: string): Promise<WhatsappMessage[]> { return []; }
+  async createWhatsappMessage(message: InsertWhatsappMessage): Promise<WhatsappMessage> { throw new Error("Not implemented"); }
+  async updateWhatsappMessageStatus(messageId: string, status: string): Promise<boolean> { return false; }
+
+  async getWardStats(wardNumber?: string): Promise<any> { return {}; }
+  async getTechnicianPerformance(): Promise<any> { return []; }
+  async getMunicipalityStats(): Promise<any> { return {}; }
+  async getDepartmentStats(department?: string): Promise<any> { return {}; }
+}
+
+export const storage = new DatabaseStorage();

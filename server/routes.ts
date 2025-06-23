@@ -247,6 +247,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/technicians", async (req, res) => {
+    try {
+      const { name, phone, email, department, skills } = req.body;
+      
+      const newTechnician = await storage.createTechnician({
+        name,
+        phone,
+        email: email || null,
+        department,
+        skills: skills || [],
+        status: "available",
+        currentLocation: null,
+        latitude: null,
+        longitude: null,
+        teamId: null,
+        performanceRating: 5,
+        completedIssues: 0,
+        avgResolutionTime: 0
+      });
+
+      res.status(201).json(newTechnician);
+    } catch (error) {
+      console.error("Error creating technician:", error);
+      res.status(500).json({ message: "Failed to create technician" });
+    }
+  });
+
   // Find nearest technicians endpoint
   app.post("/api/technicians/nearest", async (req, res) => {
     try {
@@ -566,6 +593,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: role || "citizen",
         municipalityAccountNo: municipalityAccountNo || null
       });
+
+      // If user is registering as a field technician, create technician record
+      if (role === "field_technician") {
+        try {
+          await storage.createTechnician({
+            name,
+            phone: phone || "",
+            email: email || null,
+            department: "General", // Default department
+            skills: [], // Empty skills array initially
+            status: "available",
+            currentLocation: null,
+            latitude: null,
+            longitude: null,
+            teamId: null,
+            performanceRating: 5,
+            completedIssues: 0,
+            avgResolutionTime: 0
+          });
+        } catch (techError) {
+          console.error("Failed to create technician record:", techError);
+          // Continue with user registration even if technician creation fails
+        }
+      }
 
       res.json({ 
         success: true, 
