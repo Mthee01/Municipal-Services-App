@@ -247,6 +247,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Find nearest technicians endpoint
+  app.post("/api/technicians/nearest", async (req, res) => {
+    try {
+      const { latitude, longitude, department } = req.body;
+      
+      // Get all available technicians from the specified department
+      let technicians;
+      if (department) {
+        technicians = await storage.getTechniciansByDepartment(department);
+      } else {
+        technicians = await storage.getTechnicians();
+      }
+      
+      // Filter only available technicians
+      const availableTechnicians = technicians.filter(tech => tech.status === "available");
+      
+      // Calculate distances and sort by nearest (mock calculation for demo)
+      const technicianWithDistances = availableTechnicians.map(tech => ({
+        ...tech,
+        distance: Math.random() * 10 + 1, // Mock distance in km
+        estimatedArrival: Math.floor(Math.random() * 30) + 10 // Mock arrival time in minutes
+      })).sort((a, b) => a.distance - b.distance);
+      
+      res.json(technicianWithDistances.slice(0, 5)); // Return top 5 nearest
+    } catch (error) {
+      res.status(500).json({ message: "Failed to find nearest technicians" });
+    }
+  });
+
   app.post("/api/technicians/:technicianId/assign/:issueId", async (req, res) => {
     try {
       const technicianId = parseInt(req.params.technicianId);

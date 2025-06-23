@@ -33,14 +33,12 @@ export default function TechManagerDashboard() {
 
   const { data: departmentStats, isLoading: deptLoading } = useQuery({
     queryKey: ["/api/analytics/departments", selectedDepartment],
-    queryFn: () => apiRequest(`/api/analytics/departments${selectedDepartment !== 'all' ? `?department=${selectedDepartment}` : ''}`),
+    queryFn: () => apiRequest("GET", `/api/analytics/departments${selectedDepartment !== 'all' ? `?department=${selectedDepartment}` : ''}`),
   });
 
   const assignTechnicianMutation = useMutation({
     mutationFn: ({ technicianId, issueId }: { technicianId: number; issueId: number }) =>
-      apiRequest(`/api/technicians/${technicianId}/assign/${issueId}`, {
-        method: "POST",
-      }),
+      apiRequest("POST", `/api/technicians/${technicianId}/assign/${issueId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/technicians"] });
       queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
@@ -52,10 +50,7 @@ export default function TechManagerDashboard() {
 
   const updateTechnicianMutation = useMutation({
     mutationFn: ({ id, ...updates }: { id: number } & any) =>
-      apiRequest(`/api/technicians/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-      }),
+      apiRequest("PATCH", `/api/technicians/${id}`, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/technicians"] });
       toast({ title: "Technician updated successfully" });
@@ -79,13 +74,10 @@ export default function TechManagerDashboard() {
 
       const department = categoryToDepartment[issue.category];
 
-      const response = await apiRequest("/api/technicians/nearest", {
-        method: "POST",
-        body: JSON.stringify({
-          latitude: mockCoords.latitude,
-          longitude: mockCoords.longitude,
-          department,
-        }),
+      const response = await apiRequest("POST", "/api/technicians/nearest", {
+        latitude: mockCoords.latitude,
+        longitude: mockCoords.longitude,
+        department,
       });
 
       setNearestTechnicians(response);
@@ -116,15 +108,15 @@ export default function TechManagerDashboard() {
 
   const departments = ["Water & Sanitation", "Electricity", "Roads & Transport", "Waste Management"];
   const filteredTechnicians = selectedDepartment === "all" 
-    ? technicians 
-    : technicians?.filter((tech: any) => tech.department === selectedDepartment);
+    ? (technicians || [])
+    : (technicians || []).filter((tech: any) => tech.department === selectedDepartment);
 
-  const unassignedIssues = issues?.filter((issue: any) => !issue.assignedTo && issue.status === "open") || [];
-  const assignedIssues = issues?.filter((issue: any) => issue.assignedTo && issue.status !== "resolved") || [];
+  const unassignedIssues = (issues || []).filter((issue: any) => !issue.assignedTo && issue.status === "open");
+  const assignedIssues = (issues || []).filter((issue: any) => issue.assignedTo && issue.status !== "resolved");
 
-  const availableTechs = technicians?.filter((tech: any) => tech.status === "available").length || 0;
-  const onJobTechs = technicians?.filter((tech: any) => tech.status === "on_job").length || 0;
-  const avgPerformance = technicians?.reduce((acc: number, tech: any) => acc + tech.performanceRating, 0) / (technicians?.length || 1);
+  const availableTechs = (technicians || []).filter((tech: any) => tech.status === "available").length;
+  const onJobTechs = (technicians || []).filter((tech: any) => tech.status === "on_job").length;
+  const avgPerformance = (technicians || []).reduce((acc: number, tech: any) => acc + (tech.performanceRating || 0), 0) / Math.max((technicians || []).length, 1);
 
   const handleAssignTechnician = (technicianId: number) => {
     if (selectedIssue) {
