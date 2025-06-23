@@ -103,6 +103,11 @@ export default function OfficialDashboard() {
     queryKey: ["/api/teams"]
   });
 
+  const { data: unreadCount = 0 } = useQuery<number>({
+    queryKey: ["/api/whatsapp/unread-count"],
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
   // Mutations
   const assignTechnicianMutation = useMutation({
     mutationFn: async (data: { issueId: number; technicianId: number }) => {
@@ -255,11 +260,18 @@ export default function OfficialDashboard() {
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
               <Link href="/whatsapp">
-                <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2 w-full sm:w-auto">
-                  <MessageCircle className="h-4 w-4" />
-                  <span className="hidden sm:inline">WhatsApp Center</span>
-                  <span className="sm:hidden">WhatsApp</span>
-                </Button>
+                <div className="relative">
+                  <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2 w-full sm:w-auto">
+                    <MessageCircle className="h-4 w-4" />
+                    <span className="hidden sm:inline">WhatsApp Center</span>
+                    <span className="sm:hidden">WhatsApp</span>
+                  </Button>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center min-w-[20px] px-1">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </div>
               </Link>
               <div className="text-right w-full sm:w-auto">
                 <p className="text-sm text-gray-500">Welcome back</p>

@@ -1211,6 +1211,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/whatsapp/unread-count", async (req, res) => {
+    try {
+      const unreadCount = await storage.getUnreadWhatsappCount();
+      res.json(unreadCount);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to get unread count: " + error.message });
+    }
+  });
+
   return httpServer;
 }
 

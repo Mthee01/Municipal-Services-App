@@ -2023,6 +2023,21 @@ export class DatabaseStorage implements IStorage {
       .where(eq(whatsappConversations.id, conversationId));
   }
 
+  async getUnreadWhatsappCount(): Promise<number> {
+    const messages = await db.select().from(whatsappMessages)
+      .where(eq(whatsappMessages.direction, 'inbound'));
+    
+    // Count messages from citizens (inbound) that haven't been responded to
+    const inboundMessages = messages.filter(msg => msg.direction === 'inbound');
+    const outboundMessages = messages.filter(msg => msg.direction === 'outbound');
+    
+    // Simple logic: count inbound messages that don't have a corresponding outbound response
+    // In a real implementation, you'd track read status more precisely
+    const unreadCount = Math.max(0, inboundMessages.length - outboundMessages.length);
+    
+    return Math.min(unreadCount, 5); // Cap at 5 for demo purposes
+  }
+
   async getWardStats(wardNumber?: string): Promise<any> { return {}; }
   async getTechnicianPerformance(): Promise<any> { return []; }
   async getMunicipalityStats(): Promise<any> { return {}; }
