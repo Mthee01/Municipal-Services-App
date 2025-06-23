@@ -511,42 +511,50 @@ function WorkAssignmentCard({
     <Card>
       <CardContent className="p-4">
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <h3 className="font-semibold truncate">{issue.title}</h3>
-                <Badge variant="outline" className={getPriorityColor(issue.priority)}>
-                  {issue.priority}
-                </Badge>
-                <Badge variant="outline" className={getStatusColor(issue.status)}>
-                  {issue.status}
-                </Badge>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">{issue.description}</p>
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-gray-500">
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">{issue.location}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3 flex-shrink-0" />
-                  {new Date(issue.createdAt).toLocaleDateString()}
-                </span>
-              </div>
+          {/* Header with title and badges */}
+          <div className="flex flex-wrap items-start gap-2">
+            <h3 className="font-semibold flex-1 min-w-0 break-words pr-2">{issue.title}</h3>
+            <div className="flex gap-2 flex-shrink-0">
+              <Badge variant="outline" className={`${getPriorityColor(issue.priority)} text-xs px-2 py-1`}>
+                {issue.priority}
+              </Badge>
+              <Badge variant="outline" className={`${getStatusColor(issue.status)} text-xs px-2 py-1`}>
+                {issue.status}
+              </Badge>
             </div>
-            
-            <div className="flex sm:flex-col gap-2 sm:min-w-[140px] flex-shrink-0">
+          </div>
+
+          {/* Description */}
+          <p className="text-sm text-gray-600 dark:text-gray-400 break-words leading-relaxed">
+            {issue.description}
+          </p>
+
+          {/* Location and date info */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-gray-500">
+            <span className="flex items-center gap-1">
+              <MapPin className="w-3 h-3 flex-shrink-0" />
+              <span className="break-words">{issue.location}</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <Calendar className="w-3 h-3 flex-shrink-0" />
+              <span>{new Date(issue.createdAt).toLocaleDateString()}</span>
+            </span>
+          </div>
+
+          {/* Action buttons - separate section with proper spacing */}
+          <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row gap-3">
               {session ? (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 justify-center whitespace-nowrap px-3 py-1">
-                  <PlayCircle className="w-3 h-3 mr-1 flex-shrink-0" />
-                  <span>Active</span>
-                </Badge>
+                <div className="flex items-center justify-center p-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 rounded-md">
+                  <PlayCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="text-sm font-medium">Work In Progress</span>
+                </div>
               ) : (
                 <Button 
                   size="sm" 
                   onClick={onStartWork}
                   disabled={isStarting}
-                  className="flex-1 sm:w-full whitespace-nowrap min-h-[32px] px-3"
+                  className="flex-1 min-h-[44px] px-4 py-2 text-sm font-medium"
                 >
                   <PlayCircle className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span>{isStarting ? 'Starting...' : 'Start Work'}</span>
@@ -556,10 +564,10 @@ function WorkAssignmentCard({
                 variant="outline" 
                 size="sm" 
                 onClick={onViewDetails}
-                className="flex-1 sm:w-full whitespace-nowrap min-h-[32px] px-3"
+                className="flex-1 min-h-[44px] px-4 py-2 text-sm font-medium"
               >
                 <Search className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span>Details</span>
+                <span>View Details</span>
               </Button>
             </div>
           </div>
