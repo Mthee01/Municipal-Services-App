@@ -588,6 +588,84 @@ export default function CitizenDashboard() {
         </Dialog>
       )}
 
+      {/* Rating Modal */}
+      {showRatingModal && issueToRate && (
+        <Dialog open={showRatingModal} onOpenChange={setShowRatingModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Rate Service</DialogTitle>
+              <DialogDescription>
+                How would you rate the service for "{issueToRate.title}"?
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Rating</Label>
+                <div className="flex items-center space-x-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      className={`text-2xl transition-colors ${
+                        star <= rating ? "text-yellow-400" : "text-gray-300 hover:text-yellow-200"
+                      }`}
+                    >
+                      ⭐
+                    </button>
+                  ))}
+                  {rating > 0 && (
+                    <span className="ml-2 text-sm text-gray-600">({rating}/5 stars)</span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="feedback" className="text-sm font-medium">
+                  Additional Comments (Optional)
+                </Label>
+                <Textarea
+                  id="feedback"
+                  placeholder="Share your experience..."
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  className="min-h-[80px]"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowRatingModal(false)}
+                disabled={submitRating.isPending}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => submitRating.mutate({ 
+                  issueId: issueToRate.id, 
+                  rating, 
+                  feedback 
+                })}
+                disabled={rating === 0 || submitRating.isPending}
+                className="bg-sa-gold hover:bg-yellow-500 text-black"
+              >
+                {submitRating.isPending ? "Submitting..." : "Submit Rating"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {showIssueForm && (
+        <IssueForm
+          isOpen={showIssueForm}
+          onClose={() => setShowIssueForm(false)}
+        />
+      )}
+
       {/* Floating Chatbot */}
       <Chatbot userId={1} />
     </div>
