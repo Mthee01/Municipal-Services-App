@@ -115,12 +115,11 @@ export default function OfficialDashboard() {
   });
 
   // Fetch issue notes and escalations for selected issue
-  const { data: issueNotes = [], isLoading: notesLoading, error: notesError } = useQuery<IssueNote[]>({
-    queryKey: ["/api/issues", selectedIssue?.id, "notes"],
+  const { data: issueNotes = [], isLoading: notesLoading } = useQuery<IssueNote[]>({
+    queryKey: [`/api/issues/${selectedIssue?.id}/notes`],
     queryFn: async () => {
-      const result = await apiRequest("GET", `/api/issues/${selectedIssue?.id}/notes`);
-      console.log("Notes fetched for issue", selectedIssue?.id, ":", result);
-      return result;
+      const data = await apiRequest("GET", `/api/issues/${selectedIssue?.id}/notes`);
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!selectedIssue,
     refetchInterval: 5000, // Refresh notes every 5 seconds
@@ -148,14 +147,10 @@ export default function OfficialDashboard() {
     },
     onSuccess: () => {
       // Force immediate refetch of notes
-      queryClient.invalidateQueries({ queryKey: ["/api/issues", selectedIssue?.id, "notes"] });
-      queryClient.refetchQueries({ queryKey: ["/api/issues", selectedIssue?.id, "notes"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/issues/${selectedIssue?.id}/notes`] });
+      queryClient.refetchQueries({ queryKey: [`/api/issues/${selectedIssue?.id}/notes`] });
       queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
       setNewNote("");
-      // Don't close modal immediately - let user see the note was added
-      setTimeout(() => {
-        setShowNotesModal(false);
-      }, 1000);
       toast({
         title: "Success",
         description: "Note added successfully!",
@@ -899,10 +894,6 @@ export default function OfficialDashboard() {
           <div className="space-y-4">
             {/* Existing notes */}
             <div className="max-h-60 overflow-y-auto space-y-2">
-              <div className="text-xs text-gray-400 mb-2">
-                Debug: {issueNotes?.length || 0} notes, Loading: {notesLoading ? 'yes' : 'no'}, 
-                IsArray: {Array.isArray(issueNotes) ? 'yes' : 'no'}
-              </div>
               {notesLoading ? (
                 <p className="text-gray-500 text-center py-4">Loading notes...</p>
               ) : !Array.isArray(issueNotes) || issueNotes.length === 0 ? (
