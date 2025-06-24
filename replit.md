@@ -144,7 +144,16 @@ This is a comprehensive municipal services management system built with modern w
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+✓ June 24, 2025: Enhanced technician dashboard filtering
+- Resolved issues are now properly filtered out from technician view
+- Technicians only see active work assignments (open, assigned, in_progress)
+- Improved issue completion workflow with mandatory completion notes
+- Fixed work session tracking to handle mixed data types
+- Implemented proper issue closure with "Close Issue & Complete Work" functionality
+
 ## Changelog
 
-Changelog:
-- June 23, 2025. Initial setup
+- June 23, 2025: Initial setup
+- June 24, 2025: Enhanced technician workflow and filtering

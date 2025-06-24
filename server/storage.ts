@@ -812,7 +812,9 @@ export class MemStorage implements IStorage {
   }
 
   async getIssuesByTechnician(technicianId: number): Promise<Issue[]> {
-    return Array.from(this.issues.values()).filter(issue => issue.assignedTo === technicianId);
+    return Array.from(this.issues.values()).filter(issue => 
+      issue.assignedTo === technicianId && issue.status !== 'resolved'
+    );
   }
 
   async createIssue(insertIssue: InsertIssue): Promise<Issue> {
@@ -1933,9 +1935,12 @@ export class DatabaseStorage implements IStorage {
 
   async getIssuesByTechnician(technicianId: number): Promise<Issue[]> {
     const allIssues = await db.select().from(issues);
-    return allIssues.filter(issue => 
-      issue.assignedTo == technicianId || issue.assignedTo === technicianId.toString()
-    );
+    // Filter for technician assigned issues that are NOT resolved
+    return allIssues.filter(issue => {
+      const isAssignedToTechnician = issue.assignedTo == technicianId || issue.assignedTo === technicianId.toString();
+      const isNotResolved = issue.status !== 'resolved';
+      return isAssignedToTechnician && isNotResolved;
+    });
   }
 
   async createIssue(issue: InsertIssue): Promise<Issue> {
