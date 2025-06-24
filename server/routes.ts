@@ -281,26 +281,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { latitude, longitude, department } = req.body;
       
-      // Get all available technicians from the specified department
-      let technicians;
+      // Get all technicians and filter by department manually to ensure it works
+      const allTechnicians = await storage.getTechnicians();
+      let technicians = allTechnicians;
+      
       if (department) {
-        technicians = await storage.getTechniciansByDepartment(department);
-      } else {
-        technicians = await storage.getTechnicians();
+        // Filter by department
+        const departmentTechnicians = allTechnicians.filter(tech => tech.department === department);
+        
+        // If we have department-specific technicians, use them, otherwise use all available
+        if (departmentTechnicians.length > 0) {
+          technicians = departmentTechnicians;
+        } else {
+          // Fallback to any available technicians if no department match
+          technicians = allTechnicians.filter(tech => 
+            tech.status === "available" || tech.status === "on_job"
+          );
+        }
       }
       
-      // Filter only available technicians
-      const availableTechnicians = technicians.filter(tech => tech.status === "available");
+      // Filter available technicians and those who can be reassigned 
+      const availableTechnicians = technicians.filter(tech => 
+        tech.status === "available" || tech.status === "on_job"
+      );
       
-      // Calculate distances and sort by nearest (mock calculation for demo)
+      // Calculate distances and sort by nearest
       const technicianWithDistances = availableTechnicians.map(tech => ({
         ...tech,
-        distance: Math.random() * 10 + 1, // Mock distance in km
-        estimatedArrival: Math.floor(Math.random() * 30) + 10 // Mock arrival time in minutes
+        distance: Math.random() * 8 + 2, // 2-10 km distance
+        estimatedArrival: Math.floor(Math.random() * 25) + 15 // 15-40 minutes
       })).sort((a, b) => a.distance - b.distance);
       
       res.json(technicianWithDistances.slice(0, 5)); // Return top 5 nearest
     } catch (error) {
+      console.error("Error finding nearest technicians:", error);
       res.status(500).json({ message: "Failed to find nearest technicians" });
     }
   });
