@@ -215,6 +215,19 @@ export default function OfficialDashboard() {
         return issue.referenceNumber && issue.referenceNumber.toLowerCase().includes(searchLower);
       }
       
+      // Also check if search term is a padded ID (like "000018" for issue ID 18)
+      if (searchLower.match(/^0+\d+$/)) {
+        const numericId = parseInt(searchLower);
+        if (issue.id === numericId) {
+          return true;
+        }
+        // Also check if it matches the fallback format
+        const fallbackRef = String(issue.id).padStart(6, '0');
+        if (fallbackRef.toLowerCase() === searchLower) {
+          return true;
+        }
+      }
+      
       // For other searches, search in multiple fields
       return issue.title.toLowerCase().includes(searchLower) ||
              issue.description.toLowerCase().includes(searchLower) ||
@@ -488,7 +501,7 @@ export default function OfficialDashboard() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Enter RefNo (6 chars) for exact match, or search title/location..."
+                  placeholder="Enter RefNo (e.g. B41419, 68BE82) or search title/location..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
