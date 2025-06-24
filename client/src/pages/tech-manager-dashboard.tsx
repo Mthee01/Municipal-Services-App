@@ -290,14 +290,39 @@ export default function TechManagerDashboard() {
                   {unassignedIssues.map((issue: any) => {
                     // Check if issue is newly reported (within last hour)
                     const isNewIssue = new Date().getTime() - new Date(issue.createdAt).getTime() < 3600000;
+                    // Check if issue is escalated (urgent priority with escalation history or recent escalation)
+                    const isEscalated = issue.priority === 'urgent' && (
+                      (issue.escalationHistory && issue.escalationHistory.length > 0) ||
+                      // Also mark urgent issues as escalated even without explicit escalation history
+                      issue.priority === 'urgent'
+                    );
                     
                     return (
-                      <div key={issue.id} className={`flex flex-col gap-3 p-4 border rounded-lg ${isNewIssue ? 'border-blue-500 bg-blue-50' : ''}`}>
+                      <div key={issue.id} className={`flex flex-col gap-3 p-4 border rounded-lg relative ${
+                        isEscalated 
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20' 
+                          : isNewIssue 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : ''
+                      }`}>
+                        {isEscalated && (
+                          <div className="absolute -top-1 -right-1 flex items-center">
+                            <div className="animate-ping absolute inline-flex h-4 w-4 rounded-full bg-red-500 opacity-75"></div>
+                            <div className="relative inline-flex rounded-full h-4 w-4 bg-red-600"></div>
+                          </div>
+                        )}
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold text-sm truncate">{issue.title}</h4>
+                              <h4 className={`font-semibold text-sm truncate ${
+                                isEscalated ? 'text-red-900 dark:text-red-100' : ''
+                              }`}>{issue.title}</h4>
                               {isNewIssue && <Badge variant="default" className="bg-blue-500 text-white text-xs">NEW</Badge>}
+                              {isEscalated && (
+                                <Badge variant="destructive" className="bg-red-600 text-white text-xs animate-pulse">
+                                  ESCALATED
+                                </Badge>
+                              )}
                             </div>
                             <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">{issue.category.replace('_', ' ')}</p>
                             <p className="text-xs text-gray-500 mb-2">{issue.location} • {issue.ward}</p>
@@ -347,10 +372,35 @@ export default function TechManagerDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {assignedIssues.map((issue: any) => (
-                    <div key={issue.id} className="p-3 border rounded-lg">
+                  {assignedIssues.map((issue: any) => {
+                    // Check if issue is escalated (urgent priority with escalation history or recent escalation)
+                    const isEscalated = issue.priority === 'urgent' && (
+                      (issue.escalationHistory && issue.escalationHistory.length > 0) ||
+                      // Also mark urgent issues as escalated even without explicit escalation history
+                      issue.priority === 'urgent'
+                    );
+                    
+                    return (
+                    <div key={issue.id} className={`p-3 border rounded-lg relative ${
+                      isEscalated ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''
+                    }`}>
+                      {isEscalated && (
+                        <div className="absolute -top-1 -right-1 flex items-center">
+                          <div className="animate-ping absolute inline-flex h-4 w-4 rounded-full bg-red-500 opacity-75"></div>
+                          <div className="relative inline-flex rounded-full h-4 w-4 bg-red-600"></div>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-sm">{issue.title}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className={`font-semibold text-sm ${
+                            isEscalated ? 'text-red-900 dark:text-red-100' : ''
+                          }`}>{issue.title}</h4>
+                          {isEscalated && (
+                            <Badge variant="destructive" className="bg-red-600 text-white text-xs animate-pulse">
+                              ESCALATED
+                            </Badge>
+                          )}
+                        </div>
                         <Badge variant="outline" className={getStatusColor(issue.status)}>
                           {issue.status}
                         </Badge>
@@ -362,7 +412,8 @@ export default function TechManagerDashboard() {
                         {issue.location} • {formatRelativeTime(issue.updatedAt)}
                       </p>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 {assignedIssues.length === 0 && (
                   <div className="text-center py-8">

@@ -173,6 +173,13 @@ Preferred communication style: Simple, everyday language.
 - Performance chart now displays completed issues, ratings, and resolution times
 - Department statistics working with 13 total technicians, 4.6 average performance rating
 
+✓ June 24, 2025: Added red flashing indicator for escalated issues in tech manager dashboard
+- Implemented visual red flashing indicator for urgent/escalated issues
+- Added red background highlight and pulsing red dot for immediate attention
+- Added "ESCALATED" badge with animation for clear identification
+- Issues marked as urgent priority now display with red warning indicators
+- Tech managers can instantly identify escalated issues requiring immediate action
+
 ✓ June 24, 2025: Enhanced call center agent capabilities
 - Added comprehensive note-taking system for tracking issue communication and progress
 - Implemented escalation system allowing agents to escalate issues to technical managers

@@ -274,12 +274,32 @@ export class DatabaseStorage implements IStorage {
 
   // Issue operations
   async getIssues(): Promise<Issue[]> {
-    return db.select().from(issues).orderBy(desc(issues.createdAt));
+    const issuesData = await db.select().from(issues).orderBy(desc(issues.createdAt));
+    
+    // Fetch escalation history for each issue
+    const issuesWithEscalations = await Promise.all(
+      issuesData.map(async (issue) => {
+        const escalations = await this.getIssueEscalations(issue.id);
+        return {
+          ...issue,
+          escalationHistory: escalations
+        };
+      })
+    );
+    
+    return issuesWithEscalations;
   }
 
   async getIssue(id: number): Promise<Issue | undefined> {
     const [issue] = await db.select().from(issues).where(eq(issues.id, id));
-    return issue;
+    if (!issue) return undefined;
+    
+    // Fetch escalation history for the issue
+    const escalations = await this.getIssueEscalations(issue.id);
+    return {
+      ...issue,
+      escalationHistory: escalations
+    };
   }
 
   async getIssuesByStatus(status: string): Promise<Issue[]> {
