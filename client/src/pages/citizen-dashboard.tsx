@@ -530,7 +530,7 @@ export default function CitizenDashboard() {
                 <Button 
                   onClick={() => {
                     setShowDetailsModal(false);
-                    console.log("Rate service", selectedIssue);
+                    handleRateService(selectedIssue);
                   }}
                   className="bg-sa-gold hover:bg-yellow-500 text-black"
                 >
