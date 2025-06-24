@@ -42,16 +42,13 @@ export default function TechManagerDashboard() {
   const { data: departmentStats, isLoading: deptLoading } = useQuery({
     queryKey: ["/api/analytics/departments", selectedDepartment],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/analytics/departments${selectedDepartment !== 'all' ? `?department=${selectedDepartment}` : ''}`);
-      const data = await response.json();
-      console.log("Department stats response:", data);
-      return data;
+      return await apiRequest("GET", `/api/analytics/departments${selectedDepartment !== 'all' ? `?department=${selectedDepartment}` : ''}`);
     },
   });
 
   // Fetch issue notes for selected issue
   const { data: issueNotes = [] } = useQuery({
-    queryKey: ["/api/issues", selectedIssueForNotes?.id, "notes"],
+    queryKey: [`/api/issues/${selectedIssueForNotes?.id}/notes`],
     enabled: !!selectedIssueForNotes
   });
 
@@ -539,6 +536,45 @@ export default function TechManagerDashboard() {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Notes Modal */}
+      <Dialog open={showNotesModal} onOpenChange={setShowNotesModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Issue Notes - {selectedIssueForNotes?.title}</DialogTitle>
+            <DialogDescription>
+              View notes and communication history for this issue
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="max-h-60 overflow-y-auto space-y-2">
+              {!Array.isArray(issueNotes) || issueNotes.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No notes yet for this issue</p>
+              ) : (
+                issueNotes.map((note) => (
+                  <div key={note.id} className="p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm text-gray-900">{note.createdBy}</span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(note.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700">{note.note}</p>
+                    <Badge variant="secondary" className="mt-2 text-xs">
+                      {note.noteType || 'General'}
+                    </Badge>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNotesModal(false)}>
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
