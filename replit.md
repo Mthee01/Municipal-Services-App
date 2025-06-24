@@ -146,11 +146,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-✓ June 24, 2025: Restricted technician assignment to tech managers only
-- Removed technician assignment capability from call center agent dashboard
-- Call center agents can now only monitor and export issue reports
-- Added clear messaging that assignments are managed by technical managers
-- Maintained issue visibility but restricted assignment actions to proper role
+✓ June 24, 2025: Enhanced call center agent capabilities
+- Added comprehensive note-taking system for tracking issue communication and progress
+- Implemented escalation system allowing agents to escalate issues to technical managers
+- Added Notes and Escalate action buttons to issue table for easy access
+- Created detailed modals for viewing/adding notes and managing escalations
+- Escalations automatically mark issues as URGENT priority for immediate attention
+- Maintained audit trails for both notes and escalations with timestamps and user tracking
+- Call center agents can now fully monitor, document, and escalate issues as needed
 
 ✓ June 24, 2025: Enhanced real-time citizen issue visibility
 - Implemented 5-second auto-refresh for call center and tech manager dashboards

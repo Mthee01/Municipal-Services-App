@@ -590,7 +590,141 @@ export default function OfficialDashboard() {
         </div>
       </section>
 
+      {/* Issue Notes Modal */}
+      <Dialog open={showNotesModal} onOpenChange={setShowNotesModal}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Issue Notes - {selectedIssue?.title}</DialogTitle>
+            <DialogDescription>
+              View and add notes for this issue. Notes help track communication and progress.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {/* Add new note */}
+            <div className="border-b pb-4">
+              <Label htmlFor="new-note">Add New Note</Label>
+              <Textarea
+                id="new-note"
+                placeholder="Enter your note here..."
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                className="mt-2"
+                rows={3}
+              />
+              <Button 
+                onClick={handleAddNote}
+                disabled={!newNote.trim() || addNoteMutation.isPending}
+                className="mt-2"
+                size="sm"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {addNoteMutation.isPending ? "Adding..." : "Add Note"}
+              </Button>
+            </div>
 
+            {/* Existing notes */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-900">Previous Notes</h4>
+              {issueNotes.length === 0 ? (
+                <p className="text-gray-500 text-sm">No notes yet for this issue.</p>
+              ) : (
+                issueNotes.map((note) => (
+                  <div key={note.id} className="bg-gray-50 p-3 rounded-lg">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="font-medium text-sm text-gray-900">{note.createdBy}</span>
+                      <span className="text-xs text-gray-500">
+                        {formatRelativeTime(note.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700">{note.note}</p>
+                    <Badge variant="secondary" className="mt-2 text-xs">
+                      {note.noteType.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Issue Escalation Modal */}
+      <Dialog open={showEscalateModal} onOpenChange={setShowEscalateModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Escalate Issue - {selectedIssue?.title}</DialogTitle>
+            <DialogDescription>
+              Escalate this issue to the Technical Manager. Provide a clear reason for escalation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <div className="flex items-center">
+                <AlertTriangle className="h-5 w-5 text-orange-600 mr-2" />
+                <span className="text-sm font-medium text-orange-800">
+                  This will mark the issue as URGENT priority
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="escalation-reason">Escalation Reason *</Label>
+              <Textarea
+                id="escalation-reason"
+                placeholder="Please provide a detailed reason for escalating this issue..."
+                value={escalationReason}
+                onChange={(e) => setEscalationReason(e.target.value)}
+                rows={4}
+                required
+              />
+            </div>
+
+            {/* Show existing escalations */}
+            {issueEscalations.length > 0 && (
+              <div className="border-t pt-4">
+                <h4 className="font-medium text-gray-900 mb-2">Previous Escalations</h4>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {issueEscalations.map((escalation) => (
+                    <div key={escalation.id} className="bg-red-50 p-2 rounded text-sm">
+                      <div className="flex justify-between">
+                        <span className="font-medium">{escalation.escalatedBy}</span>
+                        <span className="text-xs text-gray-500">
+                          {formatRelativeTime(escalation.createdAt)}
+                        </span>
+                      </div>
+                      <p className="text-gray-700 mt-1">{escalation.escalationReason}</p>
+                      <Badge variant="destructive" className="mt-1 text-xs">
+                        {escalation.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowEscalateModal(false);
+                  setSelectedIssue(null);
+                  setEscalationReason("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleConfirmEscalation}
+                disabled={!escalationReason.trim() || escalateMutation.isPending}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <AlertCircle className="h-4 w-4 mr-2" />
+                {escalateMutation.isPending ? "Escalating..." : "Escalate to Tech Manager"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Resource Management */}
       <section className="py-8 bg-white">
@@ -607,7 +741,7 @@ export default function OfficialDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {teamsLoading ? (
+                {issuesLoading ? (
                   <div className="text-center py-4">
                     <p className="text-gray-600">Loading teams...</p>
                   </div>
