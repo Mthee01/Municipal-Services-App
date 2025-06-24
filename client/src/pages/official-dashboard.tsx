@@ -198,9 +198,13 @@ export default function OfficialDashboard() {
         return false;
       }
       
-      return issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             issue.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             issue.location.toLowerCase().includes(searchTerm.toLowerCase());
+      // Search by reference number, title, description, location, or category
+      const searchLower = searchTerm.toLowerCase();
+      return (issue.referenceNumber && issue.referenceNumber.toLowerCase().includes(searchLower)) ||
+             issue.title.toLowerCase().includes(searchLower) ||
+             issue.description.toLowerCase().includes(searchLower) ||
+             issue.location.toLowerCase().includes(searchLower) ||
+             issue.category.toLowerCase().includes(searchLower);
     });
     
     // Sort to show newest issues first (especially new citizen reports)

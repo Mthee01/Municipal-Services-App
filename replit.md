@@ -210,6 +210,12 @@ Preferred communication style: Simple, everyday language.
 - Reference numbers help citizens track their service requests
 - Database schema updated with reference_number field (6 characters)
 
+✓ June 24, 2025: Added reference number search functionality
+- Call center agents can now search issues by reference number
+- Search functionality extended to include reference numbers alongside title, location, and category
+- Updated search placeholder text to indicate reference number search capability
+- Enhanced filtering logic to support reference number matching
+
 ✓ June 24, 2025: Enhanced call center agent capabilities
 - Added comprehensive note-taking system for tracking issue communication and progress
 - Implemented escalation system allowing agents to escalate issues to technical managers
