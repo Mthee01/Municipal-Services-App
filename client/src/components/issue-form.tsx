@@ -118,6 +118,41 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
     setPhotos(photos.filter((_, i) => i !== index));
   };
 
+  // Reverse geocoding function to convert GPS coordinates to address
+  const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+    // Using OpenStreetMap Nominatim API (free, no API key required)
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'Municipal Services App'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Geocoding service unavailable');
+    }
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    // Extract meaningful address components
+    const address = data.address || {};
+    const components = [
+      address.house_number,
+      address.road || address.street,
+      address.suburb || address.neighbourhood || address.residential,
+      address.city || address.town || address.municipality,
+      address.postcode
+    ].filter(Boolean);
+    
+    return components.length > 0 ? components.join(', ') : data.display_name || 'Address not found';
+  };
+
   const getCurrentLocation = async () => {
     console.log("getCurrentLocation called");
     
@@ -147,7 +182,7 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
     
     toast({
       title: "Getting location...",
-      description: "Please allow location access when prompted",
+      description: "Getting your address...",
     });
 
     try {
@@ -177,26 +212,38 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
             reject(err);
           },
           {
-            enableHighAccuracy: false,
-            timeout: 8000,
-            maximumAge: 300000
+            enableHighAccuracy: true, // Better accuracy for address lookup
+            timeout: 10000,
+            maximumAge: 60000 // Shorter cache for more current location
           }
         );
       });
 
       const { latitude, longitude, accuracy } = position.coords;
       
-      // Enhanced location format
-      const locationString = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
+      console.log("GPS coordinates captured:", { latitude, longitude, accuracy });
       
-      form.setValue("location", locationString);
-      
-      console.log("Location captured:", { latitude, longitude, accuracy, locationString });
-      
-      toast({
-        title: "Location captured successfully", 
-        description: `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)} ${accuracy ? `(±${Math.round(accuracy)}m)` : ''}`,
-      });
+      // Try to get readable address using reverse geocoding
+      try {
+        const address = await reverseGeocode(latitude, longitude);
+        form.setValue("location", address);
+        console.log("Address captured:", address);
+        
+        toast({
+          title: "Location captured successfully", 
+          description: `Address: ${address.length > 50 ? address.substring(0, 50) + '...' : address}`,
+        });
+      } catch (geocodeError) {
+        console.warn("Reverse geocoding failed, using coordinates:", geocodeError);
+        // Fallback to coordinates if geocoding fails
+        const locationString = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
+        form.setValue("location", locationString);
+        
+        toast({
+          title: "Location captured", 
+          description: `GPS coordinates captured ${accuracy ? `(±${Math.round(accuracy)}m)` : ''}`,
+        });
+      }
     } catch (error: any) {
       console.error("Location error:", error);
       let errorMessage = "Unable to get current location";
@@ -343,7 +390,7 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
                       </Button>
                     </div>
                     <p className="text-xs text-gray-500">
-                      {locationLoading ? "Getting your location..." : "Click map icon to use current location (requires permission)"}
+                      {locationLoading ? "Getting your address..." : "Click map icon to auto-fill your current address"}
                     </p>
                     <FormMessage />
                   </FormItem>
