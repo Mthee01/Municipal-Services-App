@@ -556,7 +556,7 @@ export default function OfficialDashboard() {
                         <TableRow key={issue.id} className="hover:bg-gray-50">
                           <TableCell>
                             <div className="font-mono text-sm font-semibold text-blue-600">
-                              {issue.referenceNumber || String(issue.id).padStart(6, '0')}
+                              {issue.referenceNumber}
                             </div>
                           </TableCell>
                           <TableCell>

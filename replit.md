@@ -230,6 +230,12 @@ Preferred communication style: Simple, everyday language.
 - Updated search placeholder to clarify RefNo exact match behavior
 - Call center agents can now quickly find specific issues by RefNo
 
+✓ June 24, 2025: Fixed RefNo display to show actual alphanumeric reference numbers
+- RefNo column now displays actual alphanumeric reference numbers (e.g., AFB3F1, D31523)
+- Removed fallback to padded numeric IDs that were showing as "000018" format
+- All issues now have proper 6-character alphanumeric reference numbers assigned
+- RefNo display matches the actual database values for accurate tracking
+
 ✓ June 24, 2025: Enhanced call center agent capabilities
 - Added comprehensive note-taking system for tracking issue communication and progress
 - Implemented escalation system allowing agents to escalate issues to technical managers
