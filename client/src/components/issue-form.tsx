@@ -119,7 +119,10 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
   };
 
   const getCurrentLocation = async () => {
+    console.log("getCurrentLocation called");
+    
     if (!navigator.geolocation) {
+      console.log("Geolocation not supported");
       toast({
         title: "Location not supported",
         description: "Your browser doesn't support location services",
@@ -129,6 +132,8 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
     }
 
     setLocationLoading(true);
+    console.log("Location loading started");
+    
     toast({
       title: "Getting location...",
       description: "Please allow location access when prompted",
@@ -137,9 +142,9 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 15000, // Increased timeout for mobile
-          maximumAge: 300000 // 5 minutes cache
+          enableHighAccuracy: false, // Less accurate but faster and more reliable
+          timeout: 30000, // Longer timeout for mobile networks
+          maximumAge: 60000 // 1 minute cache
         });
       });
 
@@ -149,11 +154,16 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       const locationString = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
       
       form.setValue("location", locationString);
+      
+      // Log success for debugging
+      console.log("Location captured:", { latitude, longitude, accuracy, locationString });
+      
       toast({
         title: "Location captured successfully", 
-        description: `Current location added ${accuracy ? `(±${Math.round(accuracy)}m accuracy)` : ''}`,
+        description: `GPS coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)} ${accuracy ? `(±${Math.round(accuracy)}m)` : ''}`,
       });
     } catch (error: any) {
+      console.error("Location error:", error);
       let errorMessage = "Unable to get current location";
       
       switch (error.code) {
@@ -274,9 +284,14 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
                       <Button 
                         type="button" 
                         variant="outline" 
-                        onClick={getCurrentLocation}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          console.log("Location button clicked");
+                          getCurrentLocation();
+                        }}
                         disabled={locationLoading}
                         className="px-3"
+                        title="Get current location"
                       >
                         {locationLoading ? (
                           <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
