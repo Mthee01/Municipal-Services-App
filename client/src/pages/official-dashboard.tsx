@@ -136,6 +136,7 @@ export default function OfficialDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/issues", selectedIssue?.id, "notes"] });
       setNewNote("");
+      setShowNotesModal(false);
       toast({
         title: "Success",
         description: "Note added successfully!",
@@ -153,9 +154,10 @@ export default function OfficialDashboard() {
   const escalateMutation = useMutation({
     mutationFn: async (data: { issueId: number; reason: string }) => {
       return apiRequest("POST", `/api/issues/${data.issueId}/escalate`, {
+        reason: data.reason,
         escalatedBy: "Call Center Agent",
-        escalationReason: data.reason,
-        escalationLevel: "tech_manager"
+        escalatedByRole: "call_center_agent",
+        escalatedTo: "tech_manager"
       });
     },
     onSuccess: () => {
@@ -163,10 +165,9 @@ export default function OfficialDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/issues", selectedIssue?.id, "escalations"] });
       setEscalationReason("");
       setShowEscalateModal(false);
-      setSelectedIssue(null);
       toast({
         title: "Success",
-        description: "Issue escalated to Technical Manager!",
+        description: "Issue escalated to Technical Manager successfully!",
       });
     },
     onError: () => {
@@ -864,6 +865,99 @@ export default function OfficialDashboard() {
           </div>
         </div>
       </section>
+
+      {/* Notes Modal */}
+      <Dialog open={showNotesModal} onOpenChange={setShowNotesModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Issue Notes - {selectedIssue?.title}</DialogTitle>
+            <DialogDescription>
+              View and add notes for this issue
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Existing notes */}
+            <div className="max-h-60 overflow-y-auto space-y-2">
+              {issueNotes.length > 0 ? (
+                issueNotes.map((note) => (
+                  <div key={note.id} className="p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm text-gray-900">{note.createdBy}</span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(note.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700">{note.note}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-center py-4">No notes yet</p>
+              )}
+            </div>
+            
+            {/* Add new note */}
+            <div className="space-y-2">
+              <Label htmlFor="new-note">Add Note</Label>
+              <Textarea
+                id="new-note"
+                placeholder="Enter your note about this issue..."
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNotesModal(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAddNote}
+              disabled={!newNote.trim() || addNoteMutation.isPending}
+            >
+              <StickyNote className="h-4 w-4 mr-2" />
+              {addNoteMutation.isPending ? "Adding..." : "Add Note"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Escalate Modal */}
+      <Dialog open={showEscalateModal} onOpenChange={setShowEscalateModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Escalate Issue - {selectedIssue?.title}</DialogTitle>
+            <DialogDescription>
+              Escalate this issue to the Technical Manager. This will mark it as URGENT priority.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="escalation-reason">Reason for Escalation</Label>
+              <Textarea
+                id="escalation-reason"
+                placeholder="Explain why this issue needs immediate attention..."
+                value={escalationReason}
+                onChange={(e) => setEscalationReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEscalateModal(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmEscalation}
+              disabled={!escalationReason.trim() || escalateMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <AlertCircle className="h-4 w-4 mr-2" />
+              {escalateMutation.isPending ? "Escalating..." : "Escalate to Tech Manager"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Export Report Modal */}
       <Dialog open={showExportModal} onOpenChange={setShowExportModal}>
