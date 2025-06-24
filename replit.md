@@ -180,6 +180,13 @@ Preferred communication style: Simple, everyday language.
 - Issues marked as urgent priority now display with red warning indicators
 - Tech managers can instantly identify escalated issues requiring immediate action
 
+✓ June 24, 2025: Fixed tech manager dashboard stability issues
+- Resolved 500 errors in /api/issues endpoint that were causing dashboard failures
+- Simplified database queries to prevent crashes during issue fetching
+- Dashboard now loads reliably without intermittent failures
+- Red flashing indicators for urgent issues remain functional
+- All dashboard features working consistently
+
 ✓ June 24, 2025: Enhanced call center agent capabilities
 - Added comprehensive note-taking system for tracking issue communication and progress
 - Implemented escalation system allowing agents to escalate issues to technical managers
