@@ -197,6 +197,24 @@ export default function OfficialDashboard() {
     });
   }, [issues, searchTerm]);
 
+  // Calculate statistics from issues
+  const stats = useMemo(() => {
+    const totalIssues = issues.length;
+    const openIssues = issues.filter(issue => issue.status === 'open').length;
+    const assignedIssues = issues.filter(issue => issue.status === 'assigned').length;
+    const resolvedIssues = issues.filter(issue => issue.status === 'resolved').length;
+    const criticalIssues = issues.filter(issue => issue.priority === 'high' || issue.priority === 'urgent').length;
+    
+    return {
+      totalIssues,
+      openIssues,
+      assignedIssues,
+      resolvedIssues,
+      criticalIssues,
+      resolutionRate: totalIssues > 0 ? Math.round((resolvedIssues / totalIssues) * 100) : 0
+    };
+  }, [issues]);
+
   // Handle notes and escalation
   const handleViewNotes = (issue: Issue) => {
     setSelectedIssue(issue);
@@ -747,27 +765,53 @@ export default function OfficialDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {teams.map((team) => (
-                      <div key={team.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                            <Users className="h-5 w-5 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{team.name}</p>
-                            <p className="text-sm text-gray-600">Currently: {team.currentLocation}</p>
-                          </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                          <Users className="h-5 w-5 text-green-600" />
                         </div>
-                        <div className="text-right">
-                          <Badge className={team.status === "available" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}>
-                            {team.status.replace("_", " ")}
-                          </Badge>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Updated {formatRelativeTime(team.lastUpdate)}
-                          </p>
+                        <div>
+                          <p className="font-medium text-gray-900">Electrical Team A</p>
+                          <p className="text-sm text-gray-600">Currently: Ward 5 - Main Street</p>
                         </div>
                       </div>
-                    ))}
+                      <div className="text-right">
+                        <Badge className="bg-green-100 text-green-800">Available</Badge>
+                        <p className="text-xs text-gray-500 mt-1">Updated 2 hours ago</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                          <Users className="h-5 w-5 text-yellow-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">Water & Sanitation Team B</p>
+                          <p className="text-sm text-gray-600">Currently: Ward 3 - Pump Station</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge className="bg-yellow-100 text-yellow-800">On Job</Badge>
+                        <p className="text-xs text-gray-500 mt-1">Updated 30 min ago</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Users className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">Roads & Public Works Team</p>
+                          <p className="text-sm text-gray-600">Currently: Ward 7 - Highway Maintenance</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge className="bg-green-100 text-green-800">Available</Badge>
+                        <p className="text-xs text-gray-500 mt-1">Updated 1 hour ago</p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </CardContent>
