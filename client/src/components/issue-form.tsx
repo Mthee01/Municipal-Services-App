@@ -140,13 +140,19 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
     });
 
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: false, // Less accurate but faster and more reliable
-          timeout: 30000, // Longer timeout for mobile networks
-          maximumAge: 60000 // 1 minute cache
-        });
-      });
+      // Create a promise with built-in timeout
+      const position = await Promise.race([
+        new Promise<GeolocationPosition>((resolve, reject) => {
+          const id = navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: false, // Less accurate but faster and more reliable
+            timeout: 15000, // 15 second timeout
+            maximumAge: 300000 // 5 minute cache
+          });
+        }),
+        new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Location request timed out')), 20000); // 20 second backup timeout
+        })
+      ]);
 
       const { latitude, longitude, accuracy } = position.coords;
       
@@ -166,18 +172,22 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       console.error("Location error:", error);
       let errorMessage = "Unable to get current location";
       
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
-          break;
-        case error.POSITION_UNAVAILABLE:
-          errorMessage = "Location information is unavailable. Please check your GPS signal and try again.";
-          break;
-        case error.TIMEOUT:
-          errorMessage = "Location request timed out. Please try again or enter your address manually.";
-          break;
-        default:
-          errorMessage = "Location access failed. Please enter your address manually.";
+      if (error.message?.includes('timed out')) {
+        errorMessage = "Location request timed out. Please try again or enter your address manually.";
+      } else {
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable. Please check your GPS signal and try again.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out. Please try again or enter your address manually.";
+            break;
+          default:
+            errorMessage = "Location access failed. Please enter your address manually.";
+        }
       }
       
       toast({
@@ -186,6 +196,7 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
         variant: "destructive",
       });
     } finally {
+      console.log("Location request finished, stopping loading");
       setLocationLoading(false);
     }
   };
