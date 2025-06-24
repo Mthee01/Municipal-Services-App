@@ -144,6 +144,14 @@ This is a comprehensive municipal services management system built with modern w
 
 Preferred communication style: Simple, everyday language.
 
+## Data Storage Notes
+
+**Important**: This application currently uses in-memory storage for development. This means:
+- All data (notes, escalations, user changes) resets when the server restarts
+- Server restarts happen automatically when code changes are made
+- Notes and escalations need to be recreated after each restart for testing
+- In production, this would use persistent database storage where data never disappears
+
 ## Recent Changes
 
 ✓ June 24, 2025: Completed notes and escalation system functionality
