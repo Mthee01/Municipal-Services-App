@@ -83,9 +83,6 @@ export default function OfficialDashboard() {
 
   // State
   const [searchTerm, setSearchTerm] = useState("");
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-  const [selectedTechnician, setSelectedTechnician] = useState("");
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportEmail, setExportEmail] = useState("");
   const [exportMethod, setExportMethod] = useState("email");
@@ -98,43 +95,16 @@ export default function OfficialDashboard() {
     refetchOnMount: true,
   });
 
-  const { data: technicians = [], isLoading: techniciansLoading } = useQuery<Technician[]>({
-    queryKey: ["/api/technicians"]
-  });
-
-  const { data: teams = [], isLoading: teamsLoading } = useQuery<Team[]>({
-    queryKey: ["/api/teams"]
-  });
+  // Call center agents monitor issues but don't need technician data for assignments
+  // Technician management is handled by tech managers
 
   const { data: unreadCount = 0 } = useQuery<number>({
     queryKey: ["/api/whatsapp/unread-count"],
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
-  // Mutations
-  const assignTechnicianMutation = useMutation({
-    mutationFn: async (data: { issueId: number; technicianId: number }) => {
-      return apiRequest("POST", "/api/issues/assign", data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/technicians"] });
-      setShowAssignModal(false);
-      setSelectedIssue(null);
-      setSelectedTechnician("");
-      toast({
-        title: "Success",
-        description: "Technician assigned successfully!",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to assign technician",
-        variant: "destructive",
-      });
-    }
-  });
+  // Call center agents can view issues but cannot assign technicians
+  // Only tech managers have assignment privileges
 
   // Filtered issues with priority for new citizen reports
   const filteredIssues = useMemo(() => {
@@ -155,20 +125,8 @@ export default function OfficialDashboard() {
     });
   }, [issues, searchTerm]);
 
-  // Handle assign technician
-  const handleAssignTechnician = (issue: Issue) => {
-    setSelectedIssue(issue);
-    setShowAssignModal(true);
-  };
-
-  const handleConfirmAssignment = () => {
-    if (selectedIssue && selectedTechnician) {
-      assignTechnicianMutation.mutate({
-        issueId: selectedIssue.id,
-        technicianId: parseInt(selectedTechnician)
-      });
-    }
-  };
+  // Call center agents monitor issues but cannot assign technicians
+  // Assignments are handled by tech managers only
 
   // Handle export report
   const handleExportReport = () => {
@@ -440,7 +398,7 @@ export default function OfficialDashboard() {
                         <TableHead>Status</TableHead>
                         <TableHead>Assigned To</TableHead>
                         <TableHead>Reported</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead>Assignment Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -476,15 +434,14 @@ export default function OfficialDashboard() {
                             </span>
                           </TableCell>
                           <TableCell>
-                            {!issue.assignedTo && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleAssignTechnician(issue)}
-                                className="text-xs"
-                              >
-                                Assign
-                              </Button>
+                            {!issue.assignedTo ? (
+                              <span className="text-xs text-orange-600 font-medium">
+                                Pending Assignment
+                              </span>
+                            ) : (
+                              <span className="text-xs text-green-600 font-medium">
+                                Assigned
+                              </span>
                             )}
                           </TableCell>
                         </TableRow>
@@ -508,13 +465,6 @@ export default function OfficialDashboard() {
       <section className="py-4 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4 justify-center">
-            <Button
-              onClick={() => setShowAssignModal(true)}
-              className="bg-sa-green hover:bg-green-700 text-white"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Assign Technician
-            </Button>
             <Button 
               variant="outline" 
               className="text-sm px-4 py-2"
@@ -523,92 +473,14 @@ export default function OfficialDashboard() {
               <FileDown className="mr-2 h-4 w-4" />
               Export Report
             </Button>
+            <div className="text-center text-sm text-gray-600">
+              <p>Note: Issue assignments are managed by Technical Managers</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Assign Technician Modal */}
-      <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Assign Technician to Issue</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Select Issue</label>
-              <Select 
-                value={selectedIssue?.id.toString() || ""} 
-                onValueChange={(value) => {
-                  const issue = filteredIssues.find(i => i.id.toString() === value);
-                  if (issue) setSelectedIssue(issue);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose an issue to assign..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredIssues.filter(issue => !issue.assignedTo).map((issue) => (
-                    <SelectItem key={issue.id} value={issue.id.toString()}>
-                      <div className="flex flex-col items-start">
-                        <span className="font-medium">{issue.title}</span>
-                        <span className="text-xs text-gray-500">{issue.category.replace('_', ' ')} • Ward {issue.ward}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
-            {selectedIssue && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Select Technician</label>
-                <Select 
-                  value={selectedTechnician} 
-                  onValueChange={setSelectedTechnician}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a technician..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {technicians
-                      .filter(tech => tech.status === "available")
-                      .map((tech) => (
-                        <SelectItem key={tech.id} value={tech.id.toString()}>
-                          <div className="flex flex-col">
-                            <span>{tech.name} - {tech.department}</span>
-                            <span className="text-xs text-gray-500">
-                              Skills: {tech.skills?.join(", ") || "General"}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setShowAssignModal(false);
-                  setSelectedIssue(null);
-                  setSelectedTechnician("");
-                }}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleConfirmAssignment}
-                disabled={!selectedIssue || !selectedTechnician || assignTechnicianMutation.isPending}
-                className="bg-sa-green hover:bg-green-700"
-              >
-                {assignTechnicianMutation.isPending ? "Assigning..." : "Assign Technician"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Resource Management */}
       <section className="py-8 bg-white">

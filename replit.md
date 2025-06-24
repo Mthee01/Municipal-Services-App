@@ -146,6 +146,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+✓ June 24, 2025: Restricted technician assignment to tech managers only
+- Removed technician assignment capability from call center agent dashboard
+- Call center agents can now only monitor and export issue reports
+- Added clear messaging that assignments are managed by technical managers
+- Maintained issue visibility but restricted assignment actions to proper role
+
 ✓ June 24, 2025: Enhanced real-time citizen issue visibility
 - Implemented 5-second auto-refresh for call center and tech manager dashboards
 - Added visual highlighting for new citizen issues (within 1 hour)
