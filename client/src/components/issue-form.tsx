@@ -36,6 +36,7 @@ interface IssueFormProps {
 
 export function IssueForm({ isOpen, onClose }: IssueFormProps) {
   const [photos, setPhotos] = useState<File[]>([]);
+  const [locationLoading, setLocationLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -117,7 +118,7 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
     setPhotos(photos.filter((_, i) => i !== index));
   };
 
-  const getCurrentLocation = () => {
+  const getCurrentLocation = async () => {
     if (!navigator.geolocation) {
       toast({
         title: "Location not supported",
@@ -127,51 +128,56 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       return;
     }
 
+    setLocationLoading(true);
     toast({
       title: "Getting location...",
       description: "Please allow location access when prompted",
     });
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        // Convert coordinates to a more readable format
-        const latDir = latitude >= 0 ? 'N' : 'S';
-        const lngDir = longitude >= 0 ? 'E' : 'W';
-        const locationString = `${Math.abs(latitude).toFixed(6)}°${latDir}, ${Math.abs(longitude).toFixed(6)}°${lngDir}`;
-        
-        form.setValue("location", locationString);
-        toast({
-          title: "Location captured successfully",
-          description: "Your current location has been added to the report",
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 15000, // Increased timeout for mobile
+          maximumAge: 300000 // 5 minutes cache
         });
-      },
-      (error) => {
-        let errorMessage = "Unable to get current location";
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = "Location access denied. Please enable location services and try again.";
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = "Location information is unavailable. Please enter your address manually.";
-            break;
-          case error.TIMEOUT:
-            errorMessage = "Location request timed out. Please try again or enter your address manually.";
-            break;
-        }
-        
-        toast({
-          title: "Location Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000
+      });
+
+      const { latitude, longitude, accuracy } = position.coords;
+      
+      // Enhanced location format with accuracy and readable coordinates
+      const locationString = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
+      
+      form.setValue("location", locationString);
+      toast({
+        title: "Location captured successfully", 
+        description: `Current location added ${accuracy ? `(±${Math.round(accuracy)}m accuracy)` : ''}`,
+      });
+    } catch (error: any) {
+      let errorMessage = "Unable to get current location";
+      
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = "Location information is unavailable. Please check your GPS signal and try again.";
+          break;
+        case error.TIMEOUT:
+          errorMessage = "Location request timed out. Please try again or enter your address manually.";
+          break;
+        default:
+          errorMessage = "Location access failed. Please enter your address manually.";
       }
-    );
+      
+      toast({
+        title: "Location Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLocationLoading(false);
+    }
   };
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
@@ -265,11 +271,23 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
                       <FormControl>
                         <Input placeholder="Street address or landmark" {...field} />
                       </FormControl>
-                      <Button type="button" variant="outline" onClick={getCurrentLocation}>
-                        <MapPin className="h-4 w-4" />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={getCurrentLocation}
+                        disabled={locationLoading}
+                        className="px-3"
+                      >
+                        {locationLoading ? (
+                          <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
+                        ) : (
+                          <MapPin className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
-                    <p className="text-xs text-gray-500">Click map icon to use current location</p>
+                    <p className="text-xs text-gray-500">
+                      {locationLoading ? "Getting your location..." : "Click map icon to use current location"}
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
