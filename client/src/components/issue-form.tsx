@@ -118,25 +118,60 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
   };
 
   const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          form.setValue("location", `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`);
-          toast({
-            title: "Location captured",
-            description: "Current location has been added",
-          });
-        },
-        (error) => {
-          toast({
-            title: "Location error",
-            description: "Unable to get current location",
-            variant: "destructive",
-          });
-        }
-      );
+    if (!navigator.geolocation) {
+      toast({
+        title: "Location not supported",
+        description: "Your browser doesn't support location services",
+        variant: "destructive",
+      });
+      return;
     }
+
+    toast({
+      title: "Getting location...",
+      description: "Please allow location access when prompted",
+    });
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        // Convert coordinates to a more readable format
+        const latDir = latitude >= 0 ? 'N' : 'S';
+        const lngDir = longitude >= 0 ? 'E' : 'W';
+        const locationString = `${Math.abs(latitude).toFixed(6)}°${latDir}, ${Math.abs(longitude).toFixed(6)}°${lngDir}`;
+        
+        form.setValue("location", locationString);
+        toast({
+          title: "Location captured successfully",
+          description: "Your current location has been added to the report",
+        });
+      },
+      (error) => {
+        let errorMessage = "Unable to get current location";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied. Please enable location services and try again.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable. Please enter your address manually.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out. Please try again or enter your address manually.";
+            break;
+        }
+        
+        toast({
+          title: "Location Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    );
   };
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
