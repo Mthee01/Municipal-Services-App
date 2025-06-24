@@ -51,10 +51,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Issues endpoints
   app.get("/api/issues", async (req, res) => {
     try {
-      const { status, category, ward } = req.query;
+      const { status, category, ward, technicianId } = req.query;
       let issues;
 
-      if (status) {
+      if (technicianId) {
+        issues = await storage.getIssuesByTechnician(parseInt(technicianId as string));
+      } else if (status) {
         issues = await storage.getIssuesByStatus(status as string);
       } else if (category) {
         issues = await storage.getIssuesByCategory(category as string);

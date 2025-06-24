@@ -28,6 +28,7 @@ export interface IStorage {
   getIssuesByStatus(status: string): Promise<Issue[]>;
   getIssuesByCategory(category: string): Promise<Issue[]>;
   getIssuesByWard(ward: string): Promise<Issue[]>;
+  getIssuesByTechnician(technicianId: number): Promise<Issue[]>;
   createIssue(issue: InsertIssue): Promise<Issue>;
   updateIssue(id: number, updates: Partial<Issue>): Promise<Issue | undefined>;
   deleteIssue(id: number): Promise<boolean>;
@@ -808,6 +809,10 @@ export class MemStorage implements IStorage {
 
   async getIssuesByWard(ward: string): Promise<Issue[]> {
     return Array.from(this.issues.values()).filter(issue => issue.ward === ward);
+  }
+
+  async getIssuesByTechnician(technicianId: number): Promise<Issue[]> {
+    return Array.from(this.issues.values()).filter(issue => issue.assignedTo === technicianId);
   }
 
   async createIssue(insertIssue: InsertIssue): Promise<Issue> {
@@ -1903,6 +1908,10 @@ export class DatabaseStorage implements IStorage {
 
   async getIssuesByWard(ward: string): Promise<Issue[]> {
     return await db.select().from(issues).where(eq(issues.ward, ward));
+  }
+
+  async getIssuesByTechnician(technicianId: number): Promise<Issue[]> {
+    return await db.select().from(issues).where(eq(issues.assignedTo, technicianId));
   }
 
   async createIssue(issue: InsertIssue): Promise<Issue> {

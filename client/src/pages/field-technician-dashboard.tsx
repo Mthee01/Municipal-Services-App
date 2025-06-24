@@ -99,7 +99,7 @@ export default function FieldTechnicianDashboard() {
 
   // Fetch assigned issues
   const { data: assignedIssues = [], isLoading: issuesLoading } = useQuery({
-    queryKey: ['/api/issues', { status: 'assigned,in_progress', technicianId: currentTechnicianId }],
+    queryKey: ['/api/issues', { technicianId: currentTechnicianId }],
   });
 
   // Fetch field reports
