@@ -154,6 +154,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+✓ June 24, 2025: Added location picker fallback for instant address selection
+- Added quick location picker with 20 common South African cities/areas
+- Citizens can now instantly select locations like "Cape Town CBD", "Johannesburg CBD", "Soweto"
+- Provides immediate alternative when GPS location fails or times out
+- Enhanced location field with two buttons: GPS (map icon) and location picker (list icon)
+- No permissions required - works instantly for faster issue reporting
+- Maintains GPS functionality as primary option with fallback support
+
 ✓ June 24, 2025: IMPLEMENTED PERSISTENT DATABASE STORAGE - NOTES NEVER DISAPPEAR
 - CRITICAL FIX: Migrated from in-memory storage to PostgreSQL database storage
 - Created DatabaseStorage class with full PostgreSQL integration using Drizzle ORM

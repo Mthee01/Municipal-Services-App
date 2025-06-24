@@ -37,6 +37,7 @@ interface IssueFormProps {
 export function IssueForm({ isOpen, onClose }: IssueFormProps) {
   const [photos, setPhotos] = useState<File[]>([]);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -118,6 +119,30 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
     setPhotos(photos.filter((_, i) => i !== index));
   };
 
+  // Common South African locations for quick selection
+  const commonLocations = [
+    "Cape Town CBD",
+    "Johannesburg CBD", 
+    "Durban CBD",
+    "Pretoria CBD",
+    "Port Elizabeth CBD",
+    "Bloemfontein CBD",
+    "Soweto",
+    "Sandton",
+    "Camps Bay",
+    "Stellenbosch",
+    "Pietermaritzburg",
+    "East London",
+    "Kimberley",
+    "Polokwane",
+    "Nelspruit",
+    "Rustenburg",
+    "Potchefstroom",
+    "George",
+    "Knysna",
+    "Hermanus"
+  ];
+
   // Reverse geocoding function to convert GPS coordinates to address
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
     // Using OpenStreetMap Nominatim API (free, no API key required)
@@ -151,6 +176,15 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
     ].filter(Boolean);
     
     return components.length > 0 ? components.join(', ') : data.display_name || 'Address not found';
+  };
+
+  const selectLocation = (location: string) => {
+    form.setValue("location", location);
+    setShowLocationPicker(false);
+    toast({
+      title: "Location selected",
+      description: `Location set to: ${location}`,
+    });
   };
 
   const getCurrentLocation = async () => {
@@ -366,32 +400,65 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Location *</FormLabel>
-                    <div className="flex space-x-2">
-                      <FormControl>
-                        <Input placeholder="Street address or landmark" {...field} />
-                      </FormControl>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          console.log("Location button clicked");
-                          getCurrentLocation();
-                        }}
-                        disabled={locationLoading}
-                        className="px-3"
-                        title="Get current location"
-                      >
-                        {locationLoading ? (
-                          <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
-                        ) : (
-                          <MapPin className="h-4 w-4" />
-                        )}
-                      </Button>
+                    <div className="space-y-2">
+                      <div className="flex space-x-2">
+                        <FormControl>
+                          <Input placeholder="Street address or landmark" {...field} />
+                        </FormControl>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            console.log("Location button clicked");
+                            getCurrentLocation();
+                          }}
+                          disabled={locationLoading}
+                          className="px-3"
+                          title="Get current location"
+                        >
+                          {locationLoading ? (
+                            <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
+                          ) : (
+                            <MapPin className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setShowLocationPicker(!showLocationPicker);
+                          }}
+                          className="px-3"
+                          title="Choose from common locations"
+                        >
+                          <List className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      {showLocationPicker && (
+                        <div className="border rounded-lg p-3 bg-gray-50 max-h-40 overflow-y-auto">
+                          <p className="text-sm font-medium mb-2">Select a location:</p>
+                          <div className="grid grid-cols-2 gap-1">
+                            {commonLocations.map((location) => (
+                              <button
+                                key={location}
+                                type="button"
+                                onClick={() => selectLocation(location)}
+                                className="text-left text-sm p-2 hover:bg-white hover:shadow-sm rounded border-0 bg-transparent"
+                              >
+                                {location}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <p className="text-xs text-gray-500">
+                        {locationLoading ? "Getting your address..." : "Use GPS (map icon) or choose from list"}
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-500">
-                      {locationLoading ? "Getting your address..." : "Click map icon to auto-fill your current address"}
-                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
