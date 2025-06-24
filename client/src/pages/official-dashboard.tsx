@@ -115,7 +115,7 @@ export default function OfficialDashboard() {
   });
 
   // Fetch issue notes and escalations for selected issue
-  const { data: issueNotes = [] } = useQuery<IssueNote[]>({
+  const { data: issueNotes = [], isLoading: notesLoading } = useQuery<IssueNote[]>({
     queryKey: ["/api/issues", selectedIssue?.id, "notes"],
     queryFn: () => apiRequest("GET", `/api/issues/${selectedIssue?.id}/notes`),
     enabled: !!selectedIssue,
@@ -638,7 +638,9 @@ export default function OfficialDashboard() {
             {/* Existing notes */}
             <div className="space-y-3">
               <h4 className="font-medium text-gray-900">Previous Notes</h4>
-              {issueNotes.length === 0 ? (
+              {notesLoading ? (
+                <p className="text-gray-500 text-sm">Loading notes...</p>
+              ) : !Array.isArray(issueNotes) || issueNotes.length === 0 ? (
                 <p className="text-gray-500 text-sm">No notes yet for this issue.</p>
               ) : (
                 issueNotes.map((note) => (
@@ -888,7 +890,11 @@ export default function OfficialDashboard() {
           <div className="space-y-4">
             {/* Existing notes */}
             <div className="max-h-60 overflow-y-auto space-y-2">
-              {issueNotes.length > 0 ? (
+              {notesLoading ? (
+                <p className="text-gray-500 text-center py-4">Loading notes...</p>
+              ) : !Array.isArray(issueNotes) || issueNotes.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No notes yet</p>
+              ) : (
                 issueNotes.map((note) => (
                   <div key={note.id} className="p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
@@ -900,8 +906,6 @@ export default function OfficialDashboard() {
                     <p className="text-sm text-gray-700">{note.note}</p>
                   </div>
                 ))
-              ) : (
-                <p className="text-gray-500 text-center py-4">No notes yet</p>
               )}
             </div>
             
