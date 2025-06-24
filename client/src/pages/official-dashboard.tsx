@@ -198,10 +198,25 @@ export default function OfficialDashboard() {
         return false;
       }
       
-      // Search by reference number, title, description, location, or category
-      const searchLower = searchTerm.toLowerCase();
-      return (issue.referenceNumber && issue.referenceNumber.toLowerCase().includes(searchLower)) ||
-             issue.title.toLowerCase().includes(searchLower) ||
+      const searchLower = searchTerm.toLowerCase().trim();
+      
+      // If search term is empty, show all issues
+      if (!searchLower) {
+        return true;
+      }
+      
+      // If search term matches RefNo exactly, return only that issue
+      if (issue.referenceNumber && issue.referenceNumber.toLowerCase() === searchLower) {
+        return true;
+      }
+      
+      // If search term is 6 characters (RefNo format), only search by RefNo
+      if (searchLower.length === 6) {
+        return issue.referenceNumber && issue.referenceNumber.toLowerCase().includes(searchLower);
+      }
+      
+      // For other searches, search in multiple fields
+      return issue.title.toLowerCase().includes(searchLower) ||
              issue.description.toLowerCase().includes(searchLower) ||
              issue.location.toLowerCase().includes(searchLower) ||
              issue.category.toLowerCase().includes(searchLower);
@@ -473,7 +488,7 @@ export default function OfficialDashboard() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search by RefNo, title, location, or description..."
+                  placeholder="Enter RefNo (6 chars) for exact match, or search title/location..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
