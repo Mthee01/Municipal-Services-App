@@ -145,15 +145,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/issues/:id/notes", async (req, res) => {
     try {
       const issueId = parseInt(req.params.id);
+      const { note, noteType = "general", createdBy = "User", createdByRole = "call_center_agent" } = req.body;
+      
+      if (!note || !note.trim()) {
+        return res.status(400).json({ message: "Note content is required" });
+      }
+      
       const noteData = {
-        ...req.body,
-        issueId
+        issueId,
+        note: note.trim(),
+        noteType,
+        createdBy,
+        createdByRole
       };
       
-      const validatedData = insertIssueNoteSchema.parse(noteData);
-      const note = await storage.createIssueNote(validatedData);
-      res.status(201).json(note);
+      console.log("Creating note with data:", noteData);
+      
+      const createdNote = await storage.createIssueNote(noteData);
+      res.status(201).json(createdNote);
     } catch (error) {
+      console.error("Error creating note:", error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create note" });
     }
   });
