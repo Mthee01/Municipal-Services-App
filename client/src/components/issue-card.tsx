@@ -43,7 +43,11 @@ export function IssueCard({ issue, showActions = true, onViewDetails, onRate, on
             <Badge className={getStatusColor(issue.status)}>
               {issue.status.replace("_", " ")}
             </Badge>
-            <span className="text-sm text-gray-500">#{issue.id}</span>
+            {issue.referenceNumber && (
+              <span className="text-sm font-mono font-semibold text-blue-600">
+                RefNo: {issue.referenceNumber}
+              </span>
+            )}
           </div>
         </div>
         
