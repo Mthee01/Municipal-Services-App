@@ -23,8 +23,12 @@ export default function TechManagerDashboard() {
     queryKey: ["/api/technicians"],
   });
 
+  // Real-time issue fetching for tech managers
   const { data: issues = [], isLoading: issuesLoading } = useQuery({
     queryKey: ["/api/issues"],
+    refetchInterval: 5000, // Refetch every 5 seconds to catch new citizen issues
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const { data: techPerformance = [], isLoading: perfLoading } = useQuery({
@@ -123,7 +127,13 @@ export default function TechManagerDashboard() {
     ? techniciansList
     : techniciansList.filter((tech: any) => tech.department === selectedDepartment);
 
-  const unassignedIssues = issuesList.filter((issue: any) => !issue.assignedTo && issue.status === "open");
+  // Prioritize new citizen issues in unassigned list
+  const unassignedIssues = issuesList
+    .filter((issue: any) => !issue.assignedTo && issue.status === "open")
+    .sort((a: any, b: any) => {
+      // Sort by creation time - newest citizen reports first
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
   const assignedIssues = issuesList.filter((issue: any) => issue.assignedTo && issue.status !== "resolved");
 
   const availableTechs = techniciansList.filter((tech: any) => tech.status === "available").length;
@@ -265,28 +275,36 @@ export default function TechManagerDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {unassignedIssues.map((issue: any) => (
-                    <div key={issue.id} className="flex flex-col gap-3 p-4 border rounded-lg">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm mb-1 truncate">{issue.title}</h4>
-                          <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">{issue.category.replace('_', ' ')}</p>
-                          <p className="text-xs text-gray-500 mb-2">{issue.location} • {issue.ward}</p>
-                          <Badge variant="outline" className={getPriorityColor(issue.priority)}>
-                            {issue.priority}
-                          </Badge>
+                  {unassignedIssues.map((issue: any) => {
+                    // Check if issue is newly reported (within last hour)
+                    const isNewIssue = new Date().getTime() - new Date(issue.createdAt).getTime() < 3600000;
+                    
+                    return (
+                      <div key={issue.id} className={`flex flex-col gap-3 p-4 border rounded-lg ${isNewIssue ? 'border-blue-500 bg-blue-50' : ''}`}>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-sm truncate">{issue.title}</h4>
+                              {isNewIssue && <Badge variant="default" className="bg-blue-500 text-white text-xs">NEW</Badge>}
+                            </div>
+                            <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">{issue.category.replace('_', ' ')}</p>
+                            <p className="text-xs text-gray-500 mb-2">{issue.location} • {issue.ward}</p>
+                            <Badge variant="outline" className={getPriorityColor(issue.priority)}>
+                              {issue.priority}
+                            </Badge>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => findNearestTechnicians(issue)}
+                            className="ml-3 shrink-0"
+                          >
+                            <Navigation className="w-4 h-4 mr-1" />
+                            Assign
+                          </Button>
                         </div>
-                        <Button
-                          size="sm"
-                          onClick={() => findNearestTechnicians(issue)}
-                          className="ml-3 shrink-0"
-                        >
-                          <Navigation className="w-4 h-4 mr-1" />
-                          Assign
-                        </Button>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 {unassignedIssues.length === 0 && (
                   <div className="text-center py-8">

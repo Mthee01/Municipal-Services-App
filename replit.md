@@ -146,6 +146,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+✓ June 24, 2025: Enhanced real-time citizen issue visibility
+- Implemented 5-second auto-refresh for call center and tech manager dashboards
+- Added visual highlighting for new citizen issues (within 1 hour)
+- Prioritized unassigned citizen reports at top of both dashboards
+- Added "NEW CITIZEN ISSUE" badges for immediate identification
+- Enhanced issue sorting to show newest citizen reports first
+
 ✓ June 24, 2025: Fixed user login credentials
 - Added Lusanda to hardcoded authentication system with citizen role (ID 15)  
 - Added Themba to hardcoded authentication system with field_technician role (ID 13)

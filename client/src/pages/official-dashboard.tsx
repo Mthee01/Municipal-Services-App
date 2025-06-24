@@ -90,9 +90,12 @@ export default function OfficialDashboard() {
   const [exportEmail, setExportEmail] = useState("");
   const [exportMethod, setExportMethod] = useState("email");
 
-  // Queries
+  // Queries - Real-time issue fetching for call center agents
   const { data: issues = [], isLoading: issuesLoading } = useQuery<Issue[]>({
-    queryKey: ["/api/issues"]
+    queryKey: ["/api/issues"],
+    refetchInterval: 5000, // Refetch every 5 seconds to catch new citizen issues
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const { data: technicians = [], isLoading: techniciansLoading } = useQuery<Technician[]>({
@@ -133,12 +136,22 @@ export default function OfficialDashboard() {
     }
   });
 
-  // Filtered issues
+  // Filtered issues with priority for new citizen reports
   const filteredIssues = useMemo(() => {
-    return issues.filter((issue: Issue) => {
+    const filtered = issues.filter((issue: Issue) => {
       return issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
              issue.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
              issue.location.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+    
+    // Sort to show newest issues first (especially new citizen reports)
+    return filtered.sort((a: Issue, b: Issue) => {
+      // Prioritize unassigned issues (new citizen reports)
+      if (a.status === 'open' && b.status !== 'open') return -1;
+      if (b.status === 'open' && a.status !== 'open') return 1;
+      
+      // Then by creation time (newest first)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, [issues, searchTerm]);
 

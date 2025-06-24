@@ -100,6 +100,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertIssueSchema.parse(issueData);
       const issue = await storage.createIssue(validatedData);
       
+      // Log new citizen issue for call center and tech manager visibility
+      console.log(`NEW CITIZEN ISSUE: ${issue.title} (ID: ${issue.id}) - Priority: ${issue.priority}, Category: ${issue.category}, Location: ${issue.location}`);
+      
       res.status(201).json(issue);
     } catch (error) {
       if (error instanceof Error) {
