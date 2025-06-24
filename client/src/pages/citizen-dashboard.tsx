@@ -70,7 +70,14 @@ export default function CitizenDashboard() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [issueToRate, setIssueToRate] = useState<Issue | null>(null);
+  const [rating, setRating] = useState(0);
+  const [feedback, setFeedback] = useState("");
   const [location] = useLocation();
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Check URL parameters to auto-open report issue form or navigate to specific tabs
   useEffect(() => {
@@ -129,6 +136,43 @@ export default function CitizenDashboard() {
   const filteredCommunityIssues = communityIssues.filter(issue => 
     issue.status !== "resolved" && issue.status !== "closed"
   ).slice(0, 6);
+
+  const handleRateService = (issue: Issue) => {
+    console.log("Opening rating modal for", issue);
+    setIssueToRate(issue);
+    setRating(0);
+    setFeedback("");
+    setShowRatingModal(true);
+  };
+
+  const submitRating = useMutation({
+    mutationFn: async ({ issueId, rating, feedback }: { issueId: number; rating: number; feedback: string }) => {
+      const response = await fetch(`/api/issues/${issueId}/rate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating, feedback }),
+      });
+      if (!response.ok) throw new Error('Failed to submit rating');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Rating submitted",
+        description: "Thank you for your feedback!",
+      });
+      setShowRatingModal(false);
+      setRating(0);
+      setFeedback("");
+      queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to submit rating. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative overflow-hidden">
@@ -308,7 +352,7 @@ export default function CitizenDashboard() {
                     setSelectedIssue(issue);
                     setShowDetailsModal(true);
                   }}
-                  onRate={(issue) => console.log("Rate issue", issue)}
+                  onRate={handleRateService}
                 />
               ))}
             </div>

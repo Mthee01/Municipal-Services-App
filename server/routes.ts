@@ -133,6 +133,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rate issue endpoint
+  app.post("/api/issues/:id/rate", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { rating, feedback } = req.body;
+      
+      console.log(`Rating issue ${id} with rating ${rating} and feedback: ${feedback}`);
+      
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ error: "Rating must be between 1 and 5" });
+      }
+      
+      const updatedIssue = await storage.updateIssue(id, { 
+        rating: rating,
+        feedback: feedback || null
+      });
+      
+      if (!updatedIssue) {
+        return res.status(404).json({ error: "Issue not found" });
+      }
+      
+      console.log("Issue rated successfully:", updatedIssue);
+      res.json(updatedIssue);
+    } catch (error) {
+      console.error("Error rating issue:", error);
+      res.status(500).json({ error: "Failed to submit rating" });
+    }
+  });
+
   // Issue notes endpoints  
   app.get("/api/issues/:id/notes", async (req, res) => {
     try {
