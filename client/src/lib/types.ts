@@ -23,6 +23,16 @@ export type VoucherStatus = "active" | "used" | "expired";
 
 export type TeamStatus = "available" | "on_job" | "maintenance" | "offline";
 
+export interface IssueNote {
+  id: number;
+  issueId: number;
+  note: string;
+  noteType: string;
+  createdBy: string;
+  createdByRole: string;
+  createdAt: string;
+}
+
 export interface CreateIssueData {
   title: string;
   description: string;

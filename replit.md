@@ -183,6 +183,9 @@ Preferred communication style: Simple, everyday language.
 - Fixed API endpoint data validation and error handling
 - Notes system now fully operational with proper storage and retrieval
 - Call center agents can successfully add notes visible to technical managers
+- Fixed agent name display to show actual user names instead of "Unknown User"
+- Created useAuth hook for proper user authentication state management
+- Notes now display correct agent names (e.g., "Sarah Agent") with proper timestamps
 
 ## Changelog
 
