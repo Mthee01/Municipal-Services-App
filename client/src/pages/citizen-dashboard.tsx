@@ -111,24 +111,26 @@ export default function CitizenDashboard() {
       </div>
 
       {/* Hero Section */}
-      <section className="relative z-10 bg-gradient-to-r from-sa-green to-green-600 text-white py-16">
+      <section className="relative z-10 bg-gradient-to-r from-sa-green to-green-600 text-white py-8 sm:py-16">
         <div className="max-w-4xl mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <div className="text-center flex-1">
-              <h2 className="text-4xl font-bold mb-4" style={{ color: 'hsl(220, 85%, 15%)' }}>Report Issues. Track Progress. Build Community.</h2>
-              <p className="text-xl text-yellow-600 mb-8">Your voice matters in building better municipal services</p>
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 sm:mb-8 space-y-4 lg:space-y-0">
+            <div className="text-center lg:text-left flex-1">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4" style={{ color: 'hsl(220, 85%, 15%)' }}>Report Issues. Track Progress. Build Community.</h2>
+              <p className="text-lg sm:text-xl text-yellow-600 mb-4 sm:mb-8">Your voice matters in building better municipal services</p>
             </div>
-            <RealTimeNotifications userRole="citizen" />
+            <div className="flex justify-center lg:justify-end">
+              <RealTimeNotifications userRole="citizen" />
+            </div>
           </div>
           <div className="text-center">
             <Button 
               onClick={() => setShowIssueForm(true)}
-              className="bg-sa-gold hover:bg-yellow-500 text-black font-semibold px-8 py-4 text-lg"
+              className="bg-sa-gold hover:bg-yellow-500 text-black font-semibold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg w-full sm:w-auto"
             >
-              <Plus className="mr-2 h-5 w-5" />
+              <Plus className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
               Report New Issue
             </Button>
-            <p className="text-sm text-red-500 font-bold mt-2">⚡ Report in under 60 seconds</p>
+            <p className="text-xs sm:text-sm text-red-500 font-bold mt-2">⚡ Report in under 60 seconds</p>
           </div>
         </div>
       </section>
@@ -150,21 +152,21 @@ export default function CitizenDashboard() {
             )}
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-6">
             {categories.map((category) => (
               <div 
                 key={category.value} 
                 className="text-center group cursor-pointer"
                 onClick={() => setCategoryFilter(category.value)}
               >
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 transition-all duration-200 ${
+                <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 transition-all duration-200 ${
                   categoryFilter === category.value 
                     ? 'bg-green-200 ring-2 ring-green-500 scale-110' 
                     : 'bg-gray-100 group-hover:bg-green-100 group-hover:scale-105'
                 }`}>
-                  <span className="text-2xl">{category.icon}</span>
+                  <span className="text-lg sm:text-2xl">{category.icon}</span>
                 </div>
-                <h3 className={`font-medium text-sm transition-colors ${
+                <h3 className={`font-medium text-xs sm:text-sm transition-colors ${
                   categoryFilter === category.value 
                     ? 'text-green-700 font-semibold' 
                     : 'text-gray-900'
@@ -191,13 +193,13 @@ export default function CitizenDashboard() {
           <Tabs defaultValue="my-issues" className="space-y-6">
             <div className="w-full overflow-x-auto scrollbar-hide">
               <TabsList className="flex w-max min-w-full mobile-tabs p-1 bg-muted rounded-lg">
-                <TabsTrigger value="my-issues" className="flex-shrink-0 mobile-tab-trigger px-3 py-3 text-xs sm:text-sm whitespace-nowrap min-h-[44px] flex items-center justify-center">
-                  Issues
+                <TabsTrigger value="my-issues" className="flex-shrink-0 mobile-tab-trigger px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap min-h-[40px] sm:min-h-[44px] flex items-center justify-center">
+                  My Issues
                 </TabsTrigger>
-                <TabsTrigger value="community" className="flex-shrink-0 mobile-tab-trigger px-3 py-3 text-xs sm:text-sm whitespace-nowrap min-h-[44px] flex items-center justify-center">
+                <TabsTrigger value="community" className="flex-shrink-0 mobile-tab-trigger px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap min-h-[40px] sm:min-h-[44px] flex items-center justify-center">
                   Community
                 </TabsTrigger>
-                <TabsTrigger value="map-view" className="flex-shrink-0 mobile-tab-trigger px-3 py-3 text-xs sm:text-sm whitespace-nowrap min-h-[44px] flex items-center justify-center">
+                <TabsTrigger value="map-view" className="flex-shrink-0 mobile-tab-trigger px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap min-h-[40px] sm:min-h-[44px] flex items-center justify-center">
                   <MapPin className="w-3 h-3 mr-1" />
                   Map
                 </TabsTrigger>
@@ -216,8 +218,8 @@ export default function CitizenDashboard() {
               </TabsList>
             </div>
 
-            <TabsContent value="my-issues" className="space-y-6">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
+            <TabsContent value="my-issues" className="space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8 space-y-4 sm:space-y-0">
                 <h3 className="text-2xl font-bold text-gray-900">My Recent Issues</h3>
                 <div className="flex flex-wrap gap-4">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
