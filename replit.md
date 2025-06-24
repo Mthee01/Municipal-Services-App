@@ -153,6 +153,9 @@ Preferred communication style: Simple, everyday language.
 - Completed escalation functionality with proper data validation and storage
 - Fixed Notes button responsiveness in tech manager dashboard by adding missing modal component
 - Tech managers can now view all notes and communication history from call center agents
+- Fixed technician assignment functionality by removing duplicate endpoint definitions
+- Technicians are now properly available for assignment (available and on_job status both assignable)
+- Nearest technicians endpoint returns proper results with distance calculations
 - Both notes and escalation systems now fully operational with proper error handling
 - All API endpoints tested and working correctly
 

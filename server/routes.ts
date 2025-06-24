@@ -366,29 +366,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { latitude, longitude, department } = req.body;
       
-      // Get all technicians and filter by department manually to ensure it works
+      console.log("Finding nearest technicians for department:", department);
+      
+      // Get all technicians
       const allTechnicians = await storage.getTechnicians();
-      let technicians = allTechnicians;
+      console.log("Total technicians:", allTechnicians.length);
       
-      if (department) {
-        // Filter by department
-        const departmentTechnicians = allTechnicians.filter(tech => tech.department === department);
-        
-        // If we have department-specific technicians, use them, otherwise use all available
-        if (departmentTechnicians.length > 0) {
-          technicians = departmentTechnicians;
-        } else {
-          // Fallback to any available technicians if no department match
-          technicians = allTechnicians.filter(tech => 
-            tech.status === "available" || tech.status === "on_job"
-          );
-        }
-      }
-      
-      // Filter available technicians and those who can be reassigned 
-      const availableTechnicians = technicians.filter(tech => 
+      // Filter technicians that can be assigned (available or on_job)
+      let availableTechnicians = allTechnicians.filter(tech => 
         tech.status === "available" || tech.status === "on_job"
       );
+      
+      console.log("Available/on_job technicians:", availableTechnicians.length);
+      
+      // If department specified, prioritize department technicians but include others
+      if (department) {
+        const departmentTechnicians = availableTechnicians.filter(tech => tech.department === department);
+        const otherTechnicians = availableTechnicians.filter(tech => tech.department !== department);
+        
+        // Prioritize department technicians, then others
+        availableTechnicians = [...departmentTechnicians, ...otherTechnicians];
+        console.log(`Department '${department}' technicians: ${departmentTechnicians.length}, Others: ${otherTechnicians.length}`);
+      }
       
       // Calculate distances and sort by nearest
       const technicianWithDistances = availableTechnicians.map(tech => ({
@@ -396,8 +395,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         distance: Math.random() * 8 + 2, // 2-10 km distance
         estimatedArrival: Math.floor(Math.random() * 25) + 15 // 15-40 minutes
       })).sort((a, b) => a.distance - b.distance);
+
+      console.log("Technicians with distances:", technicianWithDistances.length);
+      const result = technicianWithDistances.slice(0, 5); // Return top 5 nearest
+      console.log("Returning technicians:", result.map(t => `${t.name} (${t.department})`));
       
-      res.json(technicianWithDistances.slice(0, 5)); // Return top 5 nearest
+      res.json(result);
     } catch (error) {
       console.error("Error finding nearest technicians:", error);
       res.status(500).json({ message: "Failed to find nearest technicians" });
@@ -510,65 +513,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Distance calculation utility endpoint
-  app.post("/api/technicians/nearest", async (req, res) => {
-    try {
-      const { latitude, longitude, department } = req.body;
-      
-      if (!latitude || !longitude) {
-        return res.status(400).json({ message: "Latitude and longitude required" });
-      }
 
-      let technicians = await storage.getTechniciansByStatus("available");
-      
-      // Prioritize technicians from the requested department, but include others if needed
-      let departmentTechnicians: any[] = [];
-      let otherTechnicians: any[] = [];
-      
-      if (department) {
-        departmentTechnicians = technicians.filter(tech => tech.department === department);
-        otherTechnicians = technicians.filter(tech => tech.department !== department);
-      } else {
-        departmentTechnicians = technicians;
-      }
-
-      // Calculate distances for department technicians first
-      const departmentTechsWithDistance = departmentTechnicians
-        .filter(tech => tech.latitude && tech.longitude)
-        .map(tech => {
-          const distance = calculateDistance(
-            parseFloat(latitude),
-            parseFloat(longitude),
-            parseFloat(tech.latitude!),
-            parseFloat(tech.longitude!)
-          );
-          return { ...tech, distance, estimatedArrival: Math.ceil(distance * 2.5) };
-        })
-        .sort((a, b) => a.distance - b.distance);
-
-      // Calculate distances for other technicians
-      const otherTechsWithDistance = otherTechnicians
-        .filter(tech => tech.latitude && tech.longitude)
-        .map(tech => {
-          const distance = calculateDistance(
-            parseFloat(latitude),
-            parseFloat(longitude),
-            parseFloat(tech.latitude!),
-            parseFloat(tech.longitude!)
-          );
-          return { ...tech, distance, estimatedArrival: Math.ceil(distance * 2.5) };
-        })
-        .sort((a, b) => a.distance - b.distance);
-
-      // Combine results - department technicians first, then others
-      const allTechniciansWithDistance = [...departmentTechsWithDistance, ...otherTechsWithDistance];
-      
-      // Return top 5 closest technicians
-      res.json(allTechniciansWithDistance.slice(0, 5));
-    } catch (error) {
-      res.status(500).json({ message: "Failed to find nearest technicians" });
-    }
-  });
 
   // Voucher endpoints
   app.get("/api/vouchers", async (req, res) => {

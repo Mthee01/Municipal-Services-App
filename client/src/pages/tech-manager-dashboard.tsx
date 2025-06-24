@@ -96,13 +96,12 @@ export default function TechManagerDashboard() {
 
       const department = categoryToDepartment[issue.category];
 
-      const response = await apiRequest("POST", "/api/technicians/nearest", {
+      const technicianData = await apiRequest("POST", "/api/technicians/nearest", {
         latitude: mockCoords.latitude,
         longitude: mockCoords.longitude,
         department,
       });
 
-      const technicianData = await response.json();
       console.log("Nearest technicians data:", technicianData);
       setNearestTechnicians(Array.isArray(technicianData) ? technicianData : []);
       setSelectedIssue(issue);
