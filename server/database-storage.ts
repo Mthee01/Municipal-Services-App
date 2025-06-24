@@ -88,6 +88,108 @@ export class DatabaseStorage implements IStorage {
           completedIssues: 31,
           avgResolutionTime: 15,
           lastUpdate: new Date(),
+        },
+        {
+          id: 8,
+          name: "David Brown",
+          phone: "0835551111",
+          email: "d.brown@municipality.gov.za",
+          department: "Roads & Transport",
+          skills: ["Road Repair", "Asphalt Work", "Traffic Management"],
+          status: "on_job" as const,
+          currentLocation: "Main Street",
+          latitude: "-25.7488",
+          longitude: "28.1902",
+          teamId: 2,
+          performanceRating: 4,
+          completedIssues: 19,
+          avgResolutionTime: 24,
+          lastUpdate: new Date(),
+        },
+        {
+          id: 9,
+          name: "Lisa Garcia",
+          phone: "0847772222",
+          email: "l.garcia@municipality.gov.za",
+          department: "Roads & Transport",
+          skills: ["Pothole Repair", "Road Marking", "Drainage"],
+          status: "available" as const,
+          currentLocation: "Ward 2 Office",
+          latitude: "-25.7333",
+          longitude: "28.2001",
+          teamId: 2,
+          performanceRating: 4,
+          completedIssues: 27,
+          avgResolutionTime: 20,
+          lastUpdate: new Date(),
+        },
+        {
+          id: 10,
+          name: "John Smith",
+          phone: "0823334444",
+          email: "j.smith@municipality.gov.za",
+          department: "Electricity",
+          skills: ["Electrical Repair", "Street Lighting", "Power Systems"],
+          status: "on_job" as const,
+          currentLocation: "Corner of Oak and Pine Streets",
+          latitude: "-25.7401",
+          longitude: "28.1856",
+          teamId: 3,
+          performanceRating: 5,
+          completedIssues: 35,
+          avgResolutionTime: 12,
+          lastUpdate: new Date(),
+        },
+        {
+          id: 11,
+          name: "Mary Johnson",
+          phone: "0819995555",
+          email: "m.johnson2@municipality.gov.za",
+          department: "Electricity",
+          skills: ["Generator Maintenance", "Emergency Power", "Electrical Safety"],
+          status: "available" as const,
+          currentLocation: "Electrical Depot",
+          latitude: "-25.7544",
+          longitude: "28.1777",
+          teamId: 3,
+          performanceRating: 4,
+          completedIssues: 22,
+          avgResolutionTime: 16,
+          lastUpdate: new Date(),
+        },
+        {
+          id: 12,
+          name: "James Williams",
+          phone: "0833445566",
+          email: "j.williams@municipality.gov.za",
+          department: "Safety & Security",
+          skills: ["Public Safety", "Equipment Inspection", "Emergency Response"],
+          status: "available" as const,
+          currentLocation: "Security Office",
+          latitude: "-25.7488",
+          longitude: "28.1855",
+          teamId: 4,
+          performanceRating: 4,
+          completedIssues: 18,
+          avgResolutionTime: 8,
+          lastUpdate: new Date(),
+        },
+        {
+          id: 13,
+          name: "Angela Davis",
+          phone: "0821556677",
+          email: "a.davis@municipality.gov.za",
+          department: "Safety & Security",
+          skills: ["Playground Safety", "Public Facilities", "Risk Assessment"],
+          status: "available" as const,
+          currentLocation: "Municipal Park Office",
+          latitude: "-25.7401",
+          longitude: "28.1922",
+          teamId: 4,
+          performanceRating: 5,
+          completedIssues: 25,
+          avgResolutionTime: 6,
+          lastUpdate: new Date(),
         }
       ];
 
@@ -382,17 +484,63 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDepartmentStats(department?: string): Promise<any> {
-    return {
-      department: department || "All Departments",
-      totalTechnicians: 0,
-      availableTechnicians: 0,
-      onJobTechnicians: 0,
-      avgPerformance: 0
-    };
+    try {
+      let techs;
+      if (department && department !== 'all') {
+        techs = await db.select().from(technicians).where(eq(technicians.department, department));
+      } else {
+        techs = await db.select().from(technicians);
+      }
+
+      const totalTechnicians = techs.length;
+      const availableTechnicians = techs.filter(tech => tech.status === 'available').length;
+      const onJobTechnicians = techs.filter(tech => tech.status === 'on_job').length;
+      const avgPerformance = totalTechnicians > 0 
+        ? techs.reduce((sum, tech) => sum + (tech.performanceRating || 0), 0) / totalTechnicians 
+        : 0;
+
+      return {
+        department: department || "All Departments",
+        totalTechnicians,
+        availableTechnicians,
+        onJobTechnicians,
+        avgPerformance: Number(avgPerformance.toFixed(1))
+      };
+    } catch (error) {
+      console.error("Error fetching department stats:", error);
+      return {
+        department: department || "All Departments",
+        totalTechnicians: 0,
+        availableTechnicians: 0,
+        onJobTechnicians: 0,
+        avgPerformance: 0
+      };
+    }
   }
 
   async getTechnicianPerformance(): Promise<any[]> {
-    return [];
+    try {
+      console.log("Fetching technician performance data...");
+      const techs = await db.select().from(technicians);
+      console.log("Database returned technicians:", techs.length);
+      
+      const performance = techs.map(tech => ({
+        id: tech.id,
+        name: tech.name,
+        department: tech.department,
+        completedIssues: tech.completedIssues || 0,
+        performanceRating: tech.performanceRating || 0,
+        avgResolutionTime: tech.avgResolutionTime || 0,
+        status: tech.status,
+        currentLocation: tech.currentLocation
+      }));
+      
+      console.log("Mapped performance data:", performance);
+      return performance;
+    } catch (error) {
+      console.error("Error fetching technician performance:", error);
+      return [];
+    }
   }
 
   async getWardStats(wardNumber: string): Promise<any> {
