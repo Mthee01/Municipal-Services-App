@@ -159,8 +159,8 @@ export class MemStorage implements IStorage {
   private chatMessagesStore: Map<number, ChatMessage>;
   private whatsappMessagesStore: Map<number, WhatsappMessage>;
   private whatsappConversationsStore: Map<number, WhatsappConversation>;
-  private issueNotesStore: Map<number, IssueNote>;
-  private issueEscalationsStore: Map<number, IssueEscalation>;
+  private issueNotes: Map<number, IssueNote>;
+  private issueEscalations: Map<number, IssueEscalation>;
   private activeWorkSessions: Map<number, { issueId: number; arrivalTime: Date; isActive: boolean }>;
   private currentUserId: number;
   private currentIssueId: number;
@@ -198,8 +198,8 @@ export class MemStorage implements IStorage {
     this.chatMessagesStore = new Map();
     this.whatsappMessagesStore = new Map();
     this.whatsappConversationsStore = new Map();
-    this.issueNotesStore = new Map();
-    this.issueEscalationsStore = new Map();
+    this.issueNotes = new Map();
+    this.issueEscalations = new Map();
     this.activeWorkSessions = new Map();
     this.currentUserId = 1;
     this.currentIssueId = 1;
@@ -2276,9 +2276,21 @@ export class DatabaseStorage implements IStorage {
   async updateWorkSession(id: number, updates: any): Promise<any> { return updates; }
 
   // Issue notes operations - stub implementations  
-  async getIssueNotes(issueId: number): Promise<IssueNote[]> { return []; }
-  async createIssueNote(note: InsertIssueNote): Promise<IssueNote> { 
-    throw new Error("Not implemented for database storage"); 
+  async getIssueNotes(issueId: number): Promise<IssueNote[]> { 
+    return Array.from(this.issueNotes.values())
+      .filter(note => note.issueId === issueId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+  
+  async createIssueNote(insertNote: InsertIssueNote): Promise<IssueNote> { 
+    const id = this.currentIssueNoteId++;
+    const note: IssueNote = {
+      ...insertNote,
+      id,
+      createdAt: new Date(),
+    };
+    this.issueNotes.set(id, note);
+    return note;
   }
 
   // Issue escalation operations - stub implementations
