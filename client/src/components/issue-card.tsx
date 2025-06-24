@@ -61,11 +61,15 @@ export function IssueCard({ issue, showActions = true, onViewDetails, onRate, on
                   key={index}
                   src={photo}
                   alt={`Issue photo ${index + 1}`}
-                  className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                  className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
                 />
               ))}
               {issue.photos.length > 3 && (
-                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-sm text-gray-600">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-100 rounded-lg flex items-center justify-center text-xs sm:text-sm text-gray-600">
                   +{issue.photos.length - 3}
                 </div>
               )}
