@@ -190,9 +190,14 @@ export default function OfficialDashboard() {
     }
   });
 
-  // Filtered issues with priority for new citizen reports
+  // Filtered issues with priority for new citizen reports, excluding resolved issues
   const filteredIssues = useMemo(() => {
     const filtered = issues.filter((issue: Issue) => {
+      // Exclude resolved issues from call center dashboard
+      if (issue.status === 'resolved') {
+        return false;
+      }
+      
       return issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
              issue.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
              issue.location.toLowerCase().includes(searchTerm.toLowerCase());
