@@ -317,23 +317,7 @@ export default function OfficialDashboard() {
     }
   };
 
-  // Statistics calculations
-  const stats = useMemo(() => {
-    const totalIssues = issues.length;
-    const openIssues = issues.filter((issue: Issue) => issue.status === 'open').length;
-    const assignedIssues = issues.filter((issue: Issue) => issue.status === 'assigned').length;
-    const resolvedIssues = issues.filter((issue: Issue) => issue.status === 'resolved').length;
-    const criticalIssues = issues.filter((issue: Issue) => issue.priority === 'critical').length;
 
-    return {
-      totalIssues,
-      openIssues,
-      assignedIssues,
-      resolvedIssues,
-      criticalIssues,
-      resolutionRate: totalIssues > 0 ? Math.round((resolvedIssues / totalIssues) * 100) : 0
-    };
-  }, [issues]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
