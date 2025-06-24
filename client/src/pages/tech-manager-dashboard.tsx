@@ -5,8 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Wrench, MapPin, Clock, Star, AlertCircle, CheckCircle, Navigation } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Users, Wrench, MapPin, Clock, Star, AlertCircle, CheckCircle, Navigation, StickyNote, Eye } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { IssueCard } from "@/components/issue-card";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -17,6 +19,8 @@ export default function TechManagerDashboard() {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [selectedIssue, setSelectedIssue] = useState<any>(null);
   const [nearestTechnicians, setNearestTechnicians] = useState<any[]>([]);
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [selectedIssueForNotes, setSelectedIssueForNotes] = useState<any>(null);
   const { toast } = useToast();
 
   const { data: technicians = [], isLoading: techLoading } = useQuery({
@@ -44,6 +48,18 @@ export default function TechManagerDashboard() {
       return data;
     },
   });
+
+  // Fetch issue notes for selected issue
+  const { data: issueNotes = [] } = useQuery({
+    queryKey: ["/api/issues", selectedIssueForNotes?.id, "notes"],
+    enabled: !!selectedIssueForNotes
+  });
+
+  // Handle viewing notes
+  const handleViewNotes = (issue: any) => {
+    setSelectedIssueForNotes(issue);
+    setShowNotesModal(true);
+  };
 
   const assignTechnicianMutation = useMutation({
     mutationFn: ({ technicianId, issueId }: { technicianId: number; issueId: number }) =>
@@ -293,14 +309,24 @@ export default function TechManagerDashboard() {
                               {issue.priority}
                             </Badge>
                           </div>
-                          <Button
-                            size="sm"
-                            onClick={() => findNearestTechnicians(issue)}
-                            className="ml-3 shrink-0"
-                          >
-                            <Navigation className="w-4 h-4 mr-1" />
-                            Assign
-                          </Button>
+                          <div className="flex space-x-2 ml-3 shrink-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewNotes(issue)}
+                              className="text-xs"
+                            >
+                              <StickyNote className="h-3 w-3 mr-1" />
+                              Notes
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => findNearestTechnicians(issue)}
+                            >
+                              <Navigation className="w-4 h-4 mr-1" />
+                              Assign
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     );
