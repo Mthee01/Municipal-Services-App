@@ -400,7 +400,7 @@ export class MemStorage implements IStorage {
         ward: "Ward 1",
         reporterName: "John Doe",
         reporterPhone: "0821234567",
-        assignedTo: "Water Maintenance Team A",
+        assignedTo: 1,
         photos: null,
         createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
         updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
@@ -514,7 +514,7 @@ export class MemStorage implements IStorage {
         ward: "Ward 1",
         reporterName: "City Inspector",
         reporterPhone: "0821234567",
-        assignedTo: "1",
+        assignedTo: 1,
         photos: null,
         createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
         updatedAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
@@ -533,7 +533,7 @@ export class MemStorage implements IStorage {
         ward: "Ward 3",
         reporterName: "Emergency Services",
         reporterPhone: "0827654321",
-        assignedTo: "1",
+        assignedTo: 1,
         photos: null,
         createdAt: new Date(Date.now() - 90 * 60 * 1000), // 1.5 hours ago
         updatedAt: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
@@ -1932,7 +1932,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getIssuesByTechnician(technicianId: number): Promise<Issue[]> {
-    return await db.select().from(issues).where(eq(issues.assignedTo, technicianId));
+    const allIssues = await db.select().from(issues);
+    return allIssues.filter(issue => 
+      issue.assignedTo == technicianId || issue.assignedTo === technicianId.toString()
+    );
   }
 
   async createIssue(issue: InsertIssue): Promise<Issue> {

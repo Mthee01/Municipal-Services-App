@@ -1052,27 +1052,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // For demo purposes, use technician ID 1 (field technician)
       const technicianId = 1;
       
-      // Find issues that are currently in progress for this technician
-      const activeIssues = await storage.getIssuesByStatus('in_progress');
-      const technicianActiveIssues = activeIssues.filter(issue => 
-        issue.assignedTo === technicianId
-      );
+      // Get issues assigned to this technician directly
+      const technicianIssues = await storage.getIssuesByTechnician(technicianId);
+      const inProgressIssues = technicianIssues.filter(issue => issue.status === 'in_progress');
       
-      // Get stored active work sessions from storage
-      const storedSessions = await storage.getActiveWorkSessions();
-      
-      // Convert to work session format with actual arrival times
-      const activeSessions = technicianActiveIssues.map(issue => {
-        const storedSession = storedSessions.find(s => s.issueId === issue.id);
-        return {
-          issueId: issue.id,
-          arrivalTime: storedSession?.arrivalTime || issue.updatedAt,
-          isActive: true
-        };
-      });
+      // Convert to work session format
+      const activeSessions = inProgressIssues.map(issue => ({
+        issueId: issue.id,
+        arrivalTime: issue.updatedAt,
+        isActive: true
+      }));
       
       res.json(activeSessions);
     } catch (error) {
+      console.error("Error fetching active work sessions:", error);
       res.status(400).json({ error: "Failed to fetch active work sessions" });
     }
   });
