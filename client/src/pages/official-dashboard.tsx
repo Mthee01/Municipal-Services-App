@@ -641,7 +641,7 @@ export default function OfficialDashboard() {
                     </div>
                     <p className="text-sm text-gray-700">{note.note}</p>
                     <Badge variant="secondary" className="mt-2 text-xs">
-                      {note.noteType.replace('_', ' ')}
+                      Note
                     </Badge>
                   </div>
                 ))
@@ -882,7 +882,7 @@ export default function OfficialDashboard() {
                 issueNotes.map((note) => (
                   <div key={note.id} className="p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-sm text-gray-900">{note.createdBy}</span>
+                      <span className="font-medium text-sm text-gray-900">{note.createdBy || 'Unknown User'}</span>
                       <span className="text-xs text-gray-500">
                         {new Date(note.createdAt).toLocaleString()}
                       </span>
