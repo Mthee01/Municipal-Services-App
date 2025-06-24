@@ -121,14 +121,11 @@ export const issueNotes = pgTable("issue_notes", {
 export const issueEscalations = pgTable("issue_escalations", {
   id: serial("id").primaryKey(),
   issueId: integer("issue_id").notNull(),
-  escalatedBy: text("escalated_by").notNull(),
-  escalatedTo: text("escalated_to").notNull(),
+  escalatedBy: varchar("escalated_by").notNull(),
+  escalatedByRole: varchar("escalated_by_role").notNull(),
   escalationReason: text("escalation_reason").notNull(),
-  escalationLevel: text("escalation_level").notNull().default("tech_manager"), // tech_manager, admin, mayor
-  status: text("status").notNull().default("pending"), // pending, acknowledged, resolved
+  priority: varchar("priority").notNull().default("urgent"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  acknowledgedAt: timestamp("acknowledged_at"),
-  resolvedAt: timestamp("resolved_at"),
 });
 
 export const vouchers = pgTable("vouchers", {

@@ -344,7 +344,11 @@ export class DatabaseStorage implements IStorage {
 
   async createIssueEscalation(insertEscalation: InsertIssueEscalation): Promise<IssueEscalation> {
     const [escalation] = await db.insert(issueEscalations).values({
-      ...insertEscalation,
+      issueId: insertEscalation.issueId,
+      escalationReason: insertEscalation.escalationReason,
+      escalatedBy: insertEscalation.escalatedBy,
+      escalatedByRole: insertEscalation.escalatedByRole,
+      priority: insertEscalation.priority || "urgent",
       createdAt: new Date()
     }).returning();
     return escalation;
