@@ -75,12 +75,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginFormData) => {
-      const response = await apiRequest("POST", "/api/auth/login", data);
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Login failed");
-      }
-      return response.json();
+      return await apiRequest("POST", "/api/auth/login", data);
     },
     onSuccess: (data) => {
       toast({
@@ -114,12 +109,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterFormData) => {
-      const response = await apiRequest("POST", "/api/auth/register", data);
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Registration failed");
-      }
-      return response.json();
+      return await apiRequest("POST", "/api/auth/register", data);
     },
     onSuccess: (data) => {
       toast({
