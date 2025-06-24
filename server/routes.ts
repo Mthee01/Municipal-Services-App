@@ -145,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/issues/:id/notes", async (req, res) => {
     try {
       const issueId = parseInt(req.params.id);
-      const { note, noteType = "general", createdBy = "User", createdByRole = "call_center_agent" } = req.body;
+      const { note, noteType = "general", createdBy, createdByRole } = req.body;
       
       if (!note || !note.trim()) {
         return res.status(400).json({ message: "Note content is required" });
@@ -155,8 +155,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         issueId,
         note: note.trim(),
         noteType,
-        createdBy,
-        createdByRole
+        createdBy: createdBy || "Unknown User",
+        createdByRole: createdByRole || "call_center_agent"
       };
       
       console.log("Creating note with data:", noteData);

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,7 @@ const getCategoryIcon = (category: string) => {
 export default function OfficialDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // State
   const [searchTerm, setSearchTerm] = useState("");
@@ -126,11 +128,14 @@ export default function OfficialDashboard() {
   // Mutations for notes and escalations
   const addNoteMutation = useMutation({
     mutationFn: async (data: { issueId: number; note: string }) => {
+      const createdBy = user?.name || user?.username || "Unknown User";
+      const createdByRole = user?.role || "call_center_agent";
+      
       return apiRequest("POST", `/api/issues/${data.issueId}/notes`, {
         note: data.note,
         noteType: "general",
-        createdBy: "Call Center Agent",
-        createdByRole: "call_center_agent"
+        createdBy,
+        createdByRole
       });
     },
     onSuccess: () => {
