@@ -146,6 +146,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+✓ June 24, 2025: Fixed Themba technician login credentials
+- Added Themba to hardcoded authentication system
+- Themba can now login with username: "Themba", password: "password"
+- Themba has field_technician role with ID 13
+- Fixed technician assignment system to show available technicians for reassignment
+- Enhanced nearest technicians endpoint to include "on_job" technicians
+
 ✓ June 24, 2025: Enhanced technician dashboard filtering
 - Resolved issues are now properly filtered out from technician view
 - Technicians only see active work assignments (open, assigned, in_progress)
