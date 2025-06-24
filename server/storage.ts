@@ -2331,10 +2331,25 @@ export class DatabaseStorage implements IStorage {
     return note;
   }
 
-  // Issue escalation operations - stub implementations
-  async getIssueEscalations(issueId: number): Promise<IssueEscalation[]> { return []; }
-  async createIssueEscalation(escalation: InsertIssueEscalation): Promise<IssueEscalation> { 
-    throw new Error("Not implemented for database storage"); 
+  // Issue escalation operations
+  async getIssueEscalations(issueId: number): Promise<IssueEscalation[]> { 
+    return Array.from(this.issueEscalations.values())
+      .filter(escalation => escalation.issueId === issueId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+  
+  async createIssueEscalation(insertEscalation: InsertIssueEscalation): Promise<IssueEscalation> { 
+    const id = this.currentIssueEscalationId++;
+    const escalation: IssueEscalation = {
+      ...insertEscalation,
+      id,
+      status: 'pending',
+      createdAt: new Date(),
+      acknowledgedAt: null,
+      resolvedAt: null,
+    };
+    this.issueEscalations.set(id, escalation);
+    return escalation;
   }
 
   // Analytics operations - stub implementations

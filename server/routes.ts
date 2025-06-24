@@ -183,20 +183,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/issues/:id/escalate", async (req, res) => {
     try {
       const issueId = parseInt(req.params.id);
+      const { reason, escalatedBy, escalatedByRole, escalatedTo } = req.body;
+      
+      if (!reason || !reason.trim()) {
+        return res.status(400).json({ message: "Escalation reason is required" });
+      }
+      
       const escalationData = {
-        ...req.body,
         issueId,
-        escalatedTo: "tech_manager" // Default escalation target for call center agents
+        escalationReason: reason.trim(),
+        escalatedBy: escalatedBy || "Call Center Agent",
+        escalatedByRole: escalatedByRole || "call_center_agent", 
+        escalatedTo: escalatedTo || "tech_manager",
+        status: "pending"
       };
       
-      const validatedData = insertIssueEscalationSchema.parse(escalationData);
-      const escalation = await storage.createIssueEscalation(validatedData);
+      console.log("Creating escalation with data:", escalationData);
+      
+      const escalation = await storage.createIssueEscalation(escalationData);
       
       // Also update issue priority to urgent if escalated
       await storage.updateIssue(issueId, { priority: "urgent" });
       
       res.status(201).json(escalation);
     } catch (error) {
+      console.error("Error creating escalation:", error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to escalate issue" });
     }
   });
