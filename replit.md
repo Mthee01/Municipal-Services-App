@@ -146,10 +146,10 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-✓ June 24, 2025: Fixed Themba technician login credentials
-- Added Themba to hardcoded authentication system
-- Themba can now login with username: "Themba", password: "password"
-- Themba has field_technician role with ID 13
+✓ June 24, 2025: Fixed user login credentials
+- Added Lusanda to hardcoded authentication system with citizen role (ID 15)  
+- Added Themba to hardcoded authentication system with field_technician role (ID 13)
+- Users can now login with username: "Lusanda"/"Themba", password: "password"
 - Fixed technician assignment system to show available technicians for reassignment
 - Enhanced nearest technicians endpoint to include "on_job" technicians
 
