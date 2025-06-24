@@ -28,6 +28,7 @@ export const users = pgTable("users", {
 
 export const issues = pgTable("issues", {
   id: serial("id").primaryKey(),
+  referenceNumber: text("reference_number"),
   title: text("title").notNull(),
   description: text("description").notNull(),
   category: text("category").notNull(),
