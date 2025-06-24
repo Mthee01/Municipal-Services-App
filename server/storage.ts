@@ -1779,6 +1779,44 @@ export class MemStorage implements IStorage {
     return Array.from(this.activeWorkSessions.values());
   }
 
+  // Issue notes operations
+  async getIssueNotes(issueId: number): Promise<IssueNote[]> {
+    return Array.from(this.issueNotes.values())
+      .filter(note => note.issueId === issueId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async createIssueNote(insertNote: InsertIssueNote): Promise<IssueNote> {
+    const id = this.currentIssueNoteId++;
+    const note: IssueNote = {
+      ...insertNote,
+      id,
+      createdAt: new Date(),
+    };
+    this.issueNotes.set(id, note);
+    return note;
+  }
+
+  // Issue escalation operations
+  async getIssueEscalations(issueId: number): Promise<IssueEscalation[]> {
+    return Array.from(this.issueEscalations.values())
+      .filter(escalation => escalation.issueId === issueId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async createIssueEscalation(insertEscalation: InsertIssueEscalation): Promise<IssueEscalation> {
+    const id = this.currentIssueEscalationId++;
+    const escalation: IssueEscalation = {
+      ...insertEscalation,
+      id,
+      createdAt: new Date(),
+      acknowledgedAt: null,
+      resolvedAt: null,
+    };
+    this.issueEscalations.set(id, escalation);
+    return escalation;
+  }
+
   // Chat message operations
   async getChatMessages(sessionId: string): Promise<ChatMessage[]> {
     return Array.from(this.chatMessagesStore.values())
