@@ -204,11 +204,11 @@ Preferred communication style: Simple, everyday language.
 - Call center agents focus on unresolved matters requiring attention
 
 ✓ June 24, 2025: Added unique reference numbers to all issues
-- Every issue now has a unique reference number (format: REF2025XXXXXX)
+- Every issue now has a unique 6-character reference number (format: XXXXXX)
 - Reference numbers visible in dashboard tables and issue cards
 - Existing issues automatically assigned reference numbers
 - Reference numbers help citizens track their service requests
-- Database schema updated with reference_number field
+- Database schema updated with reference_number field (6 characters)
 
 ✓ June 24, 2025: Enhanced call center agent capabilities
 - Added comprehensive note-taking system for tracking issue communication and progress
