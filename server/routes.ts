@@ -1074,32 +1074,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { issueId, technicianId, completionNotes } = req.body;
       
+      if (!issueId || !technicianId || !completionNotes?.trim()) {
+        return res.status(400).json({ error: "Missing required fields: issueId, technicianId, and completionNotes" });
+      }
+      
       // Update issue status to resolved
       const issue = await storage.updateIssue(issueId, {
         status: 'resolved',
         resolvedAt: new Date(),
-        feedback: completionNotes
+        feedback: completionNotes.trim(),
+        updatedAt: new Date()
       });
       
       if (!issue) {
         return res.status(404).json({ error: "Issue not found" });
       }
       
-      // Create completion field report
-      await storage.createFieldReport({
-        issueId,
-        technicianId,
-        reportType: 'completion',
-        description: completionNotes || 'Work completed',
-        findings: 'Issue resolved successfully',
-        actionsTaken: 'Completed assigned work',
-        materialsUsed: [],
-        nextSteps: 'No further action required'
+      res.json({ 
+        message: "Issue closed successfully", 
+        issue,
+        completedAt: new Date().toISOString()
       });
-      
-      res.json({ message: "Work session completed", issue });
     } catch (error) {
-      res.status(400).json({ error: "Failed to complete work session" });
+      console.error("Complete work session error:", error);
+      res.status(500).json({ error: "Failed to complete work session" });
     }
   });
 

@@ -326,19 +326,19 @@ export default function FieldTechnicianDashboard() {
         completionNotes: notes
       });
     },
-    onSuccess: (data, { issueId }) => {
+    onSuccess: (data, { issueId, notes }) => {
       setActiveWorkSessions(prev => prev.filter(session => session.issueId !== issueId));
       queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
       queryClient.invalidateQueries({ queryKey: ['/api/work-sessions/active'] });
       toast({
-        title: "Work Completed",
-        description: "Issue has been marked as resolved.",
+        title: "Issue Closed Successfully",
+        description: "Work has been completed and the issue is now resolved.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: "Failed to complete work session.",
+        title: "Failed to Close Issue",
+        description: error?.message || "Unable to complete work session. Please try again.",
         variant: "destructive",
       });
     }
@@ -807,23 +807,29 @@ function ActiveSessionCard({
         
         <div className="space-y-3">
           <div>
-            <Label htmlFor="completion-notes">Completion Notes</Label>
+            <Label htmlFor="completion-notes" className="text-sm font-medium">
+              Work Completion Summary <span className="text-red-500">*</span>
+            </Label>
             <Textarea
               id="completion-notes"
-              placeholder="Describe the work completed..."
+              placeholder="Describe what work was completed, parts used, and current status..."
               value={completionNotes}
               onChange={(e) => setCompletionNotes(e.target.value)}
-              rows={3}
+              rows={4}
+              className="resize-none"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Required: Provide details about the work completed to close this issue
+            </p>
           </div>
           
           <Button 
             onClick={() => onComplete(completionNotes)}
             disabled={isCompleting || !completionNotes.trim()}
-            className="w-full min-h-[44px] text-sm"
+            className="w-full min-h-[44px] text-sm bg-green-600 hover:bg-green-700 text-white"
           >
             <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span>{isCompleting ? 'Completing...' : 'Complete Work'}</span>
+            <span>{isCompleting ? 'Closing Issue...' : 'Close Issue & Complete Work'}</span>
           </Button>
         </div>
       </CardContent>
