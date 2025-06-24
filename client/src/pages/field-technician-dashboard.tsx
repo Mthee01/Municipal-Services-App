@@ -514,7 +514,7 @@ export default function FieldTechnicianDashboard() {
                   Assigned Work Orders
                 </CardTitle>
                 <CardDescription>
-                  Issues assigned to you for completion
+                  New work assignments ready to start
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -522,24 +522,31 @@ export default function FieldTechnicianDashboard() {
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
                   </div>
-                ) : assignedIssues.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No work assignments available
-                  </div>
-                ) : (
-                  <div className="grid gap-4">
-                    {assignedIssues.map((issue: Issue) => (
-                      <WorkAssignmentCard
-                        key={issue.id}
-                        issue={issue}
-                        session={getSessionForIssue(issue.id)}
-                        onStartWork={() => startWorkMutation.mutate(issue.id)}
-                        onViewDetails={() => setSelectedIssue(issue)}
-                        isStarting={startWorkMutation.isPending}
-                      />
-                    ))}
-                  </div>
-                )}
+                ) : (() => {
+                  // Filter out in-progress issues - work orders should only show work that needs to be started
+                  const pendingWorkOrders = assignedIssues.filter((issue: Issue) => 
+                    issue.status !== 'in_progress' && issue.status !== 'resolved'
+                  );
+                  
+                  return pendingWorkOrders.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      No pending work orders. Check "Active Work" tab for ongoing assignments.
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {pendingWorkOrders.map((issue: Issue) => (
+                        <WorkAssignmentCard
+                          key={issue.id}
+                          issue={issue}
+                          session={getSessionForIssue(issue.id)}
+                          onStartWork={() => startWorkMutation.mutate(issue.id)}
+                          onViewDetails={() => setSelectedIssue(issue)}
+                          isStarting={startWorkMutation.isPending}
+                        />
+                      ))}
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
