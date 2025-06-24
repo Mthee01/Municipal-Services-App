@@ -121,11 +121,22 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
   const getCurrentLocation = async () => {
     console.log("getCurrentLocation called");
     
+    // Check if geolocation is supported
     if (!navigator.geolocation) {
       console.log("Geolocation not supported");
       toast({
         title: "Location not supported",
-        description: "Your browser doesn't support location services",
+        description: "Your browser doesn't support location services. Please enter your address manually.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if we're in a secure context (HTTPS)
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+      toast({
+        title: "Secure connection required",
+        description: "Location services require HTTPS. Please enter your address manually.",
         variant: "destructive",
       });
       return;
@@ -140,50 +151,70 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
     });
 
     try {
+      // First check permissions
+      if ('permissions' in navigator) {
+        const permission = await navigator.permissions.query({name: 'geolocation'});
+        console.log("Geolocation permission:", permission.state);
+        
+        if (permission.state === 'denied') {
+          throw new Error('Location permission denied');
+        }
+      }
+
       // Create a promise with built-in timeout
-      const position = await Promise.race([
-        new Promise<GeolocationPosition>((resolve, reject) => {
-          const id = navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: false, // Less accurate but faster and more reliable
-            timeout: 15000, // 15 second timeout
-            maximumAge: 300000 // 5 minute cache
-          });
-        }),
-        new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Location request timed out')), 20000); // 20 second backup timeout
-        })
-      ]);
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          reject(new Error('Location request timed out after 10 seconds'));
+        }, 10000);
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            clearTimeout(timeoutId);
+            resolve(pos);
+          },
+          (err) => {
+            clearTimeout(timeoutId);
+            reject(err);
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: 8000,
+            maximumAge: 300000
+          }
+        );
+      });
 
       const { latitude, longitude, accuracy } = position.coords;
       
-      // Enhanced location format with accuracy and readable coordinates
+      // Enhanced location format
       const locationString = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
       
       form.setValue("location", locationString);
       
-      // Log success for debugging
       console.log("Location captured:", { latitude, longitude, accuracy, locationString });
       
       toast({
         title: "Location captured successfully", 
-        description: `GPS coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)} ${accuracy ? `(±${Math.round(accuracy)}m)` : ''}`,
+        description: `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)} ${accuracy ? `(±${Math.round(accuracy)}m)` : ''}`,
       });
     } catch (error: any) {
       console.error("Location error:", error);
       let errorMessage = "Unable to get current location";
       
       if (error.message?.includes('timed out')) {
-        errorMessage = "Location request timed out. Please try again or enter your address manually.";
+        errorMessage = "Location request timed out. Please enter your address manually.";
+      } else if (error.message?.includes('denied')) {
+        errorMessage = "Location access denied. Please enable location permissions and try again.";
       } else {
         switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
+          case 1: // PERMISSION_DENIED
+            errorMessage = "Location access denied. Please enable location permissions in your browser.";
             break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = "Location information is unavailable. Please check your GPS signal and try again.";
+          case 2: // POSITION_UNAVAILABLE
+            errorMessage = "Location unavailable. Please check your GPS signal or enter address manually.";
             break;
-          case error.TIMEOUT:
-            errorMessage = "Location request timed out. Please try again or enter your address manually.";
+          case 3: // TIMEOUT
+            errorMessage = "Location request timed out. Please try again or enter address manually.";
             break;
           default:
             errorMessage = "Location access failed. Please enter your address manually.";
@@ -312,7 +343,7 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
                       </Button>
                     </div>
                     <p className="text-xs text-gray-500">
-                      {locationLoading ? "Getting your location..." : "Click map icon to use current location"}
+                      {locationLoading ? "Getting your location..." : "Click map icon to use current location (requires permission)"}
                     </p>
                     <FormMessage />
                   </FormItem>
