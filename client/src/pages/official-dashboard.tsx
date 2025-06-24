@@ -168,10 +168,7 @@ export default function OfficialDashboard() {
   const escalateMutation = useMutation({
     mutationFn: async (data: { issueId: number; reason: string }) => {
       return apiRequest("POST", `/api/issues/${data.issueId}/escalate`, {
-        reason: data.reason,
-        escalatedBy: "Call Center Agent",
-        escalatedByRole: "call_center_agent",
-        escalatedTo: "tech_manager"
+        escalationReason: data.reason
       });
     },
     onSuccess: () => {
