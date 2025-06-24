@@ -6,7 +6,8 @@ import { storage } from "./storage";
 import { 
   insertIssueSchema, insertPaymentSchema, insertUserSchema, 
   insertFieldReportSchema, insertPartsInventorySchema, insertPartsOrderSchema,
-  insertTechnicianMessageSchema, insertTechnicianLocationSchema
+  insertTechnicianMessageSchema, insertTechnicianLocationSchema,
+  insertIssueNoteSchema, insertIssueEscalationSchema
 } from "@shared/schema";
 import multer from "multer";
 import path from "path";
@@ -127,6 +128,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(issue);
     } catch (error) {
       res.status(500).json({ message: "Failed to update issue" });
+    }
+  });
+
+  // Issue notes endpoints  
+  app.get("/api/issues/:id/notes", async (req, res) => {
+    try {
+      const issueId = parseInt(req.params.id);
+      const notes = await storage.getIssueNotes(issueId);
+      res.json(notes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch issue notes" });
+    }
+  });
+
+  app.post("/api/issues/:id/notes", async (req, res) => {
+    try {
+      const issueId = parseInt(req.params.id);
+      const noteData = {
+        ...req.body,
+        issueId
+      };
+      
+      const validatedData = insertIssueNoteSchema.parse(noteData);
+      const note = await storage.createIssueNote(validatedData);
+      res.status(201).json(note);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create note" });
+    }
+  });
+
+  // Issue escalation endpoints
+  app.get("/api/issues/:id/escalations", async (req, res) => {
+    try {
+      const issueId = parseInt(req.params.id);
+      const escalations = await storage.getIssueEscalations(issueId);
+      res.json(escalations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch escalations" });
+    }
+  });
+
+  app.post("/api/issues/:id/escalate", async (req, res) => {
+    try {
+      const issueId = parseInt(req.params.id);
+      const escalationData = {
+        ...req.body,
+        issueId,
+        escalatedTo: "tech_manager" // Default escalation target for call center agents
+      };
+      
+      const validatedData = insertIssueEscalationSchema.parse(escalationData);
+      const escalation = await storage.createIssueEscalation(validatedData);
+      
+      // Also update issue priority to urgent if escalated
+      await storage.updateIssue(issueId, { priority: "urgent" });
+      
+      res.status(201).json(escalation);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to escalate issue" });
     }
   });
 

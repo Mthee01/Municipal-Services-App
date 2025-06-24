@@ -1,7 +1,7 @@
 import { 
   users, issues, payments, teams, technicians, wards, issueUpdates, vouchers,
   fieldReports, partsInventory, partsOrders, technicianMessages, technicianLocations,
-  chatMessages, whatsappMessages, whatsappConversations,
+  chatMessages, whatsappMessages, whatsappConversations, issueNotes, issueEscalations,
   type User, type InsertUser, type Issue, type InsertIssue, 
   type Payment, type InsertPayment, type Team, type InsertTeam,
   type Technician, type InsertTechnician, type Ward, type InsertWard,
@@ -9,7 +9,8 @@ import {
   type FieldReport, type InsertFieldReport, type PartsInventory, type InsertPartsInventory,
   type PartsOrder, type InsertPartsOrder, type TechnicianMessage, type InsertTechnicianMessage,
   type TechnicianLocation, type InsertTechnicianLocation, type ChatMessage, type InsertChatMessage,
-  type WhatsappMessage, type InsertWhatsappMessage, type WhatsappConversation, type InsertWhatsappConversation
+  type WhatsappMessage, type InsertWhatsappMessage, type WhatsappConversation, type InsertWhatsappConversation,
+  type IssueNote, type InsertIssueNote, type IssueEscalation, type InsertIssueEscalation
 } from "@shared/schema";
 
 export interface IStorage {
@@ -126,6 +127,14 @@ export interface IStorage {
   // Active work sessions operations
   getActiveWorkSessions(): Promise<{ issueId: number; arrivalTime: Date; isActive: boolean }[]>;
   
+  // Issue notes operations
+  getIssueNotes(issueId: number): Promise<IssueNote[]>;
+  createIssueNote(note: InsertIssueNote): Promise<IssueNote>;
+
+  // Issue escalation operations
+  getIssueEscalations(issueId: number): Promise<IssueEscalation[]>;
+  createIssueEscalation(escalation: InsertIssueEscalation): Promise<IssueEscalation>;
+
   // Analytics operations
   getWardStats(wardNumber?: string): Promise<any>;
   getTechnicianPerformance(): Promise<any>;
@@ -150,6 +159,8 @@ export class MemStorage implements IStorage {
   private chatMessagesStore: Map<number, ChatMessage>;
   private whatsappMessagesStore: Map<number, WhatsappMessage>;
   private whatsappConversationsStore: Map<number, WhatsappConversation>;
+  private issueNotesStore: Map<number, IssueNote>;
+  private issueEscalationsStore: Map<number, IssueEscalation>;
   private activeWorkSessions: Map<number, { issueId: number; arrivalTime: Date; isActive: boolean }>;
   private currentUserId: number;
   private currentIssueId: number;
@@ -167,6 +178,8 @@ export class MemStorage implements IStorage {
   private currentChatMessageId: number;
   private currentWhatsappMessageId: number;
   private currentWhatsappConversationId: number;
+  private currentIssueNoteId: number;
+  private currentIssueEscalationId: number;
 
   constructor() {
     this.users = new Map();
@@ -185,6 +198,8 @@ export class MemStorage implements IStorage {
     this.chatMessagesStore = new Map();
     this.whatsappMessagesStore = new Map();
     this.whatsappConversationsStore = new Map();
+    this.issueNotesStore = new Map();
+    this.issueEscalationsStore = new Map();
     this.activeWorkSessions = new Map();
     this.currentUserId = 1;
     this.currentIssueId = 1;
@@ -202,6 +217,8 @@ export class MemStorage implements IStorage {
     this.currentChatMessageId = 1;
     this.currentWhatsappMessageId = 1;
     this.currentWhatsappConversationId = 1;
+    this.currentIssueNoteId = 1;
+    this.currentIssueEscalationId = 1;
 
     this.seedData();
     this.seedFieldTechnicianData();
@@ -2257,6 +2274,18 @@ export class DatabaseStorage implements IStorage {
   }
   async createWorkSession(session: any): Promise<any> { return session; }
   async updateWorkSession(id: number, updates: any): Promise<any> { return updates; }
+
+  // Issue notes operations - stub implementations  
+  async getIssueNotes(issueId: number): Promise<IssueNote[]> { return []; }
+  async createIssueNote(note: InsertIssueNote): Promise<IssueNote> { 
+    throw new Error("Not implemented for database storage"); 
+  }
+
+  // Issue escalation operations - stub implementations
+  async getIssueEscalations(issueId: number): Promise<IssueEscalation[]> { return []; }
+  async createIssueEscalation(escalation: InsertIssueEscalation): Promise<IssueEscalation> { 
+    throw new Error("Not implemented for database storage"); 
+  }
 
   // Analytics operations - stub implementations
   async getWardStats(wardNumber?: string): Promise<any> { return {}; }

@@ -29,10 +29,14 @@ import {
   FileDown,
   Truck,
   TriangleAlert,
-  MessageCircle
+  MessageCircle,
+  StickyNote,
+  AlertCircle,
+  Send
 } from "lucide-react";
 import { Link } from "wouter";
-import type { Issue, Technician, Team } from "@shared/schema";
+import type { Issue, Technician, Team, IssueNote, IssueEscalation } from "@shared/schema";
+import { Textarea } from "@/components/ui/textarea";
 
 // Helper functions
 const formatRelativeTime = (date: Date) => {
@@ -86,6 +90,11 @@ export default function OfficialDashboard() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportEmail, setExportEmail] = useState("");
   const [exportMethod, setExportMethod] = useState("email");
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [showEscalateModal, setShowEscalateModal] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [newNote, setNewNote] = useState("");
+  const [escalationReason, setEscalationReason] = useState("");
 
   // Queries - Real-time issue fetching for call center agents
   const { data: issues = [], isLoading: issuesLoading } = useQuery<Issue[]>({
@@ -103,8 +112,71 @@ export default function OfficialDashboard() {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
-  // Call center agents can view issues but cannot assign technicians
-  // Only tech managers have assignment privileges
+  // Fetch issue notes and escalations for selected issue
+  const { data: issueNotes = [] } = useQuery<IssueNote[]>({
+    queryKey: ["/api/issues", selectedIssue?.id, "notes"],
+    enabled: !!selectedIssue
+  });
+
+  const { data: issueEscalations = [] } = useQuery<IssueEscalation[]>({
+    queryKey: ["/api/issues", selectedIssue?.id, "escalations"],
+    enabled: !!selectedIssue
+  });
+
+  // Mutations for notes and escalations
+  const addNoteMutation = useMutation({
+    mutationFn: async (data: { issueId: number; note: string }) => {
+      return apiRequest("POST", `/api/issues/${data.issueId}/notes`, {
+        note: data.note,
+        noteType: "general",
+        createdBy: "Call Center Agent",
+        createdByRole: "call_center_agent"
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/issues", selectedIssue?.id, "notes"] });
+      setNewNote("");
+      toast({
+        title: "Success",
+        description: "Note added successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add note",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const escalateMutation = useMutation({
+    mutationFn: async (data: { issueId: number; reason: string }) => {
+      return apiRequest("POST", `/api/issues/${data.issueId}/escalate`, {
+        escalatedBy: "Call Center Agent",
+        escalationReason: data.reason,
+        escalationLevel: "tech_manager"
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/issues", selectedIssue?.id, "escalations"] });
+      setEscalationReason("");
+      setShowEscalateModal(false);
+      setSelectedIssue(null);
+      toast({
+        title: "Success",
+        description: "Issue escalated to Technical Manager!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to escalate issue",
+        variant: "destructive",
+      });
+    }
+  });
 
   // Filtered issues with priority for new citizen reports
   const filteredIssues = useMemo(() => {
@@ -125,8 +197,34 @@ export default function OfficialDashboard() {
     });
   }, [issues, searchTerm]);
 
-  // Call center agents monitor issues but cannot assign technicians
-  // Assignments are handled by tech managers only
+  // Handle notes and escalation
+  const handleViewNotes = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setShowNotesModal(true);
+  };
+
+  const handleEscalateIssue = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setShowEscalateModal(true);
+  };
+
+  const handleAddNote = () => {
+    if (selectedIssue && newNote.trim()) {
+      addNoteMutation.mutate({
+        issueId: selectedIssue.id,
+        note: newNote.trim()
+      });
+    }
+  };
+
+  const handleConfirmEscalation = () => {
+    if (selectedIssue && escalationReason.trim()) {
+      escalateMutation.mutate({
+        issueId: selectedIssue.id,
+        reason: escalationReason.trim()
+      });
+    }
+  };
 
   // Handle export report
   const handleExportReport = () => {
@@ -398,7 +496,7 @@ export default function OfficialDashboard() {
                         <TableHead>Status</TableHead>
                         <TableHead>Assigned To</TableHead>
                         <TableHead>Reported</TableHead>
-                        <TableHead>Assignment Status</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -434,15 +532,27 @@ export default function OfficialDashboard() {
                             </span>
                           </TableCell>
                           <TableCell>
-                            {!issue.assignedTo ? (
-                              <span className="text-xs text-orange-600 font-medium">
-                                Pending Assignment
-                              </span>
-                            ) : (
-                              <span className="text-xs text-green-600 font-medium">
-                                Assigned
-                              </span>
-                            )}
+                            <div className="flex space-x-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleViewNotes(issue)}
+                                className="text-xs"
+                              >
+                                <StickyNote className="h-3 w-3 mr-1" />
+                                Notes
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEscalateIssue(issue)}
+                                className="text-xs"
+                                disabled={issue.priority === "urgent"}
+                              >
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                Escalate
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}

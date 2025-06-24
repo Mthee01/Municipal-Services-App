@@ -108,6 +108,29 @@ export const issueUpdates = pgTable("issue_updates", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const issueNotes = pgTable("issue_notes", {
+  id: serial("id").primaryKey(),
+  issueId: integer("issue_id").notNull(),
+  note: text("note").notNull(),
+  noteType: text("note_type").notNull().default("general"), // general, escalation, follow_up
+  createdBy: text("created_by").notNull(),
+  createdByRole: text("created_by_role").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const issueEscalations = pgTable("issue_escalations", {
+  id: serial("id").primaryKey(),
+  issueId: integer("issue_id").notNull(),
+  escalatedBy: text("escalated_by").notNull(),
+  escalatedTo: text("escalated_to").notNull(),
+  escalationReason: text("escalation_reason").notNull(),
+  escalationLevel: text("escalation_level").notNull().default("tech_manager"), // tech_manager, admin, mayor
+  status: text("status").notNull().default("pending"), // pending, acknowledged, resolved
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  resolvedAt: timestamp("resolved_at"),
+});
+
 export const vouchers = pgTable("vouchers", {
   id: serial("id").primaryKey(),
   type: text("type").notNull(), // water, electricity
@@ -272,6 +295,18 @@ export const insertTechnicianLocationSchema = createInsertSchema(technicianLocat
   timestamp: true,
 });
 
+export const insertIssueNoteSchema = createInsertSchema(issueNotes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertIssueEscalationSchema = createInsertSchema(issueEscalations).omit({
+  id: true,
+  createdAt: true,
+  acknowledgedAt: true,
+  resolvedAt: true,
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Issue = typeof issues.$inferSelect;
@@ -298,6 +333,10 @@ export type TechnicianMessage = typeof technicianMessages.$inferSelect;
 export type InsertTechnicianMessage = z.infer<typeof insertTechnicianMessageSchema>;
 export type TechnicianLocation = typeof technicianLocations.$inferSelect;
 export type InsertTechnicianLocation = z.infer<typeof insertTechnicianLocationSchema>;
+export type IssueNote = typeof issueNotes.$inferSelect;
+export type InsertIssueNote = z.infer<typeof insertIssueNoteSchema>;
+export type IssueEscalation = typeof issueEscalations.$inferSelect;
+export type InsertIssueEscalation = z.infer<typeof insertIssueEscalationSchema>;
 
 // Chat Messages Table
 export const chatMessages = pgTable("chat_messages", {
