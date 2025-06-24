@@ -117,7 +117,9 @@ export default function OfficialDashboard() {
   // Fetch issue notes and escalations for selected issue
   const { data: issueNotes = [] } = useQuery<IssueNote[]>({
     queryKey: ["/api/issues", selectedIssue?.id, "notes"],
-    enabled: !!selectedIssue
+    queryFn: () => apiRequest("GET", `/api/issues/${selectedIssue?.id}/notes`),
+    enabled: !!selectedIssue,
+    refetchInterval: 5000 // Refresh notes every 5 seconds
   });
 
   const { data: issueEscalations = [] } = useQuery<IssueEscalation[]>({
@@ -139,7 +141,10 @@ export default function OfficialDashboard() {
       });
     },
     onSuccess: () => {
+      // Force immediate refetch of notes
       queryClient.invalidateQueries({ queryKey: ["/api/issues", selectedIssue?.id, "notes"] });
+      queryClient.refetchQueries({ queryKey: ["/api/issues", selectedIssue?.id, "notes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
       setNewNote("");
       setShowNotesModal(false);
       toast({
@@ -887,7 +892,7 @@ export default function OfficialDashboard() {
                 issueNotes.map((note) => (
                   <div key={note.id} className="p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-sm text-gray-900">{note.createdBy || 'Unknown User'}</span>
+                      <span className="font-medium text-sm text-gray-900">{note.createdBy}</span>
                       <span className="text-xs text-gray-500">
                         {new Date(note.createdAt).toLocaleString()}
                       </span>
