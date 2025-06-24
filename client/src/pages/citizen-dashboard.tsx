@@ -109,6 +109,11 @@ export default function CitizenDashboard() {
     queryKey: ["/api/issues", { user: "current" }],
   });
 
+  // Fetch technicians for name lookup
+  const { data: technicians = [] } = useQuery({
+    queryKey: ["/api/technicians"],
+  });
+
   const { data: communityIssues = [], isLoading: communityIssuesLoading } = useQuery<Issue[]>({
     queryKey: ["/api/issues", { community: true }],
   });
@@ -476,7 +481,10 @@ export default function CitizenDashboard() {
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Assigned Technician</Label>
                   <p className="text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 p-2 rounded border border-blue-200 dark:border-blue-800">
-                    Technician ID: {selectedIssue.assignedTo}
+                    {(() => {
+                      const technician = technicians.find(t => t.id === parseInt(selectedIssue.assignedTo!));
+                      return technician ? `${technician.name} (${technician.department})` : `Technician ID: ${selectedIssue.assignedTo}`;
+                    })()}
                   </p>
                 </div>
               )}
