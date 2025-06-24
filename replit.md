@@ -154,9 +154,10 @@ Preferred communication style: Simple, everyday language.
 - Enhanced issue sorting to show newest citizen reports first
 
 ✓ June 24, 2025: Fixed user login credentials
+- Added Siphokazi to hardcoded authentication system with field_technician role (ID 5)
 - Added Lusanda to hardcoded authentication system with citizen role (ID 15)  
 - Added Themba to hardcoded authentication system with field_technician role (ID 13)
-- Users can now login with username: "Lusanda"/"Themba", password: "password"
+- Users can now login with username: "Siphokazi"/"Lusanda"/"Themba", password: "password"
 - Fixed technician assignment system to show available technicians for reassignment
 - Enhanced nearest technicians endpoint to include "on_job" technicians
 

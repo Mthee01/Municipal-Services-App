@@ -574,7 +574,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { username: "techmanager", password: "password", role: "tech_manager", name: "Tech Manager Jones", id: 6 },
         { username: "technician", password: "password", role: "field_technician", name: "Field Technician Wilson", id: 7 },
         { username: "Themba", password: "password", role: "field_technician", name: "Themba", id: 13 },
-        { username: "Lusanda", password: "password", role: "citizen", name: "Lusanda", id: 15 }
+        { username: "Lusanda", password: "password", role: "citizen", name: "Lusanda", id: 15 },
+        { username: "Siphokazi", password: "password", role: "field_technician", name: "Siphokazi", id: 5 }
       ];
 
       const validUser = adminCredentials.find(u => u.username === username && u.password === password);
