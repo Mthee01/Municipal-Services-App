@@ -3,8 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Plus, Filter, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { IssueForm } from "@/components/issue-form";
 import { IssueCard } from "@/components/issue-card";
 import { PaymentSection } from "@/components/payment-section";
@@ -16,6 +19,38 @@ import Chatbot from "@/components/chatbot";
 import WhatsAppIntegration from "@/components/whatsapp-integration";
 import CitizenWhatsAppCenter from "@/components/citizen-whatsapp-center";
 import type { Issue } from "@shared/schema";
+
+// Helper functions for status and priority colors
+function getStatusColor(status: string): string {
+  switch (status) {
+    case "open":
+      return "bg-red-50 text-red-700 border-red-200";
+    case "assigned":
+      return "bg-blue-50 text-blue-700 border-blue-200";
+    case "in_progress":
+      return "bg-yellow-50 text-yellow-700 border-yellow-200";
+    case "resolved":
+    case "closed":
+      return "bg-green-50 text-green-700 border-green-200";
+    default:
+      return "bg-gray-50 text-gray-700 border-gray-200";
+  }
+}
+
+function getPriorityColor(priority: string): string {
+  switch (priority) {
+    case "urgent":
+      return "bg-red-50 text-red-700 border-red-200";
+    case "high":
+      return "bg-orange-50 text-orange-700 border-orange-200";
+    case "medium":
+      return "bg-yellow-50 text-yellow-700 border-yellow-200";
+    case "low":
+      return "bg-green-50 text-green-700 border-green-200";
+    default:
+      return "bg-gray-50 text-gray-700 border-gray-200";
+  }
+}
 
 const categories = [
   { value: "water_sanitation", label: "Water & Sanitation", icon: "💧" },
@@ -31,6 +66,8 @@ export default function CitizenDashboard() {
   const [showIssueForm, setShowIssueForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [location] = useLocation();
 
   // Check URL parameters to auto-open report issue form or navigate to specific tabs
@@ -260,7 +297,10 @@ export default function CitizenDashboard() {
                 <IssueCard 
                   key={issue.id} 
                   issue={issue} 
-                  onViewDetails={(issue) => console.log("View details", issue)}
+                  onViewDetails={(issue) => {
+                    setSelectedIssue(issue);
+                    setShowDetailsModal(true);
+                  }}
                   onRate={(issue) => console.log("Rate issue", issue)}
                 />
               ))}
@@ -359,6 +399,140 @@ export default function CitizenDashboard() {
         isOpen={showIssueForm}
         onClose={() => setShowIssueForm(false)}
       />
+
+      {/* Issue Details Modal */}
+      {selectedIssue && (
+        <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="pb-4">
+              <DialogTitle className="text-lg font-semibold truncate">{selectedIssue.title}</DialogTitle>
+              <DialogDescription className="flex items-center gap-2 text-sm">
+                <span>RefNo: {selectedIssue.referenceNumber}</span>
+                <span>•</span>
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  {selectedIssue.location}
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Category</Label>
+                  <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded capitalize">{selectedIssue.category.replace("_", " & ")}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Priority</Label>
+                  <div>
+                    <Badge variant="outline" className={getPriorityColor(selectedIssue.priority)}>
+                      {selectedIssue.priority}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Status</Label>
+                  <div>
+                    <Badge variant="outline" className={getStatusColor(selectedIssue.status)}>
+                      {selectedIssue.status.replace("_", " ")}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Created Date</Label>
+                  <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                    {new Date(selectedIssue.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Description</Label>
+                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                  <p className="text-sm leading-relaxed">{selectedIssue.description}</p>
+                </div>
+              </div>
+
+              {selectedIssue.photos && selectedIssue.photos.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Photos</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {selectedIssue.photos.map((photo, index) => (
+                      <img
+                        key={index}
+                        src={photo}
+                        alt={`Issue photo ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedIssue.assignedTo && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Assigned Technician</Label>
+                  <p className="text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 p-2 rounded border border-blue-200 dark:border-blue-800">
+                    Technician ID: {selectedIssue.assignedTo}
+                  </p>
+                </div>
+              )}
+
+              {(selectedIssue.status === 'resolved' || selectedIssue.status === 'closed') && selectedIssue.resolvedAt && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Resolved Date</Label>
+                  <p className="text-sm bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 p-2 rounded border border-green-200 dark:border-green-800">
+                    {new Date(selectedIssue.resolvedAt).toLocaleString()}
+                  </p>
+                </div>
+              )}
+
+              {selectedIssue.feedback && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Resolution Notes</Label>
+                  <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                    <p className="text-sm text-green-700 dark:text-green-400">{selectedIssue.feedback}</p>
+                  </div>
+                </div>
+              )}
+
+              {selectedIssue.rating && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Your Rating</Label>
+                  <div className="flex items-center space-x-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <span key={star} className={star <= selectedIssue.rating! ? "text-yellow-400" : "text-gray-300"}>
+                        ⭐
+                      </span>
+                    ))}
+                    <span className="ml-2 text-sm text-gray-600">({selectedIssue.rating}/5 stars)</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end gap-3 pt-6 border-t mt-6">
+              <Button variant="outline" onClick={() => setShowDetailsModal(false)} className="min-w-[100px]">
+                Close
+              </Button>
+              {(selectedIssue.status === 'resolved' || selectedIssue.status === 'closed') && !selectedIssue.rating && (
+                <Button 
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    console.log("Rate service", selectedIssue);
+                  }}
+                  className="bg-sa-gold hover:bg-yellow-500 text-black"
+                >
+                  Rate Service
+                </Button>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Floating Chatbot */}
       <Chatbot userId={1} />
