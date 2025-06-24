@@ -203,6 +203,13 @@ Preferred communication style: Simple, everyday language.
 - Updated statistics to show active issue count instead of all open issues
 - Call center agents focus on unresolved matters requiring attention
 
+✓ June 24, 2025: Added unique reference numbers to all issues
+- Every issue now has a unique reference number (format: REF2025XXXXXX)
+- Reference numbers visible in dashboard tables and issue cards
+- Existing issues automatically assigned reference numbers
+- Reference numbers help citizens track their service requests
+- Database schema updated with reference_number field
+
 ✓ June 24, 2025: Enhanced call center agent capabilities
 - Added comprehensive note-taking system for tracking issue communication and progress
 - Implemented escalation system allowing agents to escalate issues to technical managers

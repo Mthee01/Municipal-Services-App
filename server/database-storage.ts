@@ -298,9 +298,17 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(issues).where(eq(issues.assignedTo, technicianId));
   }
 
+  private generateReferenceNumber(): string {
+    const year = new Date().getFullYear();
+    const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
+    return `REF${year}${randomPart}`;
+  }
+
   async createIssue(insertIssue: InsertIssue): Promise<Issue> {
+    const referenceNumber = this.generateReferenceNumber();
     const [issue] = await db.insert(issues).values({
       ...insertIssue,
+      referenceNumber,
       createdAt: new Date(),
       updatedAt: new Date()
     }).returning();
