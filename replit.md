@@ -216,6 +216,13 @@ Preferred communication style: Simple, everyday language.
 - Updated search placeholder text to indicate reference number search capability
 - Enhanced filtering logic to support reference number matching
 
+✓ June 24, 2025: Added RefNo column to issues table
+- Added RefNo column as first column in call center dashboard issues table
+- All issues now display their unique 6-character reference numbers prominently
+- RefNo displayed in blue monospace font for easy identification
+- Updated search placeholder to mention RefNo search capability
+- All 21 issues in database now have unique reference numbers assigned
+
 ✓ June 24, 2025: Enhanced call center agent capabilities
 - Added comprehensive note-taking system for tracking issue communication and progress
 - Implemented escalation system allowing agents to escalate issues to technical managers

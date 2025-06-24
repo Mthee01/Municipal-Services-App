@@ -473,7 +473,7 @@ export default function OfficialDashboard() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search issues by title, description, or location..."
+                  placeholder="Search by RefNo, title, location, or description..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -513,6 +513,7 @@ export default function OfficialDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>RefNo</TableHead>
                         <TableHead>Issue</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead>Priority</TableHead>
@@ -525,6 +526,11 @@ export default function OfficialDashboard() {
                     <TableBody>
                       {filteredIssues.slice(0, 10).map((issue) => (
                         <TableRow key={issue.id} className="hover:bg-gray-50">
+                          <TableCell>
+                            <div className="font-mono text-sm font-semibold text-blue-600">
+                              {issue.referenceNumber || String(issue.id).padStart(6, '0')}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <div className="flex flex-col">
                               <span className="font-medium text-gray-900">{issue.title}</span>
