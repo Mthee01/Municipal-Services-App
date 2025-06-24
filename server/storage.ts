@@ -853,6 +853,27 @@ export class MemStorage implements IStorage {
     return this.issues.delete(id);
   }
 
+  // Work session operations for MemStorage
+  async getActiveWorkSessions(): Promise<any[]> { 
+    // Return active work sessions based on in-progress issues
+    const inProgressIssues = Array.from(this.issues.values()).filter(issue => issue.status === 'in_progress');
+    return inProgressIssues.map(issue => ({
+      issueId: issue.id,
+      technicianId: issue.assignedTo,
+      arrivalTime: issue.updatedAt,
+      isActive: true
+    }));
+  }
+  
+  async createWorkSession(session: any): Promise<any> { 
+    // Work sessions are implicitly created when issues are set to in_progress
+    return session;
+  }
+  
+  async updateWorkSession(id: number, updates: any): Promise<any> { 
+    return updates;
+  }
+
   // Payment operations
   async getPayments(): Promise<Payment[]> {
     return Array.from(this.payments.values());
@@ -2215,6 +2236,19 @@ export class DatabaseStorage implements IStorage {
   async getChatMessage(id: number): Promise<ChatMessage | undefined> { return undefined; }
   async getChatMessagesBySession(sessionId: string): Promise<ChatMessage[]> { return []; }
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> { throw new Error("Not implemented"); }
+
+  // Work session operations
+  async getActiveWorkSessions(): Promise<any[]> { 
+    const inProgressIssues = await db.select().from(issues).where(eq(issues.status, 'in_progress'));
+    return inProgressIssues.map(issue => ({
+      issueId: issue.id,
+      technicianId: issue.assignedTo,
+      arrivalTime: issue.updatedAt,
+      isActive: true
+    }));
+  }
+  async createWorkSession(session: any): Promise<any> { return session; }
+  async updateWorkSession(id: number, updates: any): Promise<any> { return updates; }
 
   // Analytics operations - stub implementations
   async getWardStats(wardNumber?: string): Promise<any> { return {}; }

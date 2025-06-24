@@ -1024,26 +1024,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { issueId, technicianId } = req.body;
       
+      if (!issueId || !technicianId) {
+        return res.status(400).json({ error: "Missing issueId or technicianId" });
+      }
+      
       // Update issue status to in_progress and assign technician
       const issue = await storage.updateIssue(issueId, {
         status: 'in_progress',
-        technicianId: technicianId
+        assignedTo: technicianId,
+        updatedAt: new Date()
       });
       
       if (!issue) {
         return res.status(404).json({ error: "Issue not found" });
       }
       
-      // Create location entry for work start
-      await storage.createTechnicianLocation({
-        technicianId,
-        latitude: req.body.latitude || '0',
-        longitude: req.body.longitude || '0',
-        address: req.body.address || 'On site'
-      });
-      
       res.json({ message: "Work session started", issue });
     } catch (error) {
+      console.error("Start work session error:", error);
       res.status(400).json({ error: "Failed to start work session" });
     }
   });
@@ -1057,7 +1055,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Find issues that are currently in progress for this technician
       const activeIssues = await storage.getIssuesByStatus('in_progress');
       const technicianActiveIssues = activeIssues.filter(issue => 
-        issue.assignedTo === technicianId.toString()
+        issue.assignedTo === technicianId
       );
       
       // Get stored active work sessions from storage
