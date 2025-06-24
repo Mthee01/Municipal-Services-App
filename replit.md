@@ -197,6 +197,12 @@ Preferred communication style: Simple, everyday language.
 - Escalated issues display with red flashing indicators in tech manager dashboard
 - Complete end-to-end escalation workflow operational from call center to tech manager
 
+✓ June 24, 2025: Filtered resolved issues from call center dashboard
+- Resolved issues are now hidden from call center agent dashboard
+- Only active issues (open, assigned, in_progress) are visible to call center agents
+- Updated statistics to show active issue count instead of all open issues
+- Call center agents focus on unresolved matters requiring attention
+
 ✓ June 24, 2025: Enhanced call center agent capabilities
 - Added comprehensive note-taking system for tracking issue communication and progress
 - Implemented escalation system allowing agents to escalate issues to technical managers
