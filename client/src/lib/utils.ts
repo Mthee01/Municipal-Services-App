@@ -53,6 +53,23 @@ export function getPriorityColor(priority: string): string {
   }
 }
 
+export function getStatusColor(status: string): string {
+  switch (status?.toLowerCase()) {
+    case 'open':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'assigned':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'in_progress':
+      return 'bg-orange-100 text-orange-800 border-orange-200';
+    case 'resolved':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'closed':
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+}
+
 export function formatCurrency(amountInCents: number): string {
   const amount = amountInCents / 100
   return new Intl.NumberFormat('en-ZA', {
