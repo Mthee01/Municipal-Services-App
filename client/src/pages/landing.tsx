@@ -702,18 +702,11 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
               <ul className="space-y-2 text-gray-300">
                 <li>
                   <button 
-                    onClick={(e) => {
-                      e.preventDefault();
+                    onClick={() => {
                       console.log('Report Issue clicked');
-                      // Scroll to login form and focus on it
-                      const loginForm = document.querySelector('.auth-section');
-                      if (loginForm) {
-                        loginForm.scrollIntoView({ behavior: 'smooth' });
-                        // Set to login tab
-                        setActiveTab('login');
-                      } else {
-                        console.log('Login form not found');
-                      }
+                      setActiveTab('login');
+                      // Scroll to top of page where login form is
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
                   >
@@ -722,17 +715,11 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 </li>
                 <li>
                   <button 
-                    onClick={(e) => {
-                      e.preventDefault();
+                    onClick={() => {
                       console.log('Pay Bills clicked');
-                      // Scroll to login form and focus on it
-                      const loginForm = document.querySelector('.auth-section');
-                      if (loginForm) {
-                        loginForm.scrollIntoView({ behavior: 'smooth' });
-                        setActiveTab('login');
-                      } else {
-                        console.log('Login form not found');
-                      }
+                      setActiveTab('login');
+                      // Scroll to top of page where login form is
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
                   >
@@ -741,17 +728,11 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 </li>
                 <li>
                   <button 
-                    onClick={(e) => {
-                      e.preventDefault();
+                    onClick={() => {
                       console.log('Track Progress clicked');
-                      // Scroll to login form and focus on it
-                      const loginForm = document.querySelector('.auth-section');
-                      if (loginForm) {
-                        loginForm.scrollIntoView({ behavior: 'smooth' });
-                        setActiveTab('login');
-                      } else {
-                        console.log('Login form not found');
-                      }
+                      setActiveTab('login');
+                      // Scroll to top of page where login form is
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
                   >
@@ -760,17 +741,11 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 </li>
                 <li>
                   <button 
-                    onClick={(e) => {
-                      e.preventDefault();
+                    onClick={() => {
                       console.log('Community Forum clicked');
-                      // Scroll to login form and focus on it
-                      const loginForm = document.querySelector('.auth-section');
-                      if (loginForm) {
-                        loginForm.scrollIntoView({ behavior: 'smooth' });
-                        setActiveTab('login');
-                      } else {
-                        console.log('Login form not found');
-                      }
+                      setActiveTab('login');
+                      // Scroll to top of page where login form is
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
                   >
@@ -785,17 +760,11 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
               <ul className="space-y-2 text-gray-300">
                 <li>
                   <button 
-                    onClick={(e) => {
-                      e.preventDefault();
+                    onClick={() => {
                       console.log('Help Center clicked');
-                      // Scroll to login form and focus on it
-                      const loginForm = document.querySelector('.auth-section');
-                      if (loginForm) {
-                        loginForm.scrollIntoView({ behavior: 'smooth' });
-                        setActiveTab('login');
-                      } else {
-                        console.log('Login form not found');
-                      }
+                      setActiveTab('login');
+                      // Scroll to top of page where login form is
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
                   >
@@ -804,8 +773,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 </li>
                 <li>
                   <button 
-                    onClick={(e) => {
-                      e.preventDefault();
+                    onClick={() => {
                       console.log('Contact Us clicked');
                       setShowContactForm(true);
                     }}
@@ -816,8 +784,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 </li>
                 <li>
                   <button 
-                    onClick={(e) => {
-                      e.preventDefault();
+                    onClick={() => {
                       console.log('Privacy Policy clicked');
                       setShowContactForm(true);
                     }}
@@ -828,8 +795,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 </li>
                 <li>
                   <button 
-                    onClick={(e) => {
-                      e.preventDefault();
+                    onClick={() => {
                       console.log('Accessibility clicked');
                       setShowContactForm(true);
                     }}
