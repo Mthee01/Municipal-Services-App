@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ContactForm } from "@/components/contact-form";
+// import { ContactForm } from "@/components/contact-form";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -701,73 +701,81 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
               <h4 className="font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-gray-300">
                 <li>
-                  <a 
-                    href="#"
+                  <button 
                     onClick={(e) => {
                       e.preventDefault();
+                      console.log('Report Issue clicked');
                       // Scroll to login form and focus on it
                       const loginForm = document.querySelector('.auth-section');
                       if (loginForm) {
                         loginForm.scrollIntoView({ behavior: 'smooth' });
                         // Set to login tab
                         setActiveTab('login');
+                      } else {
+                        console.log('Login form not found');
                       }
                     }}
-                    className="hover:text-sa-gold transition-colors cursor-pointer block"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
                   >
                     Report Issue
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a 
-                    href="#"
+                  <button 
                     onClick={(e) => {
                       e.preventDefault();
+                      console.log('Pay Bills clicked');
                       // Scroll to login form and focus on it
                       const loginForm = document.querySelector('.auth-section');
                       if (loginForm) {
                         loginForm.scrollIntoView({ behavior: 'smooth' });
                         setActiveTab('login');
+                      } else {
+                        console.log('Login form not found');
                       }
                     }}
-                    className="hover:text-sa-gold transition-colors cursor-pointer block"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
                   >
                     Pay Bills
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a 
-                    href="#"
+                  <button 
                     onClick={(e) => {
                       e.preventDefault();
+                      console.log('Track Progress clicked');
                       // Scroll to login form and focus on it
                       const loginForm = document.querySelector('.auth-section');
                       if (loginForm) {
                         loginForm.scrollIntoView({ behavior: 'smooth' });
                         setActiveTab('login');
+                      } else {
+                        console.log('Login form not found');
                       }
                     }}
-                    className="hover:text-sa-gold transition-colors cursor-pointer block"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
                   >
                     Track Progress
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a 
-                    href="#"
+                  <button 
                     onClick={(e) => {
                       e.preventDefault();
+                      console.log('Community Forum clicked');
                       // Scroll to login form and focus on it
                       const loginForm = document.querySelector('.auth-section');
                       if (loginForm) {
                         loginForm.scrollIntoView({ behavior: 'smooth' });
                         setActiveTab('login');
+                      } else {
+                        console.log('Login form not found');
                       }
                     }}
-                    className="hover:text-sa-gold transition-colors cursor-pointer block"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
                   >
                     Community Forum
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -776,57 +784,59 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
               <h4 className="font-semibold mb-4">Support</h4>
               <ul className="space-y-2 text-gray-300">
                 <li>
-                  <a 
-                    href="#"
+                  <button 
                     onClick={(e) => {
                       e.preventDefault();
+                      console.log('Help Center clicked');
                       // Scroll to login form and focus on it
                       const loginForm = document.querySelector('.auth-section');
                       if (loginForm) {
                         loginForm.scrollIntoView({ behavior: 'smooth' });
                         setActiveTab('login');
+                      } else {
+                        console.log('Login form not found');
                       }
                     }}
-                    className="hover:text-sa-gold transition-colors cursor-pointer block"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
                   >
                     Help Center
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a 
-                    href="#"
+                  <button 
                     onClick={(e) => {
                       e.preventDefault();
+                      console.log('Contact Us clicked');
                       setShowContactForm(true);
                     }}
-                    className="hover:text-sa-gold transition-colors cursor-pointer block"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
                   >
                     Contact Us
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a 
-                    href="#"
+                  <button 
                     onClick={(e) => {
                       e.preventDefault();
+                      console.log('Privacy Policy clicked');
                       setShowContactForm(true);
                     }}
-                    className="hover:text-sa-gold transition-colors cursor-pointer block"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
                   >
                     Privacy Policy
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a 
-                    href="#"
+                  <button 
                     onClick={(e) => {
                       e.preventDefault();
+                      console.log('Accessibility clicked');
                       setShowContactForm(true);
                     }}
-                    className="hover:text-sa-gold transition-colors cursor-pointer block"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
                   >
                     Accessibility
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
