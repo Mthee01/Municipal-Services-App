@@ -5,6 +5,54 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function formatRelativeTime(date: Date | string): string {
+  const now = new Date();
+  const targetDate = new Date(date);
+  const diffInSeconds = Math.floor((now.getTime() - targetDate.getTime()) / 1000);
+  
+  if (diffInSeconds < 60) {
+    return "just now";
+  }
+  
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+  }
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+  }
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 30) {
+    return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+  }
+  
+  const diffInMonths = Math.floor(diffInDays / 30);
+  if (diffInMonths < 12) {
+    return `${diffInMonths} month${diffInMonths > 1 ? 's' : ''} ago`;
+  }
+  
+  const diffInYears = Math.floor(diffInMonths / 12);
+  return `${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`;
+}
+
+export function getPriorityColor(priority: string): string {
+  switch (priority?.toLowerCase()) {
+    case 'urgent':
+      return 'bg-red-100 text-red-800 border-red-200';
+    case 'high':
+      return 'bg-orange-100 text-orange-800 border-orange-200';
+    case 'medium':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'low':
+      return 'bg-green-100 text-green-800 border-green-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+}
+
 export function formatCurrency(amountInCents: number): string {
   const amount = amountInCents / 100
   return new Intl.NumberFormat('en-ZA', {

@@ -16,8 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { LanguageSelector } from "@/components/language-selector";
 import { ContactForm } from "@/components/contact-form";
 
 const loginSchema = z.object({
@@ -48,8 +46,30 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
   const [activeTab, setActiveTab] = useState("login");
   const [showContactForm, setShowContactForm] = useState(false);
   const { toast } = useToast();
-  const { t } = useLanguage();
   const [, setLocation] = useLocation();
+  
+  // Simple translation function - replace with actual translations later
+  const t = {
+    welcome: "Welcome",
+    login: "Login",
+    register: "Register",
+    username: "Username",
+    password: "Password",
+    email: "Email",
+    phone: "Phone",
+    fullName: "Full Name",
+    municipalityAccountNumber: "Municipality Account Number",
+    keepMeLoggedIn: "Keep me logged in",
+    createAccount: "Create Account",
+    alreadyHaveAccount: "Already have an account?",
+    dontHaveAccount: "Don't have an account?",
+    reportIssue: "Report Issue",
+    dashboard: "Dashboard",
+    payments: "Payments",
+    vouchers: "Vouchers",
+    settings: "Settings",
+    logout: "Logout"
+  };
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -238,14 +258,13 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
             </div>
             
             <div className="flex items-center space-x-4">
-              <LanguageSelector />
               <div className="flex space-x-6">
                 <button 
                   onClick={() => {
                     const loginSection = document.querySelector('.auth-section');
                     loginSection?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="text-black hover:text-sa-green transition-colors font-medium"
+                  className="text-black hover:text-green-600 transition-colors font-medium"
                 >
                   Login
                 </button>

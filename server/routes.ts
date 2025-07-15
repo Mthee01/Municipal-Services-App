@@ -1214,34 +1214,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   
-  // Add WebSocket server for real-time notifications
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  // Add WebSocket server for real-time notifications (temporarily disabled to fix connection issues)
+  // const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
-  wss.on('connection', (ws) => {
-    console.log('New WebSocket connection established');
-    
-    // Send welcome message
-    ws.send(JSON.stringify({
-      id: Date.now().toString(),
-      type: 'info',
-      title: 'Connected',
-      message: 'Real-time notifications enabled',
-      timestamp: new Date(),
-      read: false
-    }));
-    
-    ws.on('close', () => {
-      console.log('WebSocket connection closed');
-    });
-  });
+  // wss.on('connection', (ws) => {
+  //   console.log('New WebSocket connection established');
+  //   
+  //   // Send welcome message
+  //   ws.send(JSON.stringify({
+  //     id: Date.now().toString(),
+  //     type: 'info',
+  //     title: 'Connected',
+  //     message: 'Real-time notifications enabled',
+  //     timestamp: new Date(),
+  //     read: false
+  //   }));
+  //   
+  //   ws.on('close', () => {
+  //     console.log('WebSocket connection closed');
+  //   });
+  // });
   
-  // Broadcast notification to all connected clients
+  // Broadcast notification to all connected clients (temporarily disabled)
   const broadcastNotification = (notification: any) => {
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(notification));
-      }
-    });
+    // Temporarily disabled WebSocket broadcasting
+    console.log('Notification would be broadcast:', notification);
   };
   
   // Add notification broadcasting to issue updates
