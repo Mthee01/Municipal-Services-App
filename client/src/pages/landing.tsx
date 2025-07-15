@@ -336,6 +336,15 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                   </p>
                 </CardHeader>
                 <CardContent>
+                  {/* Test credentials info */}
+                  <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-800 font-medium">Test Credentials:</p>
+                    <p className="text-xs text-blue-700">
+                      Username: citizen, agent, mayor, councillor, techmanager, technician, admin
+                    </p>
+                    <p className="text-xs text-blue-700">Password: password</p>
+                  </div>
+                  
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                     <TabsList className="grid w-full grid-cols-2 bg-gray-100">
                       <TabsTrigger value="login" className="text-sm font-medium">
