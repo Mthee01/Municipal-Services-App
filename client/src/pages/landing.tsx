@@ -703,12 +703,13 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 <li>
                   <button 
                     onClick={() => {
+                      alert('Report Issue clicked - this should work!');
                       console.log('Report Issue clicked');
                       setActiveTab('login');
-                      // Scroll to top of page where login form is
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
-                    className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full bg-transparent border-none p-0 text-gray-300"
+                    style={{ background: 'none', border: 'none', padding: 0 }}
                   >
                     Report Issue
                   </button>
@@ -774,10 +775,12 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 <li>
                   <button 
                     onClick={() => {
+                      alert('Contact Us clicked - this should work!');
                       console.log('Contact Us clicked');
                       setShowContactForm(true);
                     }}
-                    className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full"
+                    className="hover:text-sa-gold transition-colors cursor-pointer block text-left w-full bg-transparent border-none p-0 text-gray-300"
+                    style={{ background: 'none', border: 'none', padding: 0 }}
                   >
                     Contact Us
                   </button>
