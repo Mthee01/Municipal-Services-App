@@ -29,24 +29,52 @@ export function RealTimeNotifications({ userRole }: RealTimeNotificationsProps) 
     // WebSocket connection for real-time notifications
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const ws = new WebSocket(wsUrl);
     
-    ws.onmessage = (event) => {
-      const notification: Notification = JSON.parse(event.data);
-      if (shouldReceiveNotification(notification, userRole)) {
-        setNotifications(prev => [notification, ...prev.slice(0, 49)]); // Keep last 50
-        setUnreadCount(prev => prev + 1);
-      }
-    };
+    try {
+      const ws = new WebSocket(wsUrl);
+      
+      ws.onopen = () => {
+        console.log("WebSocket connected successfully");
+      };
+      
+      ws.onmessage = (event) => {
+        try {
+          const notification: Notification = JSON.parse(event.data);
+          if (shouldReceiveNotification(notification, userRole)) {
+            setNotifications(prev => [notification, ...prev.slice(0, 49)]); // Keep last 50
+            setUnreadCount(prev => prev + 1);
+          }
+        } catch (error) {
+          console.error("Error parsing WebSocket message:", error);
+        }
+      };
 
-    // Simulate some initial notifications
-    const initialNotifications = generateInitialNotifications(userRole);
-    setNotifications(initialNotifications);
-    setUnreadCount(initialNotifications.filter(n => !n.read).length);
+      ws.onerror = (error) => {
+        console.warn("WebSocket connection error:", error);
+        // Continue with app functionality even if WebSocket fails
+      };
 
-    return () => {
-      ws.close();
-    };
+      ws.onclose = () => {
+        console.log("WebSocket connection closed");
+      };
+
+      // Simulate some initial notifications
+      const initialNotifications = generateInitialNotifications(userRole);
+      setNotifications(initialNotifications);
+      setUnreadCount(initialNotifications.filter(n => !n.read).length);
+
+      return () => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+      };
+    } catch (error) {
+      console.warn("WebSocket not available:", error);
+      // Continue with app functionality even if WebSocket fails
+      const initialNotifications = generateInitialNotifications(userRole);
+      setNotifications(initialNotifications);
+      setUnreadCount(initialNotifications.filter(n => !n.read).length);
+    }
   }, [userRole]);
 
   const shouldReceiveNotification = (notification: Notification, role: string): boolean => {

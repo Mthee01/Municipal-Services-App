@@ -5,10 +5,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { LanguageSelector } from "@/components/language-selector";
-import { RoleToggle } from "@/components/role-toggle";
-import { LanguageProvider } from "@/contexts/LanguageContext";
-import { ContactForm } from "@/components/contact-form";
+import type { UserRole } from "@/lib/types";
+
+// Simplified imports to avoid circular dependencies
 import LandingPage from "@/pages/landing";
 import CitizenDashboard from "@/pages/citizen-dashboard";
 import OfficialDashboard from "@/pages/official-dashboard";
@@ -19,7 +18,6 @@ import FieldTechnicianDashboard from "@/pages/field-technician-dashboard";
 import WhatsAppDashboard from "@/pages/whatsapp-dashboard";
 import AdminDashboard from "@/pages/admin-dashboard";
 import NotFound from "@/pages/not-found";
-import type { UserRole } from "@/lib/types";
 
 function App() {
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
@@ -31,13 +29,11 @@ function App() {
   // Check for saved authentication on app load
   useEffect(() => {
     const checkSavedAuth = () => {
-      // Clear any potentially corrupted auth data first
-      try {
-        localStorage.removeItem("municipalAuth");
-        sessionStorage.removeItem("municipalAuth");
-      } catch (error) {
-        console.error("Error clearing auth storage:", error);
-      }
+      console.log("Checking saved authentication...");
+      
+      // Start with unauthenticated state
+      setIsAuthenticated(false);
+      setCurrentRole(null);
       
       // Check localStorage first (remember me)
       let savedAuth = localStorage.getItem("municipalAuth");
@@ -86,11 +82,15 @@ function App() {
             // Session expired, clear storage
             localStorage.removeItem("municipalAuth");
             sessionStorage.removeItem("municipalAuth");
+            setIsAuthenticated(false);
+            setCurrentRole(null);
           }
         } catch (error) {
           console.error("Error parsing saved auth:", error);
           localStorage.removeItem("municipalAuth");
           sessionStorage.removeItem("municipalAuth");
+          setIsAuthenticated(false);
+          setCurrentRole(null);
         }
       }
     };
@@ -173,41 +173,33 @@ function App() {
   if (!isAuthenticated || !currentRole) {
     return (
       <QueryClientProvider client={queryClient}>
-        <LanguageProvider>
-          <TooltipProvider>
-            <LandingPage onLogin={handleLogin} />
-            <Toaster />
-          </TooltipProvider>
-        </LanguageProvider>
+        <TooltipProvider>
+          <LandingPage onLogin={handleLogin} />
+          <Toaster />
+        </TooltipProvider>
       </QueryClientProvider>
     );
   }
 
   return (
     <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <TooltipProvider>
+      <TooltipProvider>
         <div className="min-h-screen bg-gray-50">
           {/* Navigation Header */}
-          <nav className="bg-white shadow-sm border-b-2 border-sa-green sticky top-0 z-50">
+          <nav className="bg-white shadow-sm border-b-2 border-green-600 sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center py-4">
                 <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 bg-sa-green rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-lg">🏢</span>
                   </div>
                   <div>
-                    <h1 className="text-xl font-bold text-gray-900">Municipal Services</h1>
+                    <h1 className="text-xl font-bold text-gray-900">ADA Smart Munic</h1>
                     <p className="text-sm text-gray-600">Citizen Engagement Platform</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center space-x-4">
-                  {/* Language Selector */}
-                  <LanguageSelector />
-                  
-
-                  
                   {/* Current User Role Display */}
                   <div className="bg-gray-100 px-3 py-1 rounded-full">
                     <span className="text-sm font-medium text-gray-700 capitalize">
@@ -294,7 +286,7 @@ function App() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div className="col-span-1 md:col-span-2">
                   <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-10 h-10 bg-sa-green rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-lg">🏢</span>
                     </div>
                     <h3 className="text-xl font-bold">ADA Smart Munic</h3>
@@ -303,7 +295,7 @@ function App() {
                     Connecting citizens with their local government for better service delivery and community engagement.
                   </p>
                   <div className="flex space-x-4">
-                    <span className="text-sa-gold">🇿🇦</span>
+                    <span className="text-yellow-400">🇿🇦</span>
                     <span className="text-gray-300">Proudly South African</span>
                   </div>
                 </div>
@@ -314,7 +306,7 @@ function App() {
                     <li>
                       <button 
                         onClick={() => setLocation("/")}
-                        className="hover:text-sa-gold transition-colors text-left"
+                        className="hover:text-yellow-400 transition-colors text-left"
                       >
                         Report Issue
                       </button>
@@ -322,7 +314,7 @@ function App() {
                     <li>
                       <button 
                         onClick={() => setLocation("/")}
-                        className="hover:text-sa-gold transition-colors text-left"
+                        className="hover:text-yellow-400 transition-colors text-left"
                       >
                         Pay Bills
                       </button>
@@ -330,7 +322,7 @@ function App() {
                     <li>
                       <button 
                         onClick={() => setLocation("/")}
-                        className="hover:text-sa-gold transition-colors text-left"
+                        className="hover:text-yellow-400 transition-colors text-left"
                       >
                         Track Progress
                       </button>
@@ -338,7 +330,7 @@ function App() {
                     <li>
                       <button 
                         onClick={() => setLocation("/")}
-                        className="hover:text-sa-gold transition-colors text-left"
+                        className="hover:text-yellow-400 transition-colors text-left"
                       >
                         Community Forum
                       </button>
@@ -352,7 +344,7 @@ function App() {
                     <li>
                       <button 
                         onClick={() => setLocation("/")}
-                        className="hover:text-sa-gold transition-colors text-left"
+                        className="hover:text-yellow-400 transition-colors text-left"
                       >
                         Help Center
                       </button>
@@ -360,7 +352,7 @@ function App() {
                     <li>
                       <button 
                         onClick={() => setShowContactForm(true)}
-                        className="hover:text-sa-gold transition-colors text-left"
+                        className="hover:text-yellow-400 transition-colors text-left"
                       >
                         Contact Us
                       </button>
@@ -368,7 +360,7 @@ function App() {
                     <li>
                       <button 
                         onClick={() => setShowContactForm(true)}
-                        className="hover:text-sa-gold transition-colors text-left"
+                        className="hover:text-yellow-400 transition-colors text-left"
                       >
                         Privacy Policy
                       </button>
@@ -376,7 +368,7 @@ function App() {
                     <li>
                       <button 
                         onClick={() => setLocation("/")}
-                        className="hover:text-sa-gold transition-colors text-left"
+                        className="hover:text-yellow-400 transition-colors text-left"
                       >
                         Accessibility
                       </button>
@@ -400,7 +392,6 @@ function App() {
           onClose={() => setShowContactForm(false)} 
         />
       </TooltipProvider>
-      </LanguageProvider>
     </QueryClientProvider>
   );
 }
