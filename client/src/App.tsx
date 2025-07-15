@@ -386,11 +386,11 @@ function App() {
         </div>
         <Toaster />
 
-        {/* Contact Form Modal */}
-        <ContactForm 
+        {/* Contact Form Modal - temporarily removed to fix error */}
+        {/* <ContactForm 
           isOpen={showContactForm} 
           onClose={() => setShowContactForm(false)} 
-        />
+        /> */}
       </TooltipProvider>
     </QueryClientProvider>
   );
