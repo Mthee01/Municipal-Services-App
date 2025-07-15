@@ -705,8 +705,13 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      console.log('Report Issue clicked');
-                      setLocation('/citizen-dashboard?report=true');
+                      // Scroll to login form and focus on it
+                      const loginForm = document.querySelector('.auth-section');
+                      if (loginForm) {
+                        loginForm.scrollIntoView({ behavior: 'smooth' });
+                        // Set to login tab
+                        setActiveTab('login');
+                      }
                     }}
                     className="hover:text-sa-gold transition-colors cursor-pointer block"
                   >
@@ -718,7 +723,12 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      setLocation('/citizen-dashboard?tab=payments');
+                      // Scroll to login form and focus on it
+                      const loginForm = document.querySelector('.auth-section');
+                      if (loginForm) {
+                        loginForm.scrollIntoView({ behavior: 'smooth' });
+                        setActiveTab('login');
+                      }
                     }}
                     className="hover:text-sa-gold transition-colors cursor-pointer block"
                   >
@@ -730,7 +740,12 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      setLocation('/citizen-dashboard?tab=my-issues');
+                      // Scroll to login form and focus on it
+                      const loginForm = document.querySelector('.auth-section');
+                      if (loginForm) {
+                        loginForm.scrollIntoView({ behavior: 'smooth' });
+                        setActiveTab('login');
+                      }
                     }}
                     className="hover:text-sa-gold transition-colors cursor-pointer block"
                   >
@@ -742,7 +757,12 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      setLocation('/citizen-dashboard?tab=community');
+                      // Scroll to login form and focus on it
+                      const loginForm = document.querySelector('.auth-section');
+                      if (loginForm) {
+                        loginForm.scrollIntoView({ behavior: 'smooth' });
+                        setActiveTab('login');
+                      }
                     }}
                     className="hover:text-sa-gold transition-colors cursor-pointer block"
                   >
@@ -760,7 +780,12 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      setLocation('/citizen-dashboard?tab=communication');
+                      // Scroll to login form and focus on it
+                      const loginForm = document.querySelector('.auth-section');
+                      if (loginForm) {
+                        loginForm.scrollIntoView({ behavior: 'smooth' });
+                        setActiveTab('login');
+                      }
                     }}
                     className="hover:text-sa-gold transition-colors cursor-pointer block"
                   >
@@ -815,10 +840,45 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       </footer>
 
       {/* Contact Form Modal */}
-      <ContactForm 
-        isOpen={showContactForm} 
-        onClose={() => setShowContactForm(false)} 
-      />
+      {showContactForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Contact Us</h3>
+              <button 
+                onClick={() => setShowContactForm(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-600">
+                  <strong>Phone:</strong> 0800 123 456
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Email:</strong> info@municipality.gov.za
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Address:</strong> City Hall, Main Street
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">
+                  For service requests and support, please log in to your account or contact us during business hours.
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowContactForm(false)}
+                className="w-full bg-sa-green text-white py-2 px-4 rounded hover:bg-green-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
