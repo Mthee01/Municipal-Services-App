@@ -128,22 +128,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/issues", upload.array('photos', 5), async (req, res) => {
     try {
+      console.log("=== NEW ISSUE UPLOAD REQUEST ===");
+      console.log("Request body fields:", Object.keys(req.body));
+      console.log("Request files:", req.files ? (req.files as Express.Multer.File[]).length : 0);
+      
       const files = req.files as Express.Multer.File[];
+      if (files && files.length > 0) {
+        console.log("Files received:");
+        files.forEach((file, index) => {
+          console.log(`  File ${index + 1}: ${file.filename} (${file.size} bytes, ${file.mimetype})`);
+        });
+      } else {
+        console.log("No files received");
+      }
+      
       const photos = files ? files.map(file => `/uploads/${file.filename}`) : [];
+      console.log("Photo paths:", photos);
       
       const issueData = {
         ...req.body,
         photos
       };
 
+      console.log("Issue data before validation:", {
+        title: issueData.title,
+        category: issueData.category,
+        location: issueData.location,
+        photos: issueData.photos,
+        photoCount: issueData.photos?.length || 0
+      });
+
       const validatedData = insertIssueSchema.parse(issueData);
       const issue = await storage.createIssue(validatedData);
       
-      // Log new citizen issue for call center and tech manager visibility
-      console.log(`NEW CITIZEN ISSUE: ${issue.title} (ID: ${issue.id}) - Priority: ${issue.priority}, Category: ${issue.category}, Location: ${issue.location}`);
+      console.log(`NEW CITIZEN ISSUE CREATED: ${issue.title} (ID: ${issue.id}) with ${issue.photos?.length || 0} photos`);
       
       res.status(201).json(issue);
     } catch (error) {
+      console.error("Error creating issue:", error);
       if (error instanceof Error) {
         res.status(400).json({ message: error.message });
       } else {

@@ -58,6 +58,9 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
 
   const createIssueMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
+      console.log("Starting issue creation with data:", data);
+      console.log("Photos to upload:", photos.length);
+      
       const formData = new FormData();
       
       // Add form fields
@@ -68,20 +71,28 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       });
 
       // Add photos
-      photos.forEach((photo) => {
+      photos.forEach((photo, index) => {
+        console.log(`Adding photo ${index + 1}: ${photo.name}, size: ${photo.size}`);
         formData.append("photos", photo);
       });
 
+      console.log("Sending request to /api/issues");
       const response = await fetch("/api/issues", {
         method: "POST",
         body: formData,
       });
 
+      console.log("Response status:", response.status);
+      
       if (!response.ok) {
-        throw new Error("Failed to create issue");
+        const errorText = await response.text();
+        console.error("API Error:", errorText);
+        throw new Error(`Failed to create issue: ${response.status} ${errorText}`);
       }
 
-      return response.json();
+      const result = await response.json();
+      console.log("Issue created successfully:", result);
+      return result;
     },
     onSuccess: () => {
       toast({
@@ -103,8 +114,21 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
   });
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("Photo upload triggered");
     const files = Array.from(event.target.files || []);
+    
+    console.log("Files selected:", files.length);
+    files.forEach((file, index) => {
+      console.log(`File ${index + 1}: ${file.name}, size: ${file.size} bytes, type: ${file.type}`);
+    });
+    
+    if (files.length === 0) {
+      console.log("No files selected");
+      return;
+    }
+    
     if (photos.length + files.length > 5) {
+      console.log("Too many photos selected");
       toast({
         title: "Too many photos",
         description: "Maximum 5 photos allowed",
@@ -112,7 +136,45 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       });
       return;
     }
-    setPhotos([...photos, ...files]);
+    
+    // Check file types and sizes
+    const validFiles = files.filter(file => {
+      const isValidType = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(file.type);
+      const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB
+      
+      if (!isValidType) {
+        console.log(`Invalid file type: ${file.type} for file ${file.name}`);
+        toast({
+          title: "Invalid file type",
+          description: `${file.name} is not a valid image file. Please upload JPG, PNG, or GIF files.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      if (!isValidSize) {
+        console.log(`File too large: ${file.size} bytes for file ${file.name}`);
+        toast({
+          title: "File too large",
+          description: `${file.name} is too large. Maximum size is 10MB.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      return true;
+    });
+    
+    if (validFiles.length > 0) {
+      console.log("Adding valid files to state:", validFiles.length);
+      setPhotos([...photos, ...validFiles]);
+      toast({
+        title: "Photos added",
+        description: `${validFiles.length} photo(s) added successfully`,
+      });
+    } else {
+      console.log("No valid files to add");
+    }
   };
 
   const removePhoto = (index: number) => {
