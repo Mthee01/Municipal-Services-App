@@ -782,6 +782,22 @@ function WorkAssignmentCard({
   onViewDetails: () => void;
   isStarting: boolean;
 }) {
+  const { toast } = useToast();
+
+  // Handle navigation to location
+  const handleNavigateToLocation = (location: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    toast({
+      title: "Opening Navigation",
+      description: `Getting directions to ${location}`,
+    });
+
+    const encoded = encodeURIComponent(location);
+    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
+    window.open(googleMapsUrl, '_blank');
+  };
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-0">
@@ -909,6 +925,22 @@ function ActiveSessionCard({
   isCompleting: boolean;
 }) {
   const [completionNotes, setCompletionNotes] = useState('');
+  const { toast } = useToast();
+
+  // Handle navigation to location
+  const handleNavigateToLocation = (location: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    toast({
+      title: "Opening Navigation",
+      description: `Getting directions to ${location}`,
+    });
+
+    const encoded = encodeURIComponent(location);
+    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
+    window.open(googleMapsUrl, '_blank');
+  };
 
   return (
     <Card>
