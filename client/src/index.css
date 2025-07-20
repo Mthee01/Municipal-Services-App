@@ -273,4 +273,27 @@
       font-size: 0.875rem !important;
     }
   }
+
+  /* Custom map marker styles */
+  .custom-div-icon {
+    background: none !important;
+    border: none !important;
+  }
+
+  .custom-marker {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .custom-marker:hover {
+    transform: rotate(-45deg) scale(1.1);
+  }
+
+  /* Line clamp utility */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 }

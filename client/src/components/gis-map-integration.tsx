@@ -96,10 +96,66 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
   const getStatusColor = (status: string) => {
     switch (status) {
       case "open": return "#EF4444";
+      case "assigned": return "#3B82F6";
       case "in_progress": return "#F59E0B";
       case "resolved": return "#10B981";
+      case "closed": return "#6B7280";
       default: return "#6B7280";
     }
+  };
+
+  const getCategoryColor = (category: string) => {
+    const layer = mapLayers.find(l => l.id === category);
+    return layer?.color || "#6B7280";
+  };
+
+  const createCustomMarker = (issue: Issue) => {
+    const categoryColor = getCategoryColor(issue.category);
+    const statusColor = getStatusColor(issue.status);
+    
+    // Create a custom icon with category and status colors
+    const markerHtml = `
+      <div class="custom-marker" style="
+        width: 30px;
+        height: 30px;
+        border-radius: 50% 50% 50% 0;
+        background: ${categoryColor};
+        border: 3px solid ${statusColor};
+        position: relative;
+        transform: rotate(-45deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      ">
+        <div style="
+          width: 16px;
+          height: 16px;
+          background: white;
+          border-radius: 50%;
+          transform: rotate(45deg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+        ">
+          ${issue.category === "water_sanitation" ? "💧" : 
+            issue.category === "electricity" ? "⚡" :
+            issue.category === "roads_transport" ? "🚗" :
+            issue.category === "waste_management" ? "🗑️" :
+            issue.category === "safety_security" ? "🛡️" :
+            issue.category === "housing" ? "🏠" : "❓"}
+        </div>
+      </div>
+    `;
+
+    return L.divIcon({
+      html: markerHtml,
+      iconSize: [30, 30],
+      iconAnchor: [15, 30],
+      popupAnchor: [0, -30],
+      className: 'custom-div-icon'
+    });
   };
 
   const toggleLayer = (layerId: string) => {
@@ -158,12 +214,13 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
     });
     markersRef.current = [];
 
-    // Add new markers
+    // Add new markers with custom colors
     filteredIssues.forEach(issue => {
       const coordinates = geocodeLocation(issue.location);
       
-      // Create custom marker based on issue status
-      const marker = L.marker([coordinates.lat, coordinates.lng]);
+      // Create custom colored marker based on category and status
+      const customIcon = createCustomMarker(issue);
+      const marker = L.marker([coordinates.lat, coordinates.lng], { icon: customIcon });
       
       // Create popup content with issue details
       const popupContent = `
@@ -292,7 +349,7 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
           </div>
 
           {/* Map Container - responsive sizing */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 relative">
             <div 
               ref={mapRef}
               className="w-full bg-gray-100 rounded-lg border border-gray-300 overflow-hidden"
@@ -303,7 +360,7 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
             
             {/* Map loading message */}
             {filteredIssues.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/90 rounded-lg">
+              <div className="absolute inset-0 flex items-center justify-center bg-white/90 rounded-lg z-[999]">
                 <div className="text-center p-8">
                   <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Issues to Display</h3>
@@ -313,6 +370,57 @@ export function GISMapIntegration({ issues, onIssueSelect, height = "500px" }: G
                 </div>
               </div>
             )}
+
+            {/* Floating Legend - appears over map */}
+            <div className="absolute bottom-2 right-2 bg-white bg-opacity-95 backdrop-blur-sm rounded-lg p-3 shadow-lg border z-[1000] max-w-64 text-xs">
+              <h4 className="font-semibold text-sm mb-2 text-gray-800">Legend</h4>
+              
+              {/* Category Colors */}
+              <div className="mb-3">
+                <p className="font-medium text-gray-600 mb-1">Categories:</p>
+                <div className="grid grid-cols-2 gap-1">
+                  {mapLayers.map(layer => (
+                    <div key={layer.id} className="flex items-center gap-1">
+                      <div 
+                        className="w-3 h-3 rounded-full flex items-center justify-center text-[8px]" 
+                        style={{ backgroundColor: layer.color }}
+                      >
+                        {layer.id === "water_sanitation" ? "💧" : 
+                         layer.id === "electricity" ? "⚡" :
+                         layer.id === "roads_transport" ? "🚗" :
+                         layer.id === "waste_management" ? "🗑️" :
+                         layer.id === "safety_security" ? "🛡️" :
+                         layer.id === "housing" ? "🏠" : "❓"}
+                      </div>
+                      <span className="text-gray-700 text-[10px]">{layer.name.split(' ')[0]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Status Border Colors */}
+              <div>
+                <p className="font-medium text-gray-600 mb-1">Status (border):</p>
+                <div className="grid grid-cols-2 gap-1">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full border-2" style={{ borderColor: getStatusColor("open") }}></div>
+                    <span className="text-gray-700 text-[10px]">Open</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full border-2" style={{ borderColor: getStatusColor("assigned") }}></div>
+                    <span className="text-gray-700 text-[10px]">Assigned</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full border-2" style={{ borderColor: getStatusColor("in_progress") }}></div>
+                    <span className="text-gray-700 text-[10px]">Progress</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full border-2" style={{ borderColor: getStatusColor("resolved") }}></div>
+                    <span className="text-gray-700 text-[10px]">Resolved</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Map Legend - responsive positioning */}
             <div className="mt-3 sm:mt-4 flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm">
