@@ -197,21 +197,34 @@ export default function AdminDashboard() {
   // Toggle user status mutation
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: "active" | "inactive" | "suspended" }) => {
+      console.log("Updating user status:", { id, status });
       const response = await apiRequest("PATCH", `/api/admin/users/${id}/status`, { status });
-      if (!response.ok) throw new Error("Failed to update user status");
-      return response.json();
+      console.log("Status update response:", response.status, response.ok);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
+        console.error("Status update failed:", errorData);
+        throw new Error(errorData.message || "Failed to update user status");
+      }
+      
+      const result = await response.json();
+      console.log("Status update successful:", result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Status mutation success:", data);
       toast({
         title: "Status Updated",
         description: "User status has been successfully updated.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
     },
     onError: (error) => {
+      console.error("Status mutation error:", error);
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Error Updating Status",
+        description: error.message || "Failed to update user status. Please try again.",
         variant: "destructive",
       });
     },
