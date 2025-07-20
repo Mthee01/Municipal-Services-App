@@ -48,7 +48,7 @@ interface FieldReport {
   materialsUsed: string[];
   photos: string[] | null;
   nextSteps: string;
-  createdAt: Date;
+  createdAt: string;
 }
 
 interface PartsOrder {
@@ -156,7 +156,7 @@ export default function FieldTechnicianDashboard() {
   const queryClient = useQueryClient();
 
   // Current technician ID (would come from auth context in real app)
-  const currentTechnicianId = 1;
+  const currentTechnicianId = 6;
 
   // Fetch assigned issues
   const { data: assignedIssues = [], isLoading: issuesLoading } = useQuery({
@@ -164,8 +164,9 @@ export default function FieldTechnicianDashboard() {
   });
 
   // Fetch field reports
-  const { data: fieldReports = [], isLoading: reportsLoading } = useQuery({
+  const { data: fieldReports = [], isLoading: reportsLoading } = useQuery<FieldReport[]>({
     queryKey: ['/api/field-reports', { technicianId: currentTechnicianId }],
+    queryFn: () => fetch(`/api/field-reports?technicianId=${currentTechnicianId}`).then(res => res.json()),
   });
 
   // Fetch parts orders
@@ -670,7 +671,7 @@ export default function FieldTechnicianDashboard() {
                 onRemovePhoto={removePhoto}
               />
               <FieldReportsHistory
-                reports={fieldReports}
+                reports={fieldReports as FieldReport[]}
                 isLoading={reportsLoading}
               />
             </div>
