@@ -164,10 +164,22 @@ export default function FieldTechnicianDashboard() {
   });
 
   // Fetch field reports
-  const { data: fieldReports = [], isLoading: reportsLoading } = useQuery<FieldReport[]>({
-    queryKey: ['/api/field-reports', { technicianId: currentTechnicianId }],
-    queryFn: () => fetch(`/api/field-reports?technicianId=${currentTechnicianId}`).then(res => res.json()),
+  const { data: fieldReports, isLoading: reportsLoading, error: reportsError } = useQuery<FieldReport[]>({
+    queryKey: ['/api/field-reports', currentTechnicianId],
+    queryFn: async () => {
+      console.log('Fetching field reports for technician:', currentTechnicianId);
+      const response = await fetch(`/api/field-reports?technicianId=${currentTechnicianId}`);
+      const data = await response.json();
+      console.log('Field reports API response:', data);
+      return data;
+    },
+    refetchInterval: 5000, // Refetch every 5 seconds to get latest reports
   });
+
+  // Additional debugging
+  console.log('fieldReports state:', fieldReports);
+  console.log('reportsLoading:', reportsLoading);
+  console.log('reportsError:', reportsError);
 
   // Fetch parts orders
   const { data: partsOrders = [], isLoading: ordersLoading } = useQuery({
@@ -671,7 +683,7 @@ export default function FieldTechnicianDashboard() {
                 onRemovePhoto={removePhoto}
               />
               <FieldReportsHistory
-                reports={fieldReports as FieldReport[]}
+                reports={fieldReports || []}
                 isLoading={reportsLoading}
               />
             </div>
