@@ -2333,9 +2333,26 @@ export class DatabaseStorage implements IStorage {
 
   // Issue escalation operations
   async getIssueEscalations(issueId: number): Promise<IssueEscalation[]> { 
-    return Array.from(this.issueEscalations.values())
-      .filter(escalation => escalation.issueId === issueId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const result = await this.db
+      .select()
+      .from(issueEscalations)
+      .where(eq(issueEscalations.issueId, issueId))
+      .orderBy(desc(issueEscalations.createdAt));
+    
+    // Transform database fields to match frontend expectations
+    return result.map(row => ({
+      id: row.id,
+      issueId: row.issueId,
+      escalatedBy: row.escalatedBy,
+      escalatedTo: 'Technical Manager', // Default escalation target
+      reason: row.escalationReason,
+      priority: row.priority,
+      escalatedAt: row.createdAt,
+      createdAt: row.createdAt,
+      status: 'pending' as const,
+      acknowledgedAt: null,
+      resolvedAt: null
+    }));
   }
   
   async createIssueEscalation(insertEscalation: InsertIssueEscalation): Promise<IssueEscalation> { 

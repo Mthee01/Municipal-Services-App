@@ -52,8 +52,22 @@ export default function TechManagerDashboard() {
     enabled: !!selectedIssueForNotes
   });
 
+  // Fetch issue escalations for selected issue
+  const { data: issueEscalations = [], isLoading: escalationsLoading } = useQuery({
+    queryKey: [`/api/issues/${selectedIssueForNotes?.id}/escalations`],
+    enabled: !!selectedIssueForNotes,
+    refetchOnWindowFocus: false,
+    onSuccess: (data) => {
+      console.log(`Fetched escalations for issue ${selectedIssueForNotes?.id}:`, data);
+    },
+    onError: (error) => {
+      console.error(`Error fetching escalations for issue ${selectedIssueForNotes?.id}:`, error);
+    }
+  });
+
   // Handle viewing notes
   const handleViewNotes = (issue: any) => {
+    console.log("Opening notes modal for issue:", issue.id, "Title:", issue.title);
     setSelectedIssueForNotes(issue);
     setShowNotesModal(true);
   };
@@ -599,24 +613,63 @@ export default function TechManagerDashboard() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="max-h-60 overflow-y-auto space-y-2">
-              {!Array.isArray(issueNotes) || issueNotes.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No notes yet for this issue</p>
-              ) : (
-                issueNotes.map((note) => (
-                  <div key={note.id} className="p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-sm text-gray-900">{note.createdBy}</span>
-                      <span className="text-xs text-gray-500">
-                        {new Date(note.createdAt).toLocaleString()}
-                      </span>
+            <div className="max-h-80 overflow-y-auto space-y-3">
+              {/* Escalations Section */}
+              {Array.isArray(issueEscalations) && issueEscalations.length > 0 && (
+                <div className="border-l-4 border-red-500 pl-4">
+                  <h3 className="font-semibold text-red-700 mb-3 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    Escalations ({issueEscalations.length})
+                  </h3>
+                  {issueEscalations.map((escalation) => (
+                    <div key={escalation.id} className="p-3 bg-red-50 border border-red-200 rounded-lg mb-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-sm text-red-900">{escalation.escalatedBy}</span>
+                        <span className="text-xs text-red-600">
+                          {new Date(escalation.escalatedAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-red-800 font-medium">Escalated to: {escalation.escalatedTo}</p>
+                      <p className="text-sm text-red-700 mt-1">{escalation.reason}</p>
+                      <Badge variant="destructive" className="mt-2 text-xs">
+                        ESCALATED
+                      </Badge>
                     </div>
-                    <p className="text-sm text-gray-700">{note.note}</p>
-                    <Badge variant="secondary" className="mt-2 text-xs">
-                      {note.noteType || 'General'}
-                    </Badge>
-                  </div>
-                ))
+                  ))}
+                </div>
+              )}
+
+              {/* Notes Section */}
+              {Array.isArray(issueNotes) && issueNotes.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-gray-700 mb-3 flex items-center">
+                    <StickyNote className="w-4 h-4 mr-2" />
+                    Notes ({issueNotes.length})
+                  </h3>
+                  {issueNotes.map((note) => (
+                    <div key={note.id} className="p-3 bg-gray-50 rounded-lg mb-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-sm text-gray-900">{note.createdBy}</span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(note.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700">{note.note}</p>
+                      <Badge variant="secondary" className="mt-2 text-xs">
+                        {note.noteType || 'General'}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* No content message */}
+              {(!Array.isArray(issueNotes) || issueNotes.length === 0) && 
+               (!Array.isArray(issueEscalations) || issueEscalations.length === 0) && (
+                <div className="text-center py-8">
+                  <StickyNote className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-500">No notes or escalations yet for this issue</p>
+                </div>
               )}
             </div>
           </div>
