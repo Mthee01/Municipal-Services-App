@@ -119,15 +119,24 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log("=== PHOTO UPLOAD TRIGGERED ===");
+    console.log("Event target:", event.target);
+    console.log("Files object:", event.target.files);
+    console.log("Browser info:", navigator.userAgent);
+    
     const files = Array.from(event.target.files || []);
     
     console.log("Files selected:", files.length);
     files.forEach((file, index) => {
-      console.log(`File ${index + 1}: ${file.name}, size: ${file.size} bytes, type: ${file.type}`);
+      console.log(`File ${index + 1}: ${file.name}, size: ${file.size} bytes, type: ${file.type}, lastModified: ${file.lastModified}`);
     });
     
     if (files.length === 0) {
-      console.log("No files selected - user may have cancelled dialog");
+      console.log("No files selected - user may have cancelled dialog or browser issue");
+      toast({
+        title: "No files selected",
+        description: "Please try selecting photos again. If the issue persists, try a different browser.",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -680,8 +689,32 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
                   <>
                     {/* Photo options */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      {/* Upload from gallery/device */}
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors cursor-pointer">
+                      {/* Upload from gallery/device with drag & drop */}
+                      <div 
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors cursor-pointer"
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.add('border-green-400', 'bg-green-50');
+                        }}
+                        onDragLeave={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.remove('border-green-400', 'bg-green-50');
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.remove('border-green-400', 'bg-green-50');
+                          console.log("=== DRAG & DROP TRIGGERED ===");
+                          const files = Array.from(e.dataTransfer.files);
+                          console.log("Dropped files:", files.length);
+                          
+                          // Create fake event for handlePhotoUpload
+                          const fakeEvent = {
+                            target: { files: e.dataTransfer.files, value: '' }
+                          } as React.ChangeEvent<HTMLInputElement>;
+                          
+                          handlePhotoUpload(fakeEvent);
+                        }}
+                      >
                         <input
                           type="file"
                           multiple
@@ -691,11 +724,23 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
                           id="photo-upload"
                           key={Date.now()}
                         />
-                        <label htmlFor="photo-upload" className="cursor-pointer block">
+                        <div className="cursor-pointer block"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            console.log("Upload area clicked");
+                            const input = document.getElementById('photo-upload') as HTMLInputElement;
+                            if (input) {
+                              console.log("Triggering file dialog manually");
+                              input.click();
+                            } else {
+                              console.error("Photo upload input not found");
+                            }
+                          }}
+                        >
                           <Upload className="mx-auto h-8 w-8 text-blue-500 mb-2" />
                           <p className="text-gray-700 font-medium text-sm">Upload from Gallery</p>
-                          <p className="text-xs text-blue-600 mt-1">Choose photos from device</p>
-                        </label>
+                          <p className="text-xs text-blue-600 mt-1">Click or drag photos here</p>
+                        </div>
                       </div>
                       
                       {/* Take photo with camera */}
@@ -708,6 +753,33 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
                         <p className="text-xs text-gray-500 mt-1">Use device camera</p>
                       </div>
                     </div>
+                    
+                    {/* Additional button for laptops with file dialog issues */}
+                    <div className="flex justify-center mt-2 mb-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          console.log("Alternative upload button clicked");
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.multiple = true;
+                          input.accept = 'image/jpeg,image/jpg,image/png,image/gif,image/webp';
+                          input.onchange = (e) => {
+                            console.log("Alternative input change triggered");
+                            handlePhotoUpload(e as any);
+                          };
+                          input.click();
+                        }}
+                        className="text-xs"
+                      >
+                        <Upload className="h-3 w-3 mr-1" />
+                        Browse Files
+                      </Button>
+                    </div>
+                    
                     <p className="text-xs text-gray-500 text-center">PNG, JPG up to 10MB each (max 5 photos)</p>
                   </>
                 ) : (
