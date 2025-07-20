@@ -719,7 +719,7 @@ export default function FieldTechnicianDashboard() {
                 partsInventory={partsInventory}
               />
               <PartsOrderHistory
-                orders={partsOrders}
+                orders={Array.isArray(partsOrders) ? partsOrders : []}
                 isLoading={ordersLoading}
               />
             </div>
@@ -1170,7 +1170,14 @@ function FieldReportForm({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setPhotoCapture([])}
+                    onClick={() => {
+                      // Clear all photos - this should be handled by parent component
+                      if (onPhotoCapture) {
+                        // Reset photo capture
+                        const event = { target: { files: null } } as any;
+                        onPhotoCapture(null);
+                      }
+                    }}
                     className="text-xs h-7"
                   >
                     <Trash2 className="w-3 h-3 mr-1" />
