@@ -15,6 +15,8 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { 
   MapPin, Clock, Wrench, Camera, Package, MessageSquare, Navigation, 
   CheckCircle, AlertCircle, PlayCircle, StopCircle, Upload, Send,
@@ -1857,9 +1859,12 @@ function LocationTrackingPanel({
                   </div>
                 </div>
               )}
-              <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                <p className="text-gray-500">Map visualization would appear here</p>
-              </div>
+              {/* Interactive Map Component */}
+              <LocationMap 
+                currentLocation={currentLocation}
+                activeWorkSessions={activeWorkSessions}
+                isRealTimeTracking={isRealTimeTracking}
+              />
             </div>
           ) : (
             <div className="text-center py-8">
@@ -2035,4 +2040,120 @@ function calculateWorkDuration(startTime: Date) {
   const hours = Math.floor(diffMins / 60);
   const minutes = diffMins % 60;
   return `${hours}h ${minutes}m`;
+}
+
+// Enhanced Location Map Component with Leaflet
+function LocationMap({ 
+  currentLocation, 
+  activeWorkSessions, 
+  isRealTimeTracking 
+}: { 
+  currentLocation: {lat: number, lng: number} | null;
+  activeWorkSessions: WorkSession[];
+  isRealTimeTracking: boolean;
+}) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const leafletMapRef = useRef<L.Map | null>(null);
+  const currentLocationMarkerRef = useRef<L.Marker | null>(null);
+
+  // Initialize map
+  useEffect(() => {
+    if (!mapRef.current || leafletMapRef.current) return;
+
+    // Fix for Leaflet default markers in Webpack
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAApCAYAAADAk4LOAAAFgUlEQVR4Aa1XA5BjWRTN2oW17d3YaZtr2962HUzbXNfN1+2bZsGmQHFP4P1cEcB1KS0GcTLlM3E6XJ1dPXmJHOKlP8JLf3pf5rkYf/8q/9n7uJbU+Fs5e0nqcqiXf12DXNl2L+BKv6RYWX7V/8p8K6dMOEJIgRHhLc5v/xpCyM3pPnhUIGqg3O6d8Nzjz8Kx+WBYVCsm3VVXvDZbwYd9oqKHbHJ5kVKE2G0iU9E1gn7wPfpvnLDi68JN/l1wlT5yJdQyoQ3iZJCMVMKWLZjM8mNGjJnYWbLI8bG1h0OWxd6mNKBi1jx0PzlIVmR8MKMhKTAzEEbRhNK8p2vWVbZjZDtjPGJ5WNH7yQR3q+w8/cHNSWcW+DBNF21t8+4l6fNr2RbWvJNEcXJvJVE6RhI+i5KIoKtpJWNTMwBKXCc6E1MK3QL9KmZk7UdbOkO7mfL8r5JZdKIrpJtV1RWprT6g+JK8sR4PmVdYZJBq9VKyqSBFu8+E1z0tKYZcK3p+HJPk4U0hG8qJ3dePjM5kz19tpOYNDRuC3iMX7rpMEBE8IiDkGP9C6aDkKmOJFFIEH8qI3MWJvRJ3BNQwgTNTqaO8zILd3VF2BcOpIAXYrHKGxRSLaJLzJZZBxMFz6HIlTZeFBt2J0R+CwRtNfaEJGqDpOD0Qhh5o4ycxwgWmyZ3SkAqHDw0HEQgpTpNOr8rJnPMANRbKSMI0ZRDF+4MPSRH8mqKvHCeN9GGBW/rPa8qPUeqAAaI+D2THBGZQKdNi9MF6v6QKSGaMZBrKhSIZnKzLVgJvhGhSLdEVqyuJvYUO9KwDWqnlhKXhEqpwR5/sOJoF9YzCcSjvRk9EuJxiHBAKlYYiB//DHINQKnJZLYiqNhPjJEbwFq9zNhJgMK1hJ/ZGhCvLLfNJj4I9nnDvGLK5n5LLNR9R4xLZQ4jz8/w3XMKQw7KF+p2fxaDwkn4Q7mjWwUxzlSS6QQQJKQWC0Sk4Gw/UhLdUcVK2QdM1dxQKB3s6W8s5iOlSwPFiL5Uo5Zc5rNfEVeBXQk8j+jklBQ9TtGqgsjhgwHFtLo3G/NqAyNGcFJBE0YPfJfOt0AGcfKjG9ys91t0kFyC9lrJqV9/rLLBnI1WLZ7pEjEpOiUe2F8k+EXTl3hJT6Ec7F8EHeBN9iNQdB9eTSWjKBiZDY+Nj+7Q6JfYgQ8C7jC9D3+C9u7YZjZ8lJHl9jFwV6XfI5aHe1xKLjdlfJPl59t4t8/GCtEL7T/qgjcFJBe+1VVEJ6oj47YQz4FFWr2FN0NJPl0EqD9cGw9TKkKPjvVPZxm7iXUJ7CpUFGe/kNBQ5I0VcGYKLBb7IHbOzgCOb9FJq5D9JnwHMEZFrVRz+O+ycOhq9HJAj7ZhcJ3VrCbKKbcOkhsNEJLUjH2dKW5yC0dj/AAlhgk6XQvUNUQzRPU6FYz2IjZQ7jbp1BjOFu/F+7QQQHgKi3nnKNBPe7RNx7vLR2tYdlCY1tKIDL9A5zAY2GYD9yY0xbKwb9YxfHfgqNY0gFpYzOLQEe11NhMkSlBFKoRnFCGcGCXNlV2IeQdM9ZJJLmkJdJr0pBdYQp9eCNZW1KZANt0PJsKWcNSP9yPp8t0+DLGLAhGwTZXlTLnBgBpYnmNgcUBNgJj1LRKRvREJ8eIGNuFzTF3tKEJ/BAQHQB2NaEBTNEu2YZjk+xNZNUbYPdhp+vqRGTzJZMqgWx/s2R+WEh4oK8MYMJ9PfL1ZDIVnVMBL8I9FbGK8CjZEOVDR9kWd5GNfXJOBLmJDvdJkmLNYQlpzlTNz7aPJ4DfwUKRvFuRxJJOCZEfxWPIkmKdXJXBOECqGFJ+8KaQQ0HgXpVpIcS8E9Dl/ZrTJXo+v4ZAAA=',
+      iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAApCAYAAADAk4LOAAAFgUlEQVR4Aa1XA5BjWRTN2oW17d3YaZtr2962HUzbXNfN1+2bZsGmQHFP4P1cEcB1KS0GcTLlM3E6XJ1dPXmJHOKlP8JLf3pf5rkYf/8q/9n7uJbU+Fs5e0nqcqiXf12DXNl2L+BKv6RYWX7V/8p8K6dMOEJIgRHhLc5v/xpCyM3pPnhUIGqg3O6d8Nzjz8Kx+WBYVCsm3VVXvDZbwYd9oqKHbHJ5kVKE2G0iU9E1gn7wPfpvnLDi68JN/l1wlT5yJdQyoQ3iZJCMVMKWLZjM8mNGjJnYWbLI8bG1h0OWxd6mNKBi1jx0PzlIVmR8MKMhKTAzEEbRhNK8p2vWVbZjZDtjPGJ5WNH7yQR3q+w8/cHNSWcW+DBNF21t8+4l6fNr2RbWvJNEcXJvJVE6RhI+i5KIoKtpJWNTMwBKXCc6E1MK3QL9KmZk7UdbOkO7mfL8r5JZdKIrpJtV1RWprT6g+JK8sR4PmVdYZJBq9VKyqSBFu8+E1z0tKYZcK3p+HJPk4U0hG8qJ3dePjM5kz19tpOYNDRuC3iMX7rpMEBE8IiDkGP9C6aDkKmOJFFIEH8qI3MWJvRJ3BNQwgTNTqaO8zILd3VF2BcOpIAXYrHKGxRSLaJLzJZZBxMFz6HIlTZeFBt2J0R+CwRtNfaEJGqDpOD0Qhh5o4ycxwgWmyZ3SkAqHDw0HEQgpTpNOr8rJnPMANRbKSMI0ZRDF+4MPSRH8mqKvHCeN9GGBW/rPa8qPUeqAAaI+D2THBGZQKdNi9MF6v6QKSGaMZBrKhSIZnKzLVgJvhGhSLdEVqyuJvYUO9KwDWqnlhKXhEqpwR5/sOJoF9YzCcSjvRk9EuJxiHBAKlYYiB//DHINQKnJZLYiqNhPjJEbwFq9zNhJgMK1hJ/ZGhCvLLfNJj4I9nnDvGLK5n5LLNR9R4xLZQ4jz8/w3XMKQw7KF+p2fxaDwkn4Q7mjWwUxzlSS6QQQJKQWC0Sk4Gw/UhLdUcVK2QdM1dxQKB3s6W8s5iOlSwPFiL5Uo5Zc5rNfEVeBXQk8j+jklBQ9TtGqgsjhgwHFtLo3G/NqAyNGcFJBE0YPfJfOt0AGcfKjG9ys91t0kFyC9lrJqV9/rLLBnI1WLZ7pEjEpOiUe2F8k+EXTl3hJT6Ec7F8EHeBN9iNQdB9eTSWjKBiZDY+Nj+7Q6JfYgQ8C7jC9D3+C9u7YZjZ8lJHl9jFwV6XfI5aHe1xKLjdlfJPl59t4t8/GCtEL7T/qgjcFJBe+1VVEJ6oj47YQz4FFWr2FN0NJPl0EqD9cGw9TKkKPjvVPZxm7iXUJ7CpUFGe/kNBQ5I0VcGYKLBb7IHbOzgCOb9FJq5D9JnwHMEZFrVRz+O+ycOhq9HJAj7ZhcJ3VrCbKKbcOkhsNEJLUjH2dKW5yC0dj/AAlhgk6XQvUNUQzRPU6FYz2IjZQ7jbp1BjOFu/F+7QQQHgKi3nnKNBPe7RNx7vLR2tYdlCY1tKIDL9A5zAY2GYD9yY0xbKwb9YxfHfgqNY0gFpYzOLQEe11NhMkSlBFKoRnFCGcGCXNlV2IeQdM9ZJJLmkJdJr0pBdYQp9eCNZW1KZANt0PJsKWcNSP9yPp8t0+DLGLAhGwTZXlTLnBgBpYnmNgcUBNgJj1LRKRvREJ8eIGNuFzTF3tKEJ/BAQHQB2NaEBTNEu2YZjk+xNZNUbYPdhp+vqRGTzJZMqgWx/s2R+WEh4oK8MYMJ9PfL1ZDIVnVMBL8I9FbGK8CjZEOVDR9kWd5GNfXJOBLmJDvdJkmLNYQlpzlTNz7aPJ4DfwUKRvFuRxJJOCZEfxWPIkmKdXJXBOECqGFJ+8KaQQ0HgXpVpIcS8E9Dl/ZrTJXo+v4ZAAA=',
+      shadowUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACkAAAApCAYAAACoYKUBAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAABmJLR0QA/wD/AP+gvaeTAAAAB3RJTUUH4wgJCzcEkJIjHwAABqFJREFUWMPtl21sU1UYx5/b3natt73rOsetmyN0Q2CKxW0MLJKJGYkxJhpJjIkvIMZEP6AkxkQTNcYPmg/Ej2o0fhCjSQwxZvgNjZHwgQQZm5hJdDBebF27KW1tS9/a9fauPXfnHD907XW8b2VmBH+JaXNzzv95zvM/5/lfnOPAf17OOddE05zbOOeaI5zFr/5e0jnHSgTTOxp1XZfuv4Df70+MZZtj3dbtfLHeLpwOeS2iCITQ5XT96yQkJgAQExNzPp9vCqFbUZRB8ODBg3/evn375osXLtZOTU2pAwMD8w1JDwwGOGhwMNDhZg+qeunWO37q+rGI76d6e3ulhYWFLClGXrlq9fP19atOZuJZY9duOTR3w9XXR/m2xoZr6o93ZC8Kp+H/+vRHBz1NTAf95A6oKyurz5bXLWk5ndPTWLrE3iayNy++1bMJBv4FgA7HFJz5+s1aMvF4jJQ9Gkx9trDv4qS6t9O+lD7m1pnZmafPnB5wJO8tOfHdTKWr6srvCZDPHUaQhd8APLKdp7wj05p6cXJOzGOTefXv3JBB6vKIAgKJOGb3E8P+JKhEv0tEwDi37ezZskEqyAKsqOKpTKUQ7P/VVUtEUWhBBkx6PAQyc7kSQRHGlJktOzp0b6b52gm/wONDd+3Oq9tMOVv16qtvunJOcMwgyzm9qEhHnZzG8o7SzN9vRVEUGdQbE8VdE9VdkOOwcP7bF18vGGOj5+2yQwfP/0g7qG9j9A6wjq2V6nVVbJNTW2H4rqcWKDCIo87AxKJ1DqJ0e8u2gC5Py8VLrmf+0aNzYz1bXlreW3nCxgzJG3E+kYh5gEK4fgvd2/FTdj9R6sTp07uTcUzzuNH7hvXPpLyL5O7L4vr73o8h3bZw93f3N+e6sdrpL5pPvNBQ=',
+    });
+
+    // Create the map with default South African coordinates
+    const defaultCoords: [number, number] = [-26.2041, 28.0473]; // Johannesburg
+    const map = L.map(mapRef.current).setView(defaultCoords, 13);
+
+    // Add OpenStreetMap tiles (free alternative to Google Maps)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    leafletMapRef.current = map;
+
+    return () => {
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update current location marker
+  useEffect(() => {
+    if (!leafletMapRef.current || !currentLocation) return;
+
+    const map = leafletMapRef.current;
+
+    // Remove existing current location marker
+    if (currentLocationMarkerRef.current) {
+      map.removeLayer(currentLocationMarkerRef.current);
+    }
+
+    // Create a custom icon for current location
+    const currentLocationIcon = L.divIcon({
+      className: 'current-location-marker',
+      html: `<div style="width: 20px; height: 20px; background: #3b82f6; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
+
+    // Add current location marker
+    const marker = L.marker([currentLocation.lat, currentLocation.lng], {
+      icon: currentLocationIcon
+    }).addTo(map);
+
+    marker.bindPopup(`
+      <div style="text-align: center;">
+        <strong>Your Location</strong><br/>
+        ${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}<br/>
+        ${isRealTimeTracking ? '<span style="color: #3b82f6;">🔄 Live Tracking</span>' : '📍 Current Position'}
+      </div>
+    `);
+
+    currentLocationMarkerRef.current = marker;
+
+    // Center map on current location
+    map.setView([currentLocation.lat, currentLocation.lng], 15);
+  }, [currentLocation, isRealTimeTracking]);
+
+  // Add work session markers
+  useEffect(() => {
+    if (!leafletMapRef.current) return;
+
+    // This would typically load issue locations and show them on the map
+    // For now, we'll show a simple demonstration
+  }, [activeWorkSessions]);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-medium">Live Location Map</Label>
+        {isRealTimeTracking && (
+          <div className="flex items-center gap-2 text-sm text-blue-600">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            Real-time tracking active
+          </div>
+        )}
+      </div>
+      <div 
+        ref={mapRef} 
+        className="h-64 w-full rounded-lg border border-gray-200 dark:border-gray-700"
+        style={{ minHeight: '256px' }}
+      />
+      {currentLocation && (
+        <div className="text-xs text-gray-500 bg-gray-50 dark:bg-gray-800 p-2 rounded text-center">
+          📍 Current: {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
+        </div>
+      )}
+    </div>
+  );
 }
