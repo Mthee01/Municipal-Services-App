@@ -320,11 +320,13 @@ Preferred communication style: Simple, everyday language.
 - TechnicianLocationTracker component displays authentic GPS data with live/recent status indicators
 - Complete end-to-end tracking: Field technician GPS → Server database → Call center dashboard
 - Navigation functionality tested with location "25 lonehill" successfully opening in external maps
-- SIMPLIFIED CALL CENTER TRACKING INTERFACE: Clean dashboard showing only tracking enabled/disabled status
-- Click-to-view location details with modal showing precise coordinates, accuracy, and on-site status
-- Enhanced user experience with simplified cards showing technician name, GPS status, and job availability
-- Modal interface provides complete location details including "View on Map" button for navigation
-- Real-time status updates showing 3+ technicians with active GPS tracking in Johannesburg area
+- DROPDOWN-BASED TECHNICIAN SELECTION INTERFACE: Simplified call center tracking with dropdown list
+- Select technician from dropdown list to view detailed location information in modal
+- Dropdown shows technician name with real-time tracking status indicator (green dot = tracking, gray = offline)
+- Modal displays complete details: department, availability status, GPS tracking status, coordinates, accuracy
+- Enhanced user experience with focused selection interface and comprehensive location details
+- "View on Map" button opens Google Maps with technician's precise coordinates
+- Real-time updates every 10 seconds with 3+ technicians available for tracking in Johannesburg area
 
 ✓ June 24, 2025: Enhanced technician dashboard filtering
 - Resolved issues are now properly filtered out from technician view

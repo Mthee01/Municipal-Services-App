@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Clock, FileText, AlertTriangle, Navigation, Eye, User } from "lucide-react";
+import { MapPin, Clock, FileText, AlertTriangle, Navigation, Eye, User, ChevronDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
 
 interface TechnicianLocation {
@@ -119,60 +120,45 @@ export function TechnicianLocationTracker() {
           {techniciansLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
-              <span className="ml-2 text-gray-600">Loading tracking status...</span>
+              <span className="ml-2 text-gray-600">Loading technicians...</span>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {techniciansWithLocations.map((technician) => {
-                const isTracking = technician.location?.timestamp && 
-                  new Date(technician.location.timestamp).getTime() > Date.now() - 30 * 60 * 1000;
-                
-                return (
-                  <div 
-                    key={technician.id} 
-                    className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => setSelectedTechnician(technician)}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-gray-600" />
-                        <span className="font-medium text-gray-900">{technician.name}</span>
-                      </div>
-                      <button className="p-1 hover:bg-gray-100 rounded">
-                        <Eye className="h-4 w-4 text-gray-500" />
-                      </button>
-                    </div>
+            <div className="max-w-md">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Technician to View Location
+              </label>
+              <Select onValueChange={(value) => {
+                const technician = techniciansWithLocations.find(t => t.id.toString() === value);
+                if (technician) setSelectedTechnician(technician);
+              }}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose a technician..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {techniciansWithLocations.map((technician) => {
+                    const isTracking = technician.location?.timestamp && 
+                      new Date(technician.location.timestamp).getTime() > Date.now() - 30 * 60 * 1000;
                     
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">GPS Tracking:</span>
-                        <Badge variant={isTracking ? "default" : "secondary"} className={
-                          isTracking ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
-                        }>
-                          {isTracking ? "Enabled" : "Disabled"}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Status:</span>
-                        <Badge variant="outline" className={
-                          technician.status === 'available' ? 'border-green-200 text-green-700' :
-                          technician.status === 'on_job' ? 'border-blue-200 text-blue-700' :
-                          'border-gray-200 text-gray-700'
-                        }>
-                          {technician.status.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          
-          {techniciansWithLocations.length === 0 && !techniciansLoading && (
-            <div className="text-center py-8 text-gray-500">
-              No technicians found
+                    return (
+                      <SelectItem key={technician.id} value={technician.id.toString()}>
+                        <div className="flex items-center justify-between w-full">
+                          <span>{technician.name}</span>
+                          <div className="flex items-center gap-2 ml-4">
+                            <div className={`w-2 h-2 rounded-full ${isTracking ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                            <span className="text-xs text-gray-500">
+                              {isTracking ? 'Tracking' : 'Offline'}
+                            </span>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              
+              {techniciansWithLocations.length === 0 && (
+                <p className="text-center text-gray-500 mt-4">No technicians available</p>
+              )}
             </div>
           )}
         </div>
@@ -190,7 +176,7 @@ export function TechnicianLocationTracker() {
           
           {selectedTechnician && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-700">Department</label>
                   <p className="text-gray-900">{selectedTechnician.department}</p>
@@ -205,6 +191,20 @@ export function TechnicianLocationTracker() {
                     {selectedTechnician.status === 'on_job' ? 'On Job' : 
                      selectedTechnician.status === 'available' ? 'Available' : 
                      selectedTechnician.status}
+                  </Badge>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">GPS Tracking</label>
+                  <Badge variant={selectedTechnician.location?.timestamp && 
+                    new Date(selectedTechnician.location.timestamp).getTime() > Date.now() - 30 * 60 * 1000 ? 
+                    "default" : "secondary"} className={
+                    selectedTechnician.location?.timestamp && 
+                    new Date(selectedTechnician.location.timestamp).getTime() > Date.now() - 30 * 60 * 1000 ? 
+                    "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+                  }>
+                    {selectedTechnician.location?.timestamp && 
+                     new Date(selectedTechnician.location.timestamp).getTime() > Date.now() - 30 * 60 * 1000 ? 
+                     "Enabled" : "Disabled"}
                   </Badge>
                 </div>
               </div>
