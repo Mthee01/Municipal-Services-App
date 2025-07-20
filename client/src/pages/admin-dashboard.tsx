@@ -31,7 +31,9 @@ import {
   Briefcase,
   Wrench,
   Phone,
-  LogOut
+  LogOut,
+  Key,
+  RefreshCw
 } from "lucide-react";
 
 // User creation form schema
@@ -85,6 +87,9 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [showEditUser, setShowEditUser] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showResetAllPasswords, setShowResetAllPasswords] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
   const { toast } = useToast();
 
   // Fetch users
@@ -248,6 +253,92 @@ export default function AdminDashboard() {
     toggleUserStatusMutation.mutate({ id: user.id, status: newStatus });
   };
 
+  // Reset password mutations
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ id, password }: { id: number; password: string }) => {
+      console.log("Resetting password for user:", id);
+      const response = await apiRequest("PATCH", `/api/admin/users/${id}/reset-password`, { newPassword: password });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
+        console.error("Password reset failed:", errorData);
+        throw new Error(errorData.message || "Failed to reset password");
+      }
+      
+      const result = await response.json();
+      console.log("Password reset successful:", result);
+      return result;
+    },
+    onSuccess: (data) => {
+      console.log("Password reset mutation success:", data);
+      toast({
+        title: "Password Reset",
+        description: "User password has been successfully reset.",
+      });
+      setShowResetPassword(false);
+      setSelectedUser(null);
+      setNewPassword("");
+    },
+    onError: (error) => {
+      console.error("Password reset mutation error:", error);
+      toast({
+        title: "Error Resetting Password",
+        description: error.message || "Failed to reset password. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetAllPasswordsMutation = useMutation({
+    mutationFn: async (password: string) => {
+      console.log("Resetting all user passwords");
+      const response = await apiRequest("POST", "/api/admin/users/reset-all-passwords", { newPassword: password });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
+        console.error("All passwords reset failed:", errorData);
+        throw new Error(errorData.message || "Failed to reset all passwords");
+      }
+      
+      const result = await response.json();
+      console.log("All passwords reset successful:", result);
+      return result;
+    },
+    onSuccess: (data) => {
+      console.log("All passwords reset mutation success:", data);
+      toast({
+        title: "All Passwords Reset",
+        description: `Successfully reset passwords for ${data.resetCount} users.`,
+      });
+      setShowResetAllPasswords(false);
+      setNewPassword("");
+    },
+    onError: (error) => {
+      console.error("All passwords reset mutation error:", error);
+      toast({
+        title: "Error Resetting Passwords",
+        description: error.message || "Failed to reset passwords. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleResetPassword = () => {
+    if (!selectedUser || !newPassword) return;
+    resetPasswordMutation.mutate({ id: selectedUser.id, password: newPassword });
+  };
+
+  const handleResetAllPasswords = () => {
+    if (!newPassword) return;
+    resetAllPasswordsMutation.mutate(newPassword);
+  };
+
+  const openResetPasswordDialog = (user: User) => {
+    setSelectedUser(user);
+    setNewPassword("");
+    setShowResetPassword(true);
+  };
+
   const openEditDialog = (user: User) => {
     setSelectedUser(user);
     editForm.reset({
@@ -378,13 +469,23 @@ export default function AdminDashboard() {
           <TabsContent value="users" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">User Management</h2>
-              <Dialog open={showCreateUser} onOpenChange={setShowCreateUser}>
-                <DialogTrigger asChild>
-                  <Button className="flex items-center space-x-2">
-                    <Plus className="w-4 h-4" />
-                    <span>Add User</span>
-                  </Button>
-                </DialogTrigger>
+              <div className="flex items-center gap-3">
+                <Dialog open={showResetAllPasswords} onOpenChange={setShowResetAllPasswords}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="flex items-center space-x-2 bg-orange-50 hover:bg-orange-100 border-orange-200">
+                      <RefreshCw className="w-4 h-4" />
+                      <span>Reset All Passwords</span>
+                    </Button>
+                  </DialogTrigger>
+                </Dialog>
+                
+                <Dialog open={showCreateUser} onOpenChange={setShowCreateUser}>
+                  <DialogTrigger asChild>
+                    <Button className="flex items-center space-x-2">
+                      <Plus className="w-4 h-4" />
+                      <span>Add User</span>
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle>Create New User</DialogTitle>
@@ -576,6 +677,17 @@ export default function AdminDashboard() {
                                 <Edit className="w-3 h-3" />
                                 <span className="text-xs">Edit</span>
                               </Button>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openResetPasswordDialog(user)}
+                                className="flex items-center gap-1 px-3 py-1 h-8 whitespace-nowrap"
+                                title="Reset Password"
+                              >
+                                <Key className="w-3 h-3" />
+                                <span className="text-xs">Reset</span>
+                              </Button>
                               
                               <Select
                                 value={user.status}
@@ -632,6 +744,7 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
+            </div>
 
             {/* Edit User Dialog */}
             <Dialog open={showEditUser} onOpenChange={setShowEditUser}>
@@ -726,6 +839,99 @@ export default function AdminDashboard() {
                     </div>
                   </form>
                 </Form>
+              </DialogContent>
+            </Dialog>
+
+            {/* Reset All Passwords Dialog */}
+            <Dialog open={showResetAllPasswords} onOpenChange={setShowResetAllPasswords}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Reset All User Passwords</DialogTitle>
+                  <DialogDescription>
+                    This will reset passwords for all {stats?.totalUsers || 0} users in the system. Please enter a new password.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="new-password-all" className="block text-sm font-medium mb-2">
+                      New Password (minimum 6 characters)
+                    </label>
+                    <Input
+                      id="new-password-all"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password for all users"
+                      minLength={6}
+                    />
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={handleResetAllPasswords}
+                      disabled={resetAllPasswordsMutation.isPending || newPassword.length < 6}
+                      className="flex-1 bg-orange-600 hover:bg-orange-700"
+                    >
+                      {resetAllPasswordsMutation.isPending ? "Resetting..." : "Reset All Passwords"}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setShowResetAllPasswords(false);
+                        setNewPassword("");
+                      }}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Reset Individual Password Dialog */}
+            <Dialog open={showResetPassword} onOpenChange={setShowResetPassword}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Reset Password</DialogTitle>
+                  <DialogDescription>
+                    Reset password for {selectedUser?.name} ({selectedUser?.username})
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="new-password-single" className="block text-sm font-medium mb-2">
+                      New Password (minimum 6 characters)
+                    </label>
+                    <Input
+                      id="new-password-single"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      minLength={6}
+                    />
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={handleResetPassword}
+                      disabled={resetPasswordMutation.isPending || newPassword.length < 6}
+                      className="flex-1"
+                    >
+                      {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setShowResetPassword(false);
+                        setSelectedUser(null);
+                        setNewPassword("");
+                      }}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
               </DialogContent>
             </Dialog>
           </TabsContent>

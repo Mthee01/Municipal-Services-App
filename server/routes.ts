@@ -816,6 +816,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reset user password endpoint
+  app.patch("/api/admin/users/:id/reset-password", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { newPassword } = req.body;
+      
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      }
+      
+      await storage.updateUserPassword(parseInt(id), newPassword);
+      res.json({ success: true, message: "Password reset successfully" });
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
+  });
+
+  // Reset all user passwords endpoint
+  app.post("/api/admin/users/reset-all-passwords", async (req, res) => {
+    try {
+      const { newPassword } = req.body;
+      
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      }
+      
+      const users = await storage.getAllUsers();
+      let resetCount = 0;
+      
+      for (const user of users) {
+        try {
+          await storage.updateUserPassword(user.id, newPassword);
+          resetCount++;
+        } catch (error) {
+          console.error(`Failed to reset password for user ${user.id}:`, error);
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `Successfully reset passwords for ${resetCount} users`,
+        resetCount,
+        totalUsers: users.length
+      });
+    } catch (error) {
+      console.error("Error resetting all passwords:", error);
+      res.status(500).json({ message: "Failed to reset passwords" });
+    }
+  });
+
   app.post("/api/admin/users", async (req, res) => {
     try {
       const userData = req.body;
