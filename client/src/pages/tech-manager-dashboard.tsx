@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { IssueCard } from "@/components/issue-card";
+import { TechnicianLocationTracker } from "@/components/technician-location-tracker";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatRelativeTime, getStatusColor, getPriorityColor } from "@/lib/utils";
@@ -270,7 +271,7 @@ export default function TechManagerDashboard() {
       </div>
 
       <Tabs defaultValue="assignments" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
           <TabsTrigger value="assignments" className="text-xs sm:text-sm p-2 sm:p-3">
             <span className="hidden sm:inline">Issue Assignments</span>
             <span className="sm:hidden">Issues</span>
@@ -278,6 +279,10 @@ export default function TechManagerDashboard() {
           <TabsTrigger value="technicians" className="text-xs sm:text-sm p-2 sm:p-3">
             <span className="hidden sm:inline">Technician Management</span>
             <span className="sm:hidden">Technicians</span>
+          </TabsTrigger>
+          <TabsTrigger value="tracking" className="text-xs sm:text-sm p-2 sm:p-3">
+            <span className="hidden sm:inline">Location Tracking</span>
+            <span className="sm:hidden">Tracking</span>
           </TabsTrigger>
           <TabsTrigger value="performance" className="text-xs sm:text-sm p-2 sm:p-3">
             <span className="hidden sm:inline">Performance Analytics</span>
@@ -502,6 +507,10 @@ export default function TechManagerDashboard() {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="tracking" className="space-y-4">
+          <TechnicianLocationTracker />
         </TabsContent>
 
         <TabsContent value="performance" className="space-y-4">
