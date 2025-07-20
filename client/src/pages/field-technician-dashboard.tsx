@@ -813,7 +813,10 @@ function WorkAssignmentCard({
           <div className="mb-4 space-y-2">
             <div className="flex items-start gap-2 text-sm text-gray-500">
               <button
-                onClick={(e) => handleNavigateToLocation(issue.location, e)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNavigateToLocation(issue.location, e);
+                }}
                 className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors cursor-pointer p-1 -m-1 rounded hover:bg-blue-50"
                 title={`Navigate to ${issue.location} - Click to open in maps`}
               >
@@ -915,7 +918,10 @@ function ActiveSessionCard({
             <h3 className="font-semibold">{issue.title}</h3>
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <button
-                onClick={(e) => handleNavigateToLocation(issue.location, e)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNavigateToLocation(issue.location, e);
+                }}
                 className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors cursor-pointer p-1 -m-1 rounded hover:bg-blue-50"
                 title={`Navigate to ${issue.location} - Click to open in maps`}
               >
@@ -1944,11 +1950,11 @@ function IssueDetailsDialog({ issue, onClose }: { issue: Issue; onClose: () => v
             </p>
           </div>
 
-          {(issue.status === 'resolved' || issue.status === 'completed') && issue.resolvedAt && (
+          {(issue.status === 'resolved' || issue.status === 'completed') && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Closing Date</Label>
+              <Label className="text-sm font-medium">Status Update</Label>
               <p className="text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 p-2 rounded border border-blue-200 dark:border-blue-800">
-                {new Date(issue.resolvedAt).toLocaleString()}
+                Issue {issue.status}
               </p>
             </div>
           )}
