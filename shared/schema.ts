@@ -145,20 +145,20 @@ export const fieldReports = pgTable("field_reports", {
   id: serial("id").primaryKey(),
   issueId: integer("issue_id").notNull(),
   technicianId: integer("technician_id").notNull(),
+  reportType: text("report_type").notNull(), // progress, completion, issue, safety
+  description: text("description").notNull(),
+  findings: text("findings"),
+  actionsTaken: text("actions_taken"),
+  materialsUsed: text("materials_used").array(),
+  nextSteps: text("next_steps"),
+  photos: text("photos").array(),
   arrivalTime: timestamp("arrival_time"),
   departureTime: timestamp("departure_time"),
   travelTimeMinutes: integer("travel_time_minutes"),
   workCompletedPercentage: integer("work_completed_percentage").default(0),
-  sitePhotos: text("site_photos").array(),
-  technicianNotes: text("technician_notes"),
-  citizenFeedback: text("citizen_feedback"),
-  citizenSignature: text("citizen_signature"),
-  partsUsed: text("parts_used").array(),
-  partsOrdered: text("parts_ordered").array(),
   nextVisitRequired: boolean("next_visit_required").default(false),
   nextVisitDate: timestamp("next_visit_date"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const partsInventory = pgTable("parts_inventory", {

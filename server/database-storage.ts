@@ -450,12 +450,72 @@ export class DatabaseStorage implements IStorage {
   async updateVoucher(id: number, updates: Partial<Voucher>): Promise<Voucher | undefined> { return undefined; }
   async useVoucher(voucherCode: string): Promise<boolean> { return false; }
 
-  async getFieldReports(): Promise<FieldReport[]> { return []; }
-  async getFieldReport(id: number): Promise<FieldReport | undefined> { return undefined; }
-  async getFieldReportsByTechnician(technicianId: number): Promise<FieldReport[]> { return []; }
-  async getFieldReportsByIssue(issueId: number): Promise<FieldReport[]> { return []; }
-  async createFieldReport(report: InsertFieldReport): Promise<FieldReport> { throw new Error("Not implemented"); }
-  async updateFieldReport(id: number, updates: Partial<FieldReport>): Promise<FieldReport | undefined> { return undefined; }
+  async getFieldReports(): Promise<FieldReport[]> {
+    try {
+      return await db.select().from(fieldReports).orderBy(desc(fieldReports.createdAt));
+    } catch (error) {
+      console.error("Error fetching field reports:", error);
+      return [];
+    }
+  }
+
+  async getFieldReport(id: number): Promise<FieldReport | undefined> {
+    try {
+      const reports = await db.select().from(fieldReports).where(eq(fieldReports.id, id)).limit(1);
+      return reports[0];
+    } catch (error) {
+      console.error("Error fetching field report:", error);
+      return undefined;
+    }
+  }
+
+  async getFieldReportsByTechnician(technicianId: number): Promise<FieldReport[]> {
+    try {
+      return await db.select().from(fieldReports)
+        .where(eq(fieldReports.technicianId, technicianId))
+        .orderBy(desc(fieldReports.createdAt));
+    } catch (error) {
+      console.error("Error fetching field reports by technician:", error);
+      return [];
+    }
+  }
+
+  async getFieldReportsByIssue(issueId: number): Promise<FieldReport[]> {
+    try {
+      return await db.select().from(fieldReports)
+        .where(eq(fieldReports.issueId, issueId))
+        .orderBy(desc(fieldReports.createdAt));
+    } catch (error) {
+      console.error("Error fetching field reports by issue:", error);
+      return [];
+    }
+  }
+
+  async createFieldReport(report: InsertFieldReport): Promise<FieldReport> {
+    try {
+      const [newReport] = await db.insert(fieldReports).values({
+        ...report,
+        createdAt: new Date()
+      }).returning();
+      return newReport;
+    } catch (error) {
+      console.error("Error creating field report:", error);
+      throw new Error("Failed to create field report");
+    }
+  }
+
+  async updateFieldReport(id: number, updates: Partial<FieldReport>): Promise<FieldReport | undefined> {
+    try {
+      const [updatedReport] = await db.update(fieldReports)
+        .set(updates)
+        .where(eq(fieldReports.id, id))
+        .returning();
+      return updatedReport;
+    } catch (error) {
+      console.error("Error updating field report:", error);
+      return undefined;
+    }
+  }
 
   async getPartsInventory(): Promise<PartsInventory[]> { return []; }
   async getPartsInventoryItem(id: number): Promise<PartsInventory | undefined> { return undefined; }
