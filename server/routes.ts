@@ -1179,6 +1179,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all technicians with their latest location data for call center tracking
+  app.get("/api/technicians-with-locations", async (req, res) => {
+    try {
+      const techniciansWithLocations = await storage.getTechniciansWithLocations();
+      res.json(techniciansWithLocations);
+    } catch (error) {
+      console.error("Error fetching technicians with locations:", error);
+      res.status(500).json({ error: "Failed to fetch technicians with locations" });
+    }
+  });
+
   app.post("/api/technician-locations", async (req, res) => {
     try {
       const locationData = insertTechnicianLocationSchema.parse(req.body);

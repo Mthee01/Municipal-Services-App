@@ -122,9 +122,10 @@ export default function OfficialDashboard() {
   // Get all technicians with their current locations
   const { data: techniciansWithLocations = [], isLoading: techniciansLoading } = useQuery({
     queryKey: ["/api/technicians-with-locations"],
-    refetchInterval: 15000, // Refetch every 15 seconds
+    refetchInterval: 10000, // Refetch every 10 seconds for enhanced real-time tracking
     refetchOnWindowFocus: true,
     refetchOnMount: true,
+    staleTime: 5000, // Consider data stale after 5 seconds
   });
 
   const { data: unreadCount = 0 } = useQuery<number>({

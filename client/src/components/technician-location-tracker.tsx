@@ -38,9 +38,10 @@ export function TechnicianLocationTracker() {
   // Get all technicians with their current locations
   const { data: techniciansWithLocations = [], isLoading: techniciansLoading, error } = useQuery<Technician[]>({
     queryKey: ["/api/technicians-with-locations"],
-    refetchInterval: 15000, // Refetch every 15 seconds for real-time tracking
+    refetchInterval: 10000, // Refetch every 10 seconds for real-time tracking
     refetchOnWindowFocus: true,
     refetchOnMount: true,
+    staleTime: 5000, // Consider data stale after 5 seconds
   });
 
   // Calculate live tracking count (technicians updated within last 30 minutes)
@@ -100,7 +101,7 @@ export function TechnicianLocationTracker() {
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-sm text-gray-600">{liveTrackedCount} live</span>
             </div>
-            <span className="text-sm text-gray-500">Updates every 15s</span>
+            <span className="text-sm text-gray-500">Updates every 10s</span>
           </div>
         </div>
       </div>

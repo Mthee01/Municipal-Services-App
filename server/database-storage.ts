@@ -551,6 +551,11 @@ export class DatabaseStorage implements IStorage {
     return result[0] || undefined;
   }
 
+  // Get latest technician location (alias for consistency with API)
+  async getLatestTechnicianLocation(technicianId: number): Promise<TechnicianLocation | undefined> {
+    return await this.getTechnicianLocation(technicianId);
+  }
+
   // Get all locations for specific technician
   async getTechnicianLocationsByTechnician(technicianId: number): Promise<TechnicianLocation[]> {
     return await db.select()

@@ -160,6 +160,25 @@ export default function FieldTechnicianDashboard() {
   // Current technician ID (would come from auth context in real app)
   const currentTechnicianId = 6;
 
+  // Function to send location update to server
+  const sendLocationUpdate = async (latitude: number, longitude: number, accuracy?: number) => {
+    try {
+      await apiRequest('/api/technician-locations', {
+        method: 'POST',
+        body: {
+          technicianId: currentTechnicianId,
+          latitude: latitude.toString(),
+          longitude: longitude.toString(),
+          accuracy: accuracy ? Math.round(accuracy) : undefined,
+          timestamp: new Date().toISOString()
+        }
+      });
+      console.log('Location update sent successfully', { latitude, longitude, accuracy });
+    } catch (error) {
+      console.error('Failed to send location update:', error);
+    }
+  };
+
   // Fetch assigned issues
   const { data: assignedIssues = [], isLoading: issuesLoading } = useQuery<Issue[]>({
     queryKey: ['/api/issues', { technicianId: currentTechnicianId }],
@@ -254,13 +273,17 @@ export default function FieldTechnicianDashboard() {
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
-        setCurrentLocation({
+        const location = {
           lat: position.coords.latitude,
           lng: position.coords.longitude
-        });
+        };
+        setCurrentLocation(location);
         setLocationAccuracy(position.coords.accuracy);
         setLocationLoading(false);
         setLocationError(null);
+        
+        // Send location update to server for call center tracking
+        sendLocationUpdate(location.lat, location.lng, position.coords.accuracy);
       },
       (error) => {
         let errorMessage = "Unable to access location";
@@ -330,11 +353,15 @@ export default function FieldTechnicianDashboard() {
         });
       });
 
-      setCurrentLocation({
+      const location = {
         lat: position.coords.latitude,
         lng: position.coords.longitude
-      });
+      };
+      setCurrentLocation(location);
       setLocationAccuracy(position.coords.accuracy);
+      
+      // Send initial location update to server for call center tracking
+      sendLocationUpdate(location.lat, location.lng, position.coords.accuracy);
       
       toast({
         title: "Location Access Granted",
