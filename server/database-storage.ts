@@ -536,11 +536,79 @@ export class DatabaseStorage implements IStorage {
   async createTechnicianMessage(message: InsertTechnicianMessage): Promise<TechnicianMessage> { throw new Error("Not implemented"); }
   async updateTechnicianMessage(id: number, updates: Partial<TechnicianMessage>): Promise<TechnicianMessage | undefined> { return undefined; }
 
-  async getTechnicianLocations(): Promise<TechnicianLocation[]> { return []; }
-  async getTechnicianLocation(id: number): Promise<TechnicianLocation | undefined> { return undefined; }
-  async getTechnicianLocationsByTechnician(technicianId: number): Promise<TechnicianLocation[]> { return []; }
-  async createTechnicianLocation(location: InsertTechnicianLocation): Promise<TechnicianLocation> { throw new Error("Not implemented"); }
-  async updateTechnicianLocation(id: number, updates: Partial<TechnicianLocation>): Promise<TechnicianLocation | undefined> { return undefined; }
+  // Get all technician locations
+  async getTechnicianLocations(): Promise<TechnicianLocation[]> {
+    return await db.select().from(technicianLocations).orderBy(desc(technicianLocations.timestamp));
+  }
+
+  // Get technician location by ID
+  async getTechnicianLocation(technicianId: number): Promise<TechnicianLocation | undefined> {
+    const result = await db.select()
+      .from(technicianLocations)
+      .where(eq(technicianLocations.technicianId, technicianId))
+      .orderBy(desc(technicianLocations.timestamp))
+      .limit(1);
+    return result[0] || undefined;
+  }
+
+  // Get all locations for specific technician
+  async getTechnicianLocationsByTechnician(technicianId: number): Promise<TechnicianLocation[]> {
+    return await db.select()
+      .from(technicianLocations)
+      .where(eq(technicianLocations.technicianId, technicianId))
+      .orderBy(desc(technicianLocations.timestamp));
+  }
+
+  // Create new technician location
+  async createTechnicianLocation(location: InsertTechnicianLocation): Promise<TechnicianLocation> {
+    const [created] = await db.insert(technicianLocations)
+      .values({
+        ...location,
+        timestamp: new Date()
+      })
+      .returning();
+    return created;
+  }
+
+  // Update technician location (create or update latest)
+  async updateTechnicianLocation(locationData: InsertTechnicianLocation): Promise<TechnicianLocation> {
+    // First, try to get existing location for this technician
+    const existing = await this.getTechnicianLocation(locationData.technicianId);
+    
+    if (existing) {
+      // Update the latest record for this technician
+      const [updated] = await db.update(technicianLocations)
+        .set({
+          ...locationData,
+          timestamp: new Date()
+        })
+        .where(eq(technicianLocations.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      // Create new location record
+      return await this.createTechnicianLocation(locationData);
+    }
+  }
+
+  // Get all technicians with their latest location data
+  async getTechniciansWithLocations(): Promise<(Technician & { location?: TechnicianLocation })[]> {
+    // Get all technicians
+    const allTechnicians = await db.select().from(technicians);
+    
+    // Get latest location for each technician
+    const results = await Promise.all(
+      allTechnicians.map(async (tech) => {
+        const location = await this.getTechnicianLocation(tech.id);
+        return {
+          ...tech,
+          location: location || undefined
+        };
+      })
+    );
+    
+    return results;
+  }
 
   async getChatMessages(): Promise<ChatMessage[]> { return []; }
   async getChatMessage(id: number): Promise<ChatMessage | undefined> { return undefined; }

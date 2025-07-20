@@ -141,6 +141,8 @@ export const vouchers = pgTable("vouchers", {
   usedDate: timestamp("used_date"),
 });
 
+
+
 export const fieldReports = pgTable("field_reports", {
   id: serial("id").primaryKey(),
   issueId: integer("issue_id").notNull(),
@@ -250,6 +252,8 @@ export const insertTechnicianSchema = createInsertSchema(technicians).omit({
   id: true,
   lastUpdate: true,
 });
+
+
 
 export const insertWardSchema = createInsertSchema(wards).omit({
   id: true,

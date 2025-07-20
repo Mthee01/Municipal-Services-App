@@ -39,6 +39,7 @@ import {
 import { Link } from "wouter";
 import type { Issue, Technician, Team, IssueNote, IssueEscalation } from "@shared/schema";
 import { Textarea } from "@/components/ui/textarea";
+import { TechnicianLocationTracker } from "@/components/technician-location-tracker";
 
 // Helper functions
 const formatRelativeTime = (date: Date) => {
@@ -110,8 +111,21 @@ export default function OfficialDashboard() {
     refetchOnMount: true,
   });
 
-  // Call center agents monitor issues but don't need technician data for assignments
-  // Technician management is handled by tech managers
+  // Real-time technician location tracking for agents to monitor field staff
+  const { data: technicianLocations = [], isLoading: locationsLoading } = useQuery({
+    queryKey: ["/api/technician-locations"],
+    refetchInterval: 10000, // Refetch every 10 seconds for real-time tracking
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  });
+
+  // Get all technicians with their current locations
+  const { data: techniciansWithLocations = [], isLoading: techniciansLoading } = useQuery({
+    queryKey: ["/api/technicians-with-locations"],
+    refetchInterval: 15000, // Refetch every 15 seconds
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  });
 
   const { data: unreadCount = 0 } = useQuery<number>({
     queryKey: ["/api/whatsapp/unread-count"],
@@ -463,6 +477,13 @@ export default function OfficialDashboard() {
           </div>
         </div>
       </header>
+
+      {/* Real-time Technician Location Tracker for Call Center Agents */}
+      <section className="py-4">
+        <div className="max-w-7xl mx-auto px-4">
+          <TechnicianLocationTracker />
+        </div>
+      </section>
 
       {/* Statistics Overview */}
       <section className="py-8">
