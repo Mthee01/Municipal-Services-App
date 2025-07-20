@@ -123,9 +123,15 @@ export default function CitizenDashboard() {
     queryKey: ["/api/technicians"],
   });
 
-  const { data: communityIssues = [], isLoading: communityIssuesLoading } = useQuery<Issue[]>({
-    queryKey: ["/api/issues", { community: true }],
+  // Fetch all issues for community view and map display
+  const { data: allIssues = [], isLoading: allIssuesLoading } = useQuery<Issue[]>({
+    queryKey: ["/api/issues"],
   });
+
+  // Community issues are all issues except user's own (for community tab)
+  const communityIssues = allIssues.filter(issue => 
+    issue.status !== "resolved" && issue.status !== "closed"
+  ).slice(0, 6);
 
   const filteredUserIssues = userIssues.filter(issue => {
     if (statusFilter !== "all" && issue.status !== statusFilter) return false;
@@ -133,9 +139,7 @@ export default function CitizenDashboard() {
     return true;
   });
 
-  const filteredCommunityIssues = communityIssues.filter(issue => 
-    issue.status !== "resolved" && issue.status !== "closed"
-  ).slice(0, 6);
+  // Filter community issues for display
 
   const handleRateService = (issue: Issue) => {
     console.log("Opening rating modal for", issue);
@@ -378,8 +382,12 @@ export default function CitizenDashboard() {
 
             <TabsContent value="map-view" className="space-y-6">
               <GISMapIntegration 
-                issues={[...userIssues, ...communityIssues]} 
-                onIssueSelect={(issue) => console.log('Selected issue:', issue)}
+                issues={allIssues}
+                onIssueSelect={(issue) => {
+                  console.log('Selected issue from map:', issue);
+                  setSelectedIssue(issue);
+                  setShowDetailsModal(true);
+                }}
                 height="600px"
               />
             </TabsContent>
