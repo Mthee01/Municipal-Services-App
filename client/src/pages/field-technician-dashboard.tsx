@@ -19,7 +19,8 @@ import {
   MapPin, Clock, Wrench, Camera, Package, MessageSquare, Navigation, 
   CheckCircle, AlertCircle, PlayCircle, StopCircle, Upload, Send,
   Phone, User, Calendar, MapIcon, Settings, Bell, Search, Filter,
-  Map, RotateCcw, ExternalLink, X, Trash2
+  Map, RotateCcw, ExternalLink, X, Trash2, ChevronDown, ChevronUp,
+  FileText
 } from "lucide-react";
 
 interface Issue {
@@ -1165,12 +1166,26 @@ function FieldReportForm({
 
 // Field Reports History Component
 function FieldReportsHistory({ reports, isLoading }: { reports: FieldReport[]; isLoading: boolean }) {
+  const [expandedReport, setExpandedReport] = useState<number | null>(null);
+
+  const toggleExpanded = (reportId: number) => {
+    setExpandedReport(expandedReport === reportId ? null : reportId);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return {
+      date: date.toLocaleDateString(),
+      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Report History</CardTitle>
         <CardDescription>
-          Previously submitted field reports
+          Click on any report to view full details
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -1184,65 +1199,136 @@ function FieldReportsHistory({ reports, isLoading }: { reports: FieldReport[]; i
           </div>
         ) : (
           <ScrollArea className="h-96">
-            <div className="space-y-4">
-              {reports.map((report) => (
-                <div key={report.id} className="border rounded-lg p-4 bg-white dark:bg-gray-800">
-                  <div className="flex items-center justify-between mb-3">
-                    <Badge variant="outline" className="capitalize">{report.reportType}</Badge>
-                    <span className="text-xs text-gray-500">
-                      {new Date(report.createdAt).toLocaleDateString()} at {new Date(report.createdAt).toLocaleTimeString()}
-                    </span>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">Description</h4>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">{report.description}</p>
+            <div className="space-y-3">
+              {reports.map((report) => {
+                const { date, time } = formatDate(report.createdAt);
+                const isExpanded = expandedReport === report.id;
+                
+                return (
+                  <div 
+                    key={report.id} 
+                    className="border rounded-lg bg-white dark:bg-gray-800 hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => toggleExpanded(report.id)}
+                  >
+                    {/* Summary View */}
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="capitalize">{report.reportType}</Badge>
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            Report #{report.id}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500">{date} {time}</span>
+                          {isExpanded ? (
+                            <ChevronUp className="w-4 h-4 text-gray-400" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-gray-400" />
+                          )}
+                        </div>
+                      </div>
+                      
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 line-clamp-2">
+                        {report.description}
+                      </p>
+                      
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        {report.findings && (
+                          <span className="flex items-center gap-1">
+                            <FileText className="w-3 h-3" />
+                            Findings
+                          </span>
+                        )}
+                        {report.actionsTaken && (
+                          <span className="flex items-center gap-1">
+                            <Wrench className="w-3 h-3" />
+                            Actions
+                          </span>
+                        )}
+                        {report.materialsUsed && report.materialsUsed.length > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Package className="w-3 h-3" />
+                            {report.materialsUsed.length} Materials
+                          </span>
+                        )}
+                        {report.photos && report.photos.length > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Camera className="w-3 h-3" />
+                            {report.photos.length} Photos
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    {report.findings && (
-                      <div>
-                        <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">Findings</h4>
-                        <p className="text-sm text-gray-700 dark:text-gray-300">{report.findings}</p>
-                      </div>
-                    )}
+                    {/* Detailed View (Expanded) */}
+                    {isExpanded && (
+                      <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-700">
+                        <div className="pt-4 space-y-4">
+                          <div>
+                            <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">Full Description</h4>
+                            <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                              {report.description}
+                            </p>
+                          </div>
 
-                    {report.actionsTaken && (
-                      <div>
-                        <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">Actions Taken</h4>
-                        <p className="text-sm text-gray-700 dark:text-gray-300">{report.actionsTaken}</p>
-                      </div>
-                    )}
+                          {report.findings && (
+                            <div>
+                              <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">Findings</h4>
+                              <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                                {report.findings}
+                              </p>
+                            </div>
+                          )}
 
-                    {report.materialsUsed && report.materialsUsed.length > 0 && (
-                      <div>
-                        <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">Materials Used</h4>
-                        <ul className="text-sm text-gray-700 dark:text-gray-300 list-disc list-inside">
-                          {report.materialsUsed.map((material, index) => (
-                            <li key={index}>{material}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                          {report.actionsTaken && (
+                            <div>
+                              <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">Actions Taken</h4>
+                              <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                                {report.actionsTaken}
+                              </p>
+                            </div>
+                          )}
 
-                    {report.nextSteps && (
-                      <div>
-                        <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">Next Steps</h4>
-                        <p className="text-sm text-gray-700 dark:text-gray-300">{report.nextSteps}</p>
-                      </div>
-                    )}
+                          {report.materialsUsed && report.materialsUsed.length > 0 && (
+                            <div>
+                              <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">Materials Used</h4>
+                              <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                                <ul className="text-sm text-gray-700 dark:text-gray-300 list-disc list-inside space-y-1">
+                                  {report.materialsUsed.map((material, index) => (
+                                    <li key={index}>{material}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          )}
 
-                    {report.photos && report.photos.length > 0 && (
-                      <div className="flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <Camera className="w-4 h-4 text-blue-500" />
-                        <span className="text-xs text-gray-500">
-                          {report.photos.length} photo(s) attached
-                        </span>
+                          {report.nextSteps && (
+                            <div>
+                              <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">Next Steps</h4>
+                              <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                                {report.nextSteps}
+                              </p>
+                            </div>
+                          )}
+
+                          {report.photos && report.photos.length > 0 && (
+                            <div>
+                              <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">Attached Photos</h4>
+                              <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                                <Camera className="w-4 h-4 text-blue-500" />
+                                <span className="text-sm text-gray-700 dark:text-gray-300">
+                                  {report.photos.length} photo(s) attached to this report
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
         )}
