@@ -19,7 +19,7 @@ import {
   MapPin, Clock, Wrench, Camera, Package, MessageSquare, Navigation, 
   CheckCircle, AlertCircle, PlayCircle, StopCircle, Upload, Send,
   Phone, User, Calendar, MapIcon, Settings, Bell, Search, Filter,
-  Map, RotateCcw, ExternalLink
+  Map, RotateCcw, ExternalLink, X, Trash2
 } from "lucide-react";
 
 interface Issue {
@@ -491,6 +491,14 @@ export default function FieldTechnicianDashboard() {
     }
   };
 
+  const removePhoto = (indexToRemove: number) => {
+    setPhotoCapture(prev => prev.filter((_, index) => index !== indexToRemove));
+    toast({
+      title: "Photo removed",
+      description: "Photo has been removed from the report",
+    });
+  };
+
   const getSessionForIssue = (issueId: number) => {
     return activeWorkSessions.find(session => session.issueId === issueId);
   };
@@ -658,6 +666,7 @@ export default function FieldTechnicianDashboard() {
                 photoCapture={photoCapture}
                 onPhotoCapture={handlePhotoCapture}
                 fileInputRef={fileInputRef}
+                onRemovePhoto={removePhoto}
               />
               <FieldReportsHistory
                 reports={fieldReports}
@@ -928,7 +937,8 @@ function FieldReportForm({
   assignedIssues, 
   photoCapture, 
   onPhotoCapture,
-  fileInputRef 
+  fileInputRef,
+  onRemovePhoto 
 }: any) {
   const [formData, setFormData] = useState({
     issueId: '',
@@ -1078,12 +1088,63 @@ function FieldReportForm({
               />
             </div>
             {photoCapture.length > 0 && (
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {photoCapture.map((file, index) => (
-                  <div key={index} className="text-xs bg-gray-100 dark:bg-gray-700 p-3 rounded truncate">
-                    {file.name}
-                  </div>
-                ))}
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Selected Photos:
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPhotoCapture([])}
+                    className="text-xs h-7"
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" />
+                    Clear All
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {photoCapture.map((file, index) => (
+                    <div key={index} className="relative bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Camera className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                              {file.name}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {(file.size / (1024 * 1024)).toFixed(1)} MB • {file.type}
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onRemovePhoto ? onRemovePhoto(index) : removePhoto(index)}
+                          className="h-8 w-8 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex-shrink-0"
+                          title={`Remove ${file.name}`}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      
+                      {/* Photo preview if it's an image */}
+                      {file.type.startsWith('image/') && (
+                        <div className="mt-2 rounded border overflow-hidden bg-gray-100 dark:bg-gray-700">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="w-full h-20 object-cover"
+                            onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
