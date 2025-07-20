@@ -19,7 +19,7 @@ import {
   MapPin, Clock, Wrench, Camera, Package, MessageSquare, Navigation, 
   CheckCircle, AlertCircle, PlayCircle, StopCircle, Upload, Send,
   Phone, User, Calendar, MapIcon, Settings, Bell, Search, Filter,
-  Map, RotateCcw
+  Map, RotateCcw, ExternalLink
 } from "lucide-react";
 
 interface Issue {
@@ -80,9 +80,70 @@ interface WorkSession {
   isActive: boolean;
 }
 
+// Navigation utility functions
+const openGoogleMaps = (location: string) => {
+  const query = encodeURIComponent(location);
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${query}`;
+  window.open(googleMapsUrl, '_blank');
+};
+
+const openWaze = (location: string) => {
+  const query = encodeURIComponent(location);
+  const wazeUrl = `https://waze.com/ul?q=${query}`;
+  window.open(wazeUrl, '_blank');
+};
+
+const openAppleMaps = (location: string) => {
+  const query = encodeURIComponent(location);
+  const appleMapsUrl = `http://maps.apple.com/?q=${query}`;
+  window.open(appleMapsUrl, '_blank');
+};
+
 export default function FieldTechnicianDashboard() {
   const [activeWorkSessions, setActiveWorkSessions] = useState<WorkSession[]>([]);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const { toast } = useToast();
+
+  const handleNavigateToLocation = (location: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
+
+    // Show toast notification
+    toast({
+      title: "Opening Navigation",
+      description: `Getting directions to ${location}`,
+    });
+
+    // Detect user agent for better default navigation app
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isIOS = /iphone|ipad|ipod/.test(userAgent);
+    const isAndroid = /android/.test(userAgent);
+    const isMobile = isIOS || isAndroid;
+
+    try {
+      if (isMobile) {
+        // On mobile devices, try to open the native maps app
+        if (isIOS) {
+          // Try Apple Maps first on iOS
+          openAppleMaps(location);
+        } else {
+          // Try Google Maps on Android
+          openGoogleMaps(location);
+        }
+      } else {
+        // On desktop, always use Google Maps web
+        openGoogleMaps(location);
+      }
+    } catch (error) {
+      toast({
+        title: "Navigation Error",
+        description: "Could not open navigation app. Please manually search for the location.",
+        variant: "destructive",
+      });
+    }
+  };
+  
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -91,7 +152,6 @@ export default function FieldTechnicianDashboard() {
   const watchIdRef = useRef<number | null>(null);
   const [photoCapture, setPhotoCapture] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Current technician ID (would come from auth context in real app)
@@ -708,7 +768,14 @@ function WorkAssignmentCard({
           {/* Location and date info */}
           <div className="mb-4 space-y-2">
             <div className="flex items-start gap-2 text-sm text-gray-500">
-              <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5" />
+              <button
+                onClick={(e) => handleNavigateToLocation(issue.location, e)}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors cursor-pointer p-1 -m-1 rounded hover:bg-blue-50"
+                title={`Navigate to ${issue.location} - Click to open in maps`}
+              >
+                <Navigation className="w-4 h-4 flex-shrink-0" />
+                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+              </button>
               <span className="break-words leading-relaxed flex-1">{issue.location}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -800,9 +867,19 @@ function ActiveSessionCard({
     <Card>
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-4">
-          <div>
+          <div className="flex-1">
             <h3 className="font-semibold">{issue.title}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{issue.location}</p>
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <button
+                onClick={(e) => handleNavigateToLocation(issue.location, e)}
+                className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors cursor-pointer p-1 -m-1 rounded hover:bg-blue-50"
+                title={`Navigate to ${issue.location} - Click to open in maps`}
+              >
+                <Navigation className="w-3 h-3 flex-shrink-0" />
+                <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
+              </button>
+              <span>{issue.location}</span>
+            </div>
           </div>
           <div className="text-right">
             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mb-2">
