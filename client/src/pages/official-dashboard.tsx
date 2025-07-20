@@ -97,6 +97,7 @@ export default function OfficialDashboard() {
   const [selectedTickets, setSelectedTickets] = useState<Set<number>>(new Set());
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [showEscalateModal, setShowEscalateModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [newNote, setNewNote] = useState("");
   const [escalationReason, setEscalationReason] = useState("");
@@ -268,6 +269,11 @@ export default function OfficialDashboard() {
   }, [issues]);
 
   // Handle notes and escalation
+  const handleViewDetails = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setShowDetailsModal(true);
+  };
+
   const handleViewNotes = (issue: Issue) => {
     setSelectedIssue(issue);
     setShowNotesModal(true);
@@ -666,7 +672,12 @@ export default function OfficialDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col">
-                              <span className="font-medium text-gray-900">{issue.title}</span>
+                              <button
+                                className="font-medium text-gray-900 hover:text-blue-600 text-left cursor-pointer"
+                                onClick={() => handleViewDetails(issue)}
+                              >
+                                {issue.title}
+                              </button>
                               <span className="text-sm text-gray-600">{issue.location}</span>
                             </div>
                           </TableCell>
@@ -698,6 +709,15 @@ export default function OfficialDashboard() {
                               <Button
                                 size="sm"
                                 variant="outline"
+                                onClick={() => handleViewDetails(issue)}
+                                className="text-xs"
+                              >
+                                <MessageCircle className="h-3 w-3 mr-1" />
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 onClick={() => handleViewNotes(issue)}
                                 className="text-xs"
                               >
@@ -706,13 +726,13 @@ export default function OfficialDashboard() {
                               </Button>
                               <Button
                                 size="sm"
-                                variant="outline"
+                                variant={issue.priority === "urgent" ? "default" : "outline"}
                                 onClick={() => handleEscalateIssue(issue)}
-                                className="text-xs"
+                                className={`text-xs ${issue.priority === "urgent" ? "bg-red-600 hover:bg-red-700 text-white" : ""}`}
                                 disabled={issue.priority === "urgent"}
                               >
                                 <AlertCircle className="h-3 w-3 mr-1" />
-                                Escalate
+                                {issue.priority === "urgent" ? "Escalated" : "Escalate"}
                               </Button>
                             </div>
                           </TableCell>
@@ -1121,6 +1141,105 @@ export default function OfficialDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Issue Details Modal */}
+      {selectedIssue && (
+        <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="pb-4">
+              <DialogTitle className="text-lg font-semibold truncate">{selectedIssue.title}</DialogTitle>
+              <DialogDescription className="flex items-center gap-2 text-sm">
+                <span>RefNo: {selectedIssue.referenceNumber}</span>
+                <span>•</span>
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  {selectedIssue.location}
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Category</Label>
+                  <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded capitalize">{selectedIssue.category.replace("_", " & ")}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Priority</Label>
+                  <div>
+                    <Badge variant="outline" className={getPriorityColor(selectedIssue.priority)}>
+                      {selectedIssue.priority}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Status</Label>
+                  <div>
+                    <Badge variant="outline" className={getStatusColor(selectedIssue.status)}>
+                      {selectedIssue.status.replace("_", " ")}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Created Date</Label>
+                  <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                    {new Date(selectedIssue.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Description</Label>
+                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                  <p className="text-sm leading-relaxed">{selectedIssue.description}</p>
+                </div>
+              </div>
+
+              {selectedIssue.photos && selectedIssue.photos.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Photos</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {selectedIssue.photos.map((photo, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={photo}
+                          alt={`Issue photo ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-90"
+                          onClick={() => window.open(photo, '_blank')}
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all duration-200 flex items-center justify-center">
+                          <span className="text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            Click to view full size
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedIssue.assignedTo && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Assigned To</Label>
+                  <p className="text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 p-2 rounded border border-blue-200 dark:border-blue-800">
+                    {selectedIssue.assignedTo}
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDetailsModal(false)}>
+                Close
+              </Button>
+              <Button onClick={() => handleViewNotes(selectedIssue)}>
+                <StickyNote className="h-4 w-4 mr-2" />
+                View Notes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Export Report Modal */}
       <Dialog open={showExportModal} onOpenChange={setShowExportModal}>

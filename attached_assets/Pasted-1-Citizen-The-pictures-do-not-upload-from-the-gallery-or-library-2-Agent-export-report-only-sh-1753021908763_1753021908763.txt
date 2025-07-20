@@ -1,0 +1,22 @@
+1. Citizen - The pictures do not upload from the gallery or library
+2. Agent – export report only shows recently reported incident. Need to have an option to select single or multiple tickets and export all
+3. Agent – unable to click on individual issue to see details. This detail should also show the uploaded picture. if any.
+4. Agent – The escalate button should turn red and the wording should change to “escalated” once the agent escalates that issue.
+5. Tech Manager – issues escalated by the agent do not show the notes related to the escation. It only shows general agent notes.
+6. All Maps- area map does not show. Only the issues show as is they are ploted on a graph. We should also be able to click on the issue pin to see actual location
+7. All maps – buttons on the left side of the map are not functional i.e zoom in, zoom out buttons etc,
+8. Technician – when technician clicks on the location icon, it should link him to google maps/waze, with location automatically captured
+9. Technician and citizen– uploaded pictures should be removeable. In case a wrong picture was uploaded
+10. Issues reported by technicians do not show in the history reports
+11. Agent and tech manager – allow for live location tracking of the technicians
+12. Ordering of parts is not defined to whom the request should be submitted to- will be mapped during integration
+13. Footnote links do not work. Consider removing quick links and only remain with the support footnote. Alternatively move this link to the body of the page, if footnotes are problematic
+14. Mayor – Dashboards do not pull anything when navigating through different sections i.e overview, department, and performance
+15. Mayor and councilor – ward issues are not updating
+16. Municipal assistant chat is inactive
+17. Communication feature under support does not have an option for sending email
+18. Citizen – create placeholder for payment of municipal services i.e water, electricity, rates and traffic fines
+19. Admin – number of active users not pulling correctly.
+20. Admin – function to change user status between active, inactive or suspended returns error message
+21. Admin – create function to reset user passwords
+22. In the login page , create function for “forgot password and  username”

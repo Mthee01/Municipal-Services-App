@@ -674,7 +674,8 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
                         <input
                           type="file"
                           multiple
-                          accept="image/*"
+                          accept="image/*,image/jpeg,image/jpg,image/png,image/gif"
+                          capture="environment"
                           onChange={handlePhotoUpload}
                           className="hidden"
                           id="photo-upload"
