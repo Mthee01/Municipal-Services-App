@@ -626,7 +626,12 @@ export default function TechManagerDashboard() {
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-sm text-red-900">{escalation.escalatedBy}</span>
                         <span className="text-xs text-red-600">
-                          {new Date(escalation.escalatedAt).toLocaleString()}
+                          {escalation.escalatedAt && !isNaN(new Date(escalation.escalatedAt).getTime()) 
+                            ? new Date(escalation.escalatedAt).toLocaleString()
+                            : escalation.createdAt && !isNaN(new Date(escalation.createdAt).getTime())
+                            ? new Date(escalation.createdAt).toLocaleString()
+                            : 'Date not available'
+                          }
                         </span>
                       </div>
                       <p className="text-sm text-red-800 font-medium">Escalated to: {escalation.escalatedTo}</p>
@@ -651,7 +656,10 @@ export default function TechManagerDashboard() {
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-sm text-gray-900">{note.createdBy}</span>
                         <span className="text-xs text-gray-500">
-                          {new Date(note.createdAt).toLocaleString()}
+                          {note.createdAt && !isNaN(new Date(note.createdAt).getTime()) 
+                            ? new Date(note.createdAt).toLocaleString()
+                            : 'Date not available'
+                          }
                         </span>
                       </div>
                       <p className="text-sm text-gray-700">{note.note}</p>

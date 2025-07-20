@@ -2347,8 +2347,8 @@ export class DatabaseStorage implements IStorage {
       escalatedTo: 'Technical Manager', // Default escalation target
       reason: row.escalationReason,
       priority: row.priority,
-      escalatedAt: row.createdAt,
-      createdAt: row.createdAt,
+      escalatedAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+      createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
       status: 'pending' as const,
       acknowledgedAt: null,
       resolvedAt: null

@@ -344,9 +344,25 @@ export class DatabaseStorage implements IStorage {
 
   // Issue Escalations operations - CRITICAL FOR PERSISTENCE
   async getIssueEscalations(issueId: number): Promise<IssueEscalation[]> {
-    return db.select().from(issueEscalations)
+    const result = await db.select().from(issueEscalations)
       .where(eq(issueEscalations.issueId, issueId))
       .orderBy(desc(issueEscalations.createdAt));
+    
+    // Transform database fields to match frontend expectations
+    return result.map(row => ({
+      id: row.id,
+      issueId: row.issueId,
+      escalatedBy: row.escalatedBy,
+      escalatedTo: 'Technical Manager', // Default escalation target
+      reason: row.escalationReason,
+      priority: row.priority,
+      escalatedAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+      createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+      status: 'pending' as const,
+      acknowledgedAt: null,
+      resolvedAt: null,
+      escalatedByRole: row.escalatedByRole
+    }));
   }
 
   async createIssueEscalation(insertEscalation: InsertIssueEscalation): Promise<IssueEscalation> {
