@@ -1169,6 +1169,11 @@ function FieldReportForm({
 function FieldReportsHistory({ reports, isLoading }: { reports: FieldReport[]; isLoading: boolean }) {
   const [expandedReport, setExpandedReport] = useState<number | null>(null);
 
+  // Debug logging
+  console.log('FieldReportsHistory - reports:', reports);
+  console.log('FieldReportsHistory - isLoading:', isLoading);
+  console.log('FieldReportsHistory - reports length:', reports?.length);
+
   const toggleExpanded = (reportId: number) => {
     setExpandedReport(expandedReport === reportId ? null : reportId);
   };
@@ -1194,9 +1199,10 @@ function FieldReportsHistory({ reports, isLoading }: { reports: FieldReport[]; i
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
           </div>
-        ) : reports.length === 0 ? (
+        ) : !reports || reports.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             No reports submitted yet
+            {console.log('Showing no reports message, reports:', reports)}
           </div>
         ) : (
           <ScrollArea className="h-96">
