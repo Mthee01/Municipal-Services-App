@@ -118,7 +118,7 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
   });
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("Photo upload triggered");
+    console.log("=== PHOTO UPLOAD TRIGGERED ===");
     const files = Array.from(event.target.files || []);
     
     console.log("Files selected:", files.length);
@@ -127,37 +127,39 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
     });
     
     if (files.length === 0) {
-      console.log("No files selected");
+      console.log("No files selected - user may have cancelled dialog");
       return;
     }
     
     if (photos.length + files.length > 5) {
-      console.log("Too many photos selected");
+      console.log("Too many photos selected - limit is 5");
       toast({
         title: "Too many photos",
         description: "Maximum 5 photos allowed",
         variant: "destructive",
       });
+      // Reset the input to allow another selection
+      event.target.value = '';
       return;
     }
     
     // Check file types and sizes
     const validFiles = files.filter(file => {
-      const isValidType = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(file.type);
+      const isValidType = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'].includes(file.type);
       const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB
       
       if (!isValidType) {
-        console.log(`Invalid file type: ${file.type} for file ${file.name}`);
+        console.log(`❌ Invalid file type: ${file.type} for file ${file.name}`);
         toast({
           title: "Invalid file type",
-          description: `${file.name} is not a valid image file. Please upload JPG, PNG, or GIF files.`,
+          description: `${file.name} is not a valid image file. Please upload JPG, PNG, GIF, or WEBP files.`,
           variant: "destructive",
         });
         return false;
       }
       
       if (!isValidSize) {
-        console.log(`File too large: ${file.size} bytes for file ${file.name}`);
+        console.log(`❌ File too large: ${file.size} bytes for file ${file.name}`);
         toast({
           title: "File too large",
           description: `${file.name} is too large. Maximum size is 10MB.`,
@@ -166,19 +168,28 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
         return false;
       }
       
+      console.log(`✅ Valid file: ${file.name} - ${file.type} - ${file.size} bytes`);
       return true;
     });
     
     if (validFiles.length > 0) {
-      console.log("Adding valid files to state:", validFiles.length);
-      setPhotos([...photos, ...validFiles]);
+      console.log(`✅ Adding ${validFiles.length} valid files to state`);
+      console.log("Current photos state:", photos.length);
+      setPhotos(prevPhotos => {
+        const newPhotos = [...prevPhotos, ...validFiles];
+        console.log("New photos state will be:", newPhotos.length);
+        return newPhotos;
+      });
       toast({
-        title: "Photos added",
-        description: `${validFiles.length} photo(s) added successfully`,
+        title: "Photos added successfully!",
+        description: `${validFiles.length} photo(s) ready for upload`,
       });
     } else {
-      console.log("No valid files to add");
+      console.log("❌ No valid files to add");
     }
+    
+    // Reset the input to allow selecting the same files again if needed
+    event.target.value = '';
   };
 
   const removePhoto = (index: number) => {
@@ -669,21 +680,21 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
                   <>
                     {/* Photo options */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      {/* Upload from device */}
+                      {/* Upload from gallery/device */}
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors cursor-pointer">
                         <input
                           type="file"
                           multiple
-                          accept="image/*,image/jpeg,image/jpg,image/png,image/gif"
-                          capture="environment"
+                          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                           onChange={handlePhotoUpload}
                           className="hidden"
                           id="photo-upload"
+                          key={Date.now()}
                         />
-                        <label htmlFor="photo-upload" className="cursor-pointer">
-                          <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                          <p className="text-gray-600 font-medium text-sm">Upload from device</p>
-                          <p className="text-xs text-gray-500 mt-1">Select photos</p>
+                        <label htmlFor="photo-upload" className="cursor-pointer block">
+                          <Upload className="mx-auto h-8 w-8 text-blue-500 mb-2" />
+                          <p className="text-gray-700 font-medium text-sm">Upload from Gallery</p>
+                          <p className="text-xs text-blue-600 mt-1">Choose photos from device</p>
                         </label>
                       </div>
                       
@@ -693,8 +704,8 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
                         onClick={startCamera}
                       >
                         <CameraIcon className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                        <p className="text-gray-600 font-medium text-sm">Take photo</p>
-                        <p className="text-xs text-gray-500 mt-1">Use camera</p>
+                        <p className="text-gray-600 font-medium text-sm">Take Photo</p>
+                        <p className="text-xs text-gray-500 mt-1">Use device camera</p>
                       </div>
                     </div>
                     <p className="text-xs text-gray-500 text-center">PNG, JPG up to 10MB each (max 5 photos)</p>
@@ -741,25 +752,44 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
                 
                 {/* Display uploaded/captured photos */}
                 {photos.length > 0 && (
-                  <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {photos.map((photo, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={URL.createObjectURL(photo)}
-                          alt={`Photo ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
-                          onClick={() => removePhoto(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-medium text-gray-700">Selected Photos ({photos.length}/5)</h4>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPhotos([])}
+                        className="text-xs"
+                      >
+                        Clear All
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {photos.map((photo, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={URL.createObjectURL(photo)}
+                            alt={`Photo ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-lg border-2 border-green-200"
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all duration-200 flex items-center justify-center">
+                            <span className="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                              {photo.name}
+                            </span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-80 hover:opacity-100"
+                            onClick={() => removePhoto(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
