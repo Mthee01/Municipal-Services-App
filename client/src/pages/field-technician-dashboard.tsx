@@ -1186,21 +1186,61 @@ function FieldReportsHistory({ reports, isLoading }: { reports: FieldReport[]; i
           <ScrollArea className="h-96">
             <div className="space-y-4">
               {reports.map((report) => (
-                <div key={report.id} className="border rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge variant="outline">{report.reportType}</Badge>
+                <div key={report.id} className="border rounded-lg p-4 bg-white dark:bg-gray-800">
+                  <div className="flex items-center justify-between mb-3">
+                    <Badge variant="outline" className="capitalize">{report.reportType}</Badge>
                     <span className="text-xs text-gray-500">
-                      {new Date(report.createdAt).toLocaleDateString()}
+                      {new Date(report.createdAt).toLocaleDateString()} at {new Date(report.createdAt).toLocaleTimeString()}
                     </span>
                   </div>
-                  <p className="text-sm">{report.description}</p>
-                  {report.photos && report.photos.length > 0 && (
-                    <div className="mt-2">
-                      <span className="text-xs text-gray-500">
-                        {report.photos.length} photo(s) attached
-                      </span>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">Description</h4>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{report.description}</p>
                     </div>
-                  )}
+
+                    {report.findings && (
+                      <div>
+                        <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">Findings</h4>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">{report.findings}</p>
+                      </div>
+                    )}
+
+                    {report.actionsTaken && (
+                      <div>
+                        <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">Actions Taken</h4>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">{report.actionsTaken}</p>
+                      </div>
+                    )}
+
+                    {report.materialsUsed && report.materialsUsed.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">Materials Used</h4>
+                        <ul className="text-sm text-gray-700 dark:text-gray-300 list-disc list-inside">
+                          {report.materialsUsed.map((material, index) => (
+                            <li key={index}>{material}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {report.nextSteps && (
+                      <div>
+                        <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">Next Steps</h4>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">{report.nextSteps}</p>
+                      </div>
+                    )}
+
+                    {report.photos && report.photos.length > 0 && (
+                      <div className="flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <Camera className="w-4 h-4 text-blue-500" />
+                        <span className="text-xs text-gray-500">
+                          {report.photos.length} photo(s) attached
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
