@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -92,6 +93,8 @@ export default function OfficialDashboard() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportEmail, setExportEmail] = useState("");
   const [exportMethod, setExportMethod] = useState("email");
+  const [exportScope, setExportScope] = useState("current"); // "current", "all", "selected"
+  const [selectedTickets, setSelectedTickets] = useState<Set<number>>(new Set());
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [showEscalateModal, setShowEscalateModal] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
@@ -293,6 +296,26 @@ export default function OfficialDashboard() {
     }
   };
 
+  // Handle ticket selection
+  const toggleTicketSelection = (ticketId: number) => {
+    const newSelection = new Set(selectedTickets);
+    if (newSelection.has(ticketId)) {
+      newSelection.delete(ticketId);
+    } else {
+      newSelection.add(ticketId);
+    }
+    setSelectedTickets(newSelection);
+  };
+
+  const selectAllVisibleTickets = () => {
+    const allVisibleIds = new Set(filteredIssues.map(issue => issue.id));
+    setSelectedTickets(allVisibleIds);
+  };
+
+  const clearTicketSelection = () => {
+    setSelectedTickets(new Set());
+  };
+
   // Handle export report
   const handleExportReport = () => {
     setShowExportModal(true);
@@ -308,10 +331,41 @@ export default function OfficialDashboard() {
       return;
     }
 
+    // Determine which issues to export based on scope
+    let issuesToExport: Issue[] = [];
+    let exportDescription = "";
+
+    switch (exportScope) {
+      case "current":
+        issuesToExport = filteredIssues;
+        exportDescription = `Currently displayed issues (${filteredIssues.length} items)`;
+        break;
+      case "all":
+        issuesToExport = issues;
+        exportDescription = `All issues (${issues.length} items)`;
+        break;
+      case "selected":
+        if (selectedTickets.size === 0) {
+          toast({
+            title: "Error",
+            description: "Please select at least one ticket to export",
+            variant: "destructive",
+          });
+          return;
+        }
+        issuesToExport = issues.filter(issue => selectedTickets.has(issue.id));
+        exportDescription = `Selected tickets (${selectedTickets.size} items)`;
+        break;
+      default:
+        issuesToExport = filteredIssues;
+        exportDescription = `Currently displayed issues (${filteredIssues.length} items)`;
+    }
+
     const csvContent = [
-      ['ID', 'Title', 'Category', 'Priority', 'Status', 'Location', 'Ward', 'Assigned To', 'Created', 'Reporter'],
-      ...filteredIssues.map(issue => [
+      ['ID', 'Ref No', 'Title', 'Category', 'Priority', 'Status', 'Location', 'Ward', 'Assigned To', 'Created', 'Reporter'],
+      ...issuesToExport.map(issue => [
         issue.id,
+        issue.referenceNumber || `Issue-${issue.id}`,
         `"${issue.title}"`,
         issue.category.replace('_', ' '),
         issue.priority,
@@ -335,10 +389,11 @@ export default function OfficialDashboard() {
         
         toast({
           title: "Success",
-          description: `Report sent to ${exportEmail}`,
+          description: `Report (${exportDescription}) sent to ${exportEmail}`,
         });
         setShowExportModal(false);
         setExportEmail("");
+        setSelectedTickets(new Set());
       } catch (error) {
         toast({
           title: "Error",
@@ -360,9 +415,10 @@ export default function OfficialDashboard() {
 
       toast({
         title: "Success",
-        description: "Report downloaded successfully",
+        description: `Report (${exportDescription}) downloaded successfully`,
       });
       setShowExportModal(false);
+      setSelectedTickets(new Set());
     }
   };
 
@@ -507,6 +563,34 @@ export default function OfficialDashboard() {
                   className="pl-10"
                 />
               </div>
+
+              {/* Selection Summary Bar */}
+              {selectedTickets.size > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm text-blue-800">
+                      <strong>{selectedTickets.size}</strong> ticket(s) selected
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearTicketSelection}
+                      className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                    >
+                      Clear Selection
+                    </Button>
+                  </div>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleExportReport}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Export Selected
+                  </Button>
+                </div>
+              )}
             </div>
             
             <div className="flex items-center">
@@ -541,6 +625,20 @@ export default function OfficialDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={selectedTickets.size === filteredIssues.length && filteredIssues.length > 0}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                selectAllVisibleTickets();
+                              } else {
+                                clearTicketSelection();
+                              }
+                            }}
+                            className="h-4 w-4"
+                            title="Select all visible tickets"
+                          />
+                        </TableHead>
                         <TableHead>RefNo</TableHead>
                         <TableHead>Issue</TableHead>
                         <TableHead>Category</TableHead>
@@ -554,6 +652,13 @@ export default function OfficialDashboard() {
                     <TableBody>
                       {filteredIssues.slice(0, 10).map((issue) => (
                         <TableRow key={issue.id} className="hover:bg-gray-50">
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedTickets.has(issue.id)}
+                              onCheckedChange={() => toggleTicketSelection(issue.id)}
+                              className="h-4 w-4"
+                            />
+                          </TableCell>
                           <TableCell>
                             <div className="font-mono text-sm font-semibold text-blue-600">
                               {issue.referenceNumber}
@@ -1027,6 +1132,36 @@ export default function OfficialDashboard() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {/* Export Scope Selection */}
+            <div className="space-y-4">
+              <Label htmlFor="export-scope">What to Export</Label>
+              <Select value={exportScope} onValueChange={setExportScope}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select export scope" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current">
+                    Currently Displayed Issues ({filteredIssues.length} items)
+                  </SelectItem>
+                  <SelectItem value="all">
+                    All Issues ({issues.length} items)
+                  </SelectItem>
+                  <SelectItem value="selected">
+                    Selected Tickets ({selectedTickets.size} items)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Show info about selected scope */}
+            {exportScope === "selected" && selectedTickets.size === 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                <p className="text-sm text-yellow-800">
+                  No tickets selected. Please select tickets from the table to export them.
+                </p>
+              </div>
+            )}
+            
             <div className="space-y-4">
               <Label htmlFor="export-method">Delivery Method</Label>
               <Select value={exportMethod} onValueChange={setExportMethod}>
