@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Plus, Filter, MapPin } from "lucide-react";
+import { Plus, Filter, MapPin, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -177,6 +177,44 @@ export default function CitizenDashboard() {
       });
     },
   });
+
+  const handleRemovePhoto = async (issueId: number, photoIndex: number) => {
+    try {
+      const response = await fetch(`/api/issues/${issueId}/photos/${photoIndex}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to remove photo');
+      }
+      
+      toast({
+        title: "Photo removed",
+        description: "The photo has been removed successfully.",
+      });
+      
+      // Refresh the issues data
+      queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
+      
+      // Update the selected issue if it's the same one
+      if (selectedIssue && selectedIssue.id === issueId) {
+        const updatedResponse = await fetch(`/api/issues/${issueId}`);
+        if (updatedResponse.ok) {
+          const updatedIssue = await updatedResponse.json();
+          setSelectedIssue(updatedIssue);
+        }
+      }
+    } catch (error) {
+      console.error('Error removing photo:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to remove photo. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative overflow-hidden">
@@ -513,19 +551,67 @@ export default function CitizenDashboard() {
               </div>
 
               {selectedIssue.photos && selectedIssue.photos.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Photos</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {selectedIssue.photos.map((photo, index) => (
-                      <img
-                        key={index}
-                        src={photo}
-                        alt={`Issue photo ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Photos ({selectedIssue.photos.length})</Label>
+                    {selectedIssue.status === 'open' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => {
+                          // TODO: Add functionality to add more photos to existing issue
+                          toast({
+                            title: "Coming Soon",
+                            description: "Photo editing will be available soon",
+                          });
                         }}
-                      />
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Photos
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {selectedIssue.photos.map((photo, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={photo}
+                          alt={`Issue photo ${index + 1}`}
+                          className="w-full h-40 sm:h-48 object-cover rounded-lg border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder-image.png';
+                            e.currentTarget.className += ' opacity-50';
+                          }}
+                          onClick={() => {
+                            // Open photo in new window for full view
+                            window.open(photo, '_blank');
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-lg transition-all duration-200 flex items-center justify-center">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity text-center">
+                            <div className="bg-white bg-opacity-90 text-gray-800 px-3 py-1 rounded-md text-sm font-medium">
+                              Click to enlarge
+                            </div>
+                          </div>
+                        </div>
+                        <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                          Photo {index + 1}
+                        </div>
+                        {selectedIssue.status === 'open' && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 left-2 h-8 w-8 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemovePhoto(selectedIssue.id, index);
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>

@@ -55,22 +55,38 @@ export function IssueCard({ issue, showActions = true, onViewDetails, onRate, on
         
         {issue.photos && issue.photos.length > 0 && (
           <div className="mb-4">
-            <div className="flex space-x-2 overflow-x-auto">
-              {issue.photos.slice(0, 3).map((photo, index) => (
-                <img
-                  key={index}
-                  src={photo}
-                  alt={`Issue photo ${index + 1}`}
-                  className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
+            <h5 className="text-sm font-medium text-gray-700 mb-2">Photos ({issue.photos.length})</h5>
+            <div className="flex space-x-3 overflow-x-auto pb-2">
+              {issue.photos.slice(0, 4).map((photo, index) => (
+                <div key={index} className="relative group flex-shrink-0">
+                  <img
+                    src={photo}
+                    alt={`Issue photo ${index + 1}`}
+                    className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/placeholder-image.png';
+                      target.className += ' opacity-50';
+                    }}
+                    onClick={() => {
+                      // Open photo in new window for full view
+                      window.open(photo, '_blank');
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all duration-200 flex items-center justify-center">
+                    <span className="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 px-2 py-1 rounded">
+                      Click to enlarge
+                    </span>
+                  </div>
+                </div>
               ))}
-              {issue.photos.length > 3 && (
-                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-100 rounded-lg flex items-center justify-center text-xs sm:text-sm text-gray-600">
-                  +{issue.photos.length - 3}
+              {issue.photos.length > 4 && (
+                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 rounded-lg flex items-center justify-center text-xs sm:text-sm text-gray-600 flex-shrink-0 cursor-pointer hover:bg-gray-200 transition-colors"
+                     onClick={() => onViewDetails?.(issue)}>
+                  <div className="text-center">
+                    <div className="font-semibold">+{issue.photos.length - 4}</div>
+                    <div className="text-xs">more</div>
+                  </div>
                 </div>
               )}
             </div>

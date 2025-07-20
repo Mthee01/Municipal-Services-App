@@ -220,6 +220,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Remove photo from issue endpoint
+  app.delete("/api/issues/:id/photos/:photoIndex", async (req, res) => {
+    try {
+      const issueId = parseInt(req.params.id);
+      const photoIndex = parseInt(req.params.photoIndex);
+
+      console.log(`Removing photo ${photoIndex} from issue ${issueId}`);
+
+      const issue = await storage.getIssue(issueId);
+      if (!issue) {
+        return res.status(404).json({ message: "Issue not found" });
+      }
+
+      // Only allow photo removal for open issues
+      if (issue.status !== 'open') {
+        return res.status(400).json({ message: "Can only remove photos from open issues" });
+      }
+
+      // Check if photo index is valid
+      if (!issue.photos || photoIndex < 0 || photoIndex >= issue.photos.length) {
+        return res.status(400).json({ message: "Invalid photo index" });
+      }
+
+      // Remove the photo from the array
+      const updatedPhotos = issue.photos.filter((_, index) => index !== photoIndex);
+
+      const updatedIssue = await storage.updateIssue(issueId, {
+        photos: updatedPhotos
+      });
+
+      res.json({ message: "Photo removed successfully", issue: updatedIssue });
+    } catch (error) {
+      console.error("Error removing photo:", error);
+      res.status(500).json({ message: "Failed to remove photo" });
+    }
+  });
+
   // Issue notes endpoints  
   app.get("/api/issues/:id/notes", async (req, res) => {
     try {
