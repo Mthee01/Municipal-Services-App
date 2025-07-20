@@ -867,6 +867,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Forgot Password endpoint
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { identifier } = req.body;
+      
+      if (!identifier) {
+        return res.status(400).json({ message: "Email or phone number is required" });
+      }
+      
+      // Find user by email or phone
+      const users = await storage.getAllUsers();
+      const user = users.find(u => 
+        u.email === identifier || 
+        u.phone === identifier ||
+        u.username === identifier
+      );
+      
+      if (!user) {
+        // For security, don't reveal if user exists
+        return res.json({ 
+          success: true, 
+          message: "If an account exists with that information, reset instructions have been sent.",
+          sentTo: identifier.includes('@') ? 'email' : 'phone'
+        });
+      }
+      
+      // Generate temporary password and update user
+      const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+      await storage.updateUserPassword(user.id, tempPassword);
+      
+      // In real implementation, send email/SMS here
+      console.log(`Password reset for user ${user.username}: New temporary password is "${tempPassword}"`);
+      
+      res.json({ 
+        success: true, 
+        message: "Password reset instructions have been sent.",
+        sentTo: user.email ? 'email' : 'phone',
+        // For demo purposes, include the temporary password
+        tempPassword: tempPassword
+      });
+    } catch (error) {
+      console.error("Error in forgot password:", error);
+      res.status(500).json({ message: "Failed to process password reset request" });
+    }
+  });
+
+  // Forgot Username endpoint
+  app.post("/api/auth/forgot-username", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email address is required" });
+      }
+      
+      // Find user by email
+      const users = await storage.getAllUsers();
+      const user = users.find(u => u.email === email);
+      
+      if (!user) {
+        // For security, don't reveal if user exists
+        return res.json({ 
+          success: true, 
+          message: "If an account exists with that email, username has been sent."
+        });
+      }
+      
+      // In real implementation, send email here
+      console.log(`Username recovery for ${email}: Username is "${user.username}"`);
+      
+      res.json({ 
+        success: true, 
+        message: "Username has been sent to your email address.",
+        // For demo purposes, include the username
+        username: user.username
+      });
+    } catch (error) {
+      console.error("Error in forgot username:", error);
+      res.status(500).json({ message: "Failed to process username recovery request" });
+    }
+  });
+
   app.post("/api/admin/users", async (req, res) => {
     try {
       const userData = req.body;

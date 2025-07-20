@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 // import { ContactForm } from "@/components/contact-form";
@@ -34,8 +35,18 @@ const registerSchema = z.object({
   role: z.enum(["citizen", "call_centre_agent", "admin", "ward_councillor", "mayor", "tech_manager", "field_technician"]),
 });
 
+const forgotPasswordSchema = z.object({
+  identifier: z.string().min(1, "Email or phone number is required"),
+});
+
+const forgotUsernameSchema = z.object({
+  email: z.string().email("Valid email address is required"),
+});
+
 type LoginFormData = z.infer<typeof loginSchema>;
 type RegisterFormData = z.infer<typeof registerSchema>;
+type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>;
+type ForgotUsernameData = z.infer<typeof forgotUsernameSchema>;
 
 interface LandingPageProps {
   onLogin: (userRole: string) => void;
@@ -44,6 +55,8 @@ interface LandingPageProps {
 export default function LandingPage({ onLogin }: LandingPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showForgotUsername, setShowForgotUsername] = useState(false);
 
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -90,6 +103,20 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       phone: "",
       municipalityAccountNo: "",
       role: undefined as any, // Force user to make a selection
+    },
+  });
+
+  const forgotPasswordForm = useForm<ForgotPasswordData>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      identifier: "",
+    },
+  });
+
+  const forgotUsernameForm = useForm<ForgotUsernameData>({
+    resolver: zodResolver(forgotUsernameSchema),
+    defaultValues: {
+      email: "",
     },
   });
 
@@ -154,6 +181,62 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
 
   const onRegisterSubmit = (data: RegisterFormData) => {
     registerMutation.mutate(data);
+  };
+
+  // Forgot password mutation
+  const forgotPasswordMutation = useMutation({
+    mutationFn: async (data: ForgotPasswordData) => {
+      const response = await apiRequest("POST", "/api/auth/forgot-password", data);
+      if (!response.ok) throw new Error("Failed to send password reset instructions");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Password Reset Sent",
+        description: `Password reset instructions have been sent to your ${data.sentTo === 'email' ? 'email' : 'phone'}.`,
+      });
+      setShowForgotPassword(false);
+      forgotPasswordForm.reset();
+    },
+    onError: (error) => {
+      toast({
+        title: "Password Reset Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Forgot username mutation
+  const forgotUsernameMutation = useMutation({
+    mutationFn: async (data: ForgotUsernameData) => {
+      const response = await apiRequest("POST", "/api/auth/forgot-username", data);
+      if (!response.ok) throw new Error("Failed to send username reminder");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Username Sent",
+        description: "Your username has been sent to your email address.",
+      });
+      setShowForgotUsername(false);
+      forgotUsernameForm.reset();
+    },
+    onError: (error) => {
+      toast({
+        title: "Username Recovery Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onForgotPasswordSubmit = (data: ForgotPasswordData) => {
+    forgotPasswordMutation.mutate(data);
+  };
+
+  const onForgotUsernameSubmit = (data: ForgotUsernameData) => {
+    forgotUsernameMutation.mutate(data);
   };
 
   const features = [
@@ -435,6 +518,26 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                               t.login
                             )}
                           </Button>
+
+                          <div className="mt-4 space-y-2 text-center">
+                            <div className="flex justify-center space-x-4 text-sm">
+                              <button
+                                type="button"
+                                onClick={() => setShowForgotPassword(true)}
+                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                              >
+                                Forgot Password?
+                              </button>
+                              <span className="text-gray-400">|</span>
+                              <button
+                                type="button"
+                                onClick={() => setShowForgotUsername(true)}
+                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                              >
+                                Forgot Username?
+                              </button>
+                            </div>
+                          </div>
                         </form>
                       </Form>
 
@@ -685,6 +788,104 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
         </div>
       </footer>
 
+      {/* Forgot Password Dialog */}
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reset Your Password</DialogTitle>
+            <DialogDescription>
+              Enter your email address or phone number and we'll send you instructions to reset your password.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...forgotPasswordForm}>
+            <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
+              <FormField
+                control={forgotPasswordForm.control}
+                name="identifier"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email or Phone Number</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter your email address or phone number" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex space-x-2">
+                <Button 
+                  type="submit" 
+                  disabled={forgotPasswordMutation.isPending}
+                  className="flex-1"
+                >
+                  {forgotPasswordMutation.isPending ? "Sending..." : "Send Reset Instructions"}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowForgotPassword(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Forgot Username Dialog */}
+      <Dialog open={showForgotUsername} onOpenChange={setShowForgotUsername}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Recover Your Username</DialogTitle>
+            <DialogDescription>
+              Enter your email address and we'll send you your username.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...forgotUsernameForm}>
+            <form onSubmit={forgotUsernameForm.handleSubmit(onForgotUsernameSubmit)} className="space-y-4">
+              <FormField
+                control={forgotUsernameForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="email"
+                        placeholder="Enter your email address" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex space-x-2">
+                <Button 
+                  type="submit" 
+                  disabled={forgotUsernameMutation.isPending}
+                  className="flex-1"
+                >
+                  {forgotUsernameMutation.isPending ? "Sending..." : "Send Username"}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowForgotUsername(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
