@@ -760,8 +760,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const formattedUsers = users.map(user => ({
         ...user,
-        status: "active",
-        lastActive: user.updatedAt ? user.updatedAt.toISOString() : null
+        status: user.status || "active",
+        lastActive: user.lastActive ? user.lastActive.toISOString() : user.updatedAt ? user.updatedAt.toISOString() : null
       }));
       
       res.json(formattedUsers);
@@ -782,7 +782,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const stats = {
         totalUsers: users.length,
-        activeUsers: users.length, // All users are considered active for now
+        activeUsers: users.filter(u => (u.status || "active") === "active").length,
         totalIssues: issues.length,
         resolvedIssues: resolvedIssues.length,
         pendingIssues: pendingIssues.length,
@@ -795,6 +795,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching admin stats:", error);
       res.status(500).json({ message: "Failed to fetch system statistics" });
+    }
+  });
+
+  // Update user status endpoint
+  app.patch("/api/admin/users/:id/status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      if (!["active", "inactive", "suspended"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status value" });
+      }
+      
+      await storage.updateUserStatus(parseInt(id), status);
+      res.json({ success: true, message: "User status updated successfully" });
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      res.status(500).json({ message: "Failed to update user status" });
     }
   });
 

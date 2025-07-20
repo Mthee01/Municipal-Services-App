@@ -332,6 +332,14 @@ Preferred communication style: Simple, everyday language.
 - Both call center agents and technical managers can now track technicians using identical interface
 - Consistent user experience across all management roles with unified tracking capabilities
 
+✓ July 20, 2025: FIXED ADMIN DASHBOARD USER STATUS MANAGEMENT
+- Added status and lastActive fields to users database schema for proper user management
+- Fixed admin API endpoints to correctly display and update user status (active/inactive/suspended)
+- Updated admin statistics to show accurate count of active users vs total users
+- Implemented proper user status toggle functionality with dropdown selection
+- Admin dashboard now correctly displays all active users with real status data
+- Enhanced user management with persistent status tracking and last activity timestamps
+
 ✓ June 24, 2025: Enhanced technician dashboard filtering
 - Resolved issues are now properly filtered out from technician view
 - Technicians only see active work assignments (open, assigned, in_progress)

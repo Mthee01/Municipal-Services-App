@@ -22,6 +22,8 @@ export const users = pgTable("users", {
   email: text("email"),
   phone: text("phone"),
   municipalityAccountNo: text("municipality_account_no"),
+  status: text("status").notNull().default("active"), // active, inactive, suspended
+  lastActive: timestamp("last_active").defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
