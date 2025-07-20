@@ -159,7 +159,7 @@ export default function FieldTechnicianDashboard() {
   const currentTechnicianId = 6;
 
   // Fetch assigned issues
-  const { data: assignedIssues = [], isLoading: issuesLoading } = useQuery({
+  const { data: assignedIssues = [], isLoading: issuesLoading } = useQuery<Issue[]>({
     queryKey: ['/api/issues', { technicianId: currentTechnicianId }],
   });
 
@@ -1158,7 +1158,7 @@ function FieldReportForm({
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => onRemovePhoto ? onRemovePhoto(index) : removePhoto(index)}
+                          onClick={() => onRemovePhoto && onRemovePhoto(index)}
                           className="h-8 w-8 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex-shrink-0"
                           title={`Remove ${file.name}`}
                         >
@@ -1255,7 +1255,6 @@ function FieldReportsHistory({ reports, isLoading }: { reports: FieldReport[]; i
         ) : !reports || reports.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             No reports submitted yet
-            {console.log('Showing no reports message, reports:', reports)}
           </div>
         ) : (
           <ScrollArea className="h-96">
