@@ -1181,10 +1181,13 @@ function FieldReportForm({
 function FieldReportsHistory({ reports, isLoading }: { reports: FieldReport[]; isLoading: boolean }) {
   const [expandedReport, setExpandedReport] = useState<number | null>(null);
 
-  // Debug logging
-  console.log('FieldReportsHistory - reports:', reports);
-  console.log('FieldReportsHistory - isLoading:', isLoading);
-  console.log('FieldReportsHistory - reports length:', reports?.length);
+  // Enhanced debug logging
+  console.log('=== FieldReportsHistory Component ===');
+  console.log('reports:', reports);
+  console.log('isLoading:', isLoading);
+  console.log('reports length:', reports?.length);
+  console.log('reports type:', typeof reports);
+  console.log('is array:', Array.isArray(reports));
 
   const toggleExpanded = (reportId: number) => {
     setExpandedReport(expandedReport === reportId ? null : reportId);
@@ -1248,29 +1251,29 @@ function FieldReportsHistory({ reports, isLoading }: { reports: FieldReport[]; i
                         </div>
                       </div>
                       
-                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 line-clamp-2">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 line-clamp-2">
                         {report.description}
                       </p>
                       
+                      {/* Consolidated Report Preview */}
+                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-2">
+                        <div className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">Consolidated Report</div>
+                        <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
+                          <div><span className="font-medium">Findings:</span> {report.findings?.substring(0, 50)}...</div>
+                          <div><span className="font-medium">Actions:</span> {report.actionsTaken?.substring(0, 50)}...</div>
+                          <div><span className="font-medium">Materials:</span> {report.materialsUsed?.slice(0, 2).join(', ')}{report.materialsUsed?.length > 2 ? '...' : ''}</div>
+                        </div>
+                      </div>
+                      
                       <div className="flex items-center gap-4 text-xs text-gray-500">
-                        {report.findings && (
-                          <span className="flex items-center gap-1">
-                            <FileText className="w-3 h-3" />
-                            Findings
-                          </span>
-                        )}
-                        {report.actionsTaken && (
-                          <span className="flex items-center gap-1">
-                            <Wrench className="w-3 h-3" />
-                            Actions
-                          </span>
-                        )}
-                        {report.materialsUsed && report.materialsUsed.length > 0 && (
-                          <span className="flex items-center gap-1">
-                            <Package className="w-3 h-3" />
-                            {report.materialsUsed.length} Materials
-                          </span>
-                        )}
+                        <span className="flex items-center gap-1">
+                          <FileText className="w-3 h-3" />
+                          Details
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Package className="w-3 h-3" />
+                          {report.materialsUsed?.length || 0} Items
+                        </span>
                         {report.photos && report.photos.length > 0 && (
                           <span className="flex items-center gap-1">
                             <Camera className="w-3 h-3" />
@@ -1283,65 +1286,82 @@ function FieldReportsHistory({ reports, isLoading }: { reports: FieldReport[]; i
                     {/* Detailed View (Expanded) */}
                     {isExpanded && (
                       <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-700">
-                        <div className="pt-4 space-y-4">
-                          <div>
-                            <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">Full Description</h4>
-                            <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                              {report.description}
-                            </p>
-                          </div>
-
-                          {report.findings && (
+                        <div className="pt-4">
+                          <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-3">Complete Field Report</h4>
+                          
+                          {/* Consolidated Report Format */}
+                          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg space-y-4">
+                            
+                            {/* Description */}
                             <div>
-                              <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">Findings</h4>
-                              <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                                {report.findings}
-                              </p>
+                              <h5 className="font-medium text-xs text-gray-600 dark:text-gray-300 mb-2">DESCRIPTION</h5>
+                              <p className="text-sm text-gray-700 dark:text-gray-300">{report.description}</p>
                             </div>
-                          )}
 
-                          {report.actionsTaken && (
-                            <div>
-                              <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">Actions Taken</h4>
-                              <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                                {report.actionsTaken}
-                              </p>
-                            </div>
-                          )}
+                            {/* Findings */}
+                            {report.findings && (
+                              <div>
+                                <h5 className="font-medium text-xs text-gray-600 dark:text-gray-300 mb-2">FINDINGS</h5>
+                                <p className="text-sm text-gray-700 dark:text-gray-300">{report.findings}</p>
+                              </div>
+                            )}
 
-                          {report.materialsUsed && report.materialsUsed.length > 0 && (
-                            <div>
-                              <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">Materials Used</h4>
-                              <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                                <ul className="text-sm text-gray-700 dark:text-gray-300 list-disc list-inside space-y-1">
+                            {/* Actions Taken */}
+                            {report.actionsTaken && (
+                              <div>
+                                <h5 className="font-medium text-xs text-gray-600 dark:text-gray-300 mb-2">ACTIONS TAKEN</h5>
+                                <p className="text-sm text-gray-700 dark:text-gray-300">{report.actionsTaken}</p>
+                              </div>
+                            )}
+
+                            {/* Materials Used */}
+                            {report.materialsUsed && report.materialsUsed.length > 0 && (
+                              <div>
+                                <h5 className="font-medium text-xs text-gray-600 dark:text-gray-300 mb-2">MATERIALS USED</h5>
+                                <div className="flex flex-wrap gap-2">
                                   {report.materialsUsed.map((material, index) => (
-                                    <li key={index}>{material}</li>
+                                    <span key={index} className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs">
+                                      {material}
+                                    </span>
                                   ))}
-                                </ul>
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
 
-                          {report.nextSteps && (
-                            <div>
-                              <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">Next Steps</h4>
-                              <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                                {report.nextSteps}
-                              </p>
-                            </div>
-                          )}
-
-                          {report.photos && report.photos.length > 0 && (
-                            <div>
-                              <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">Attached Photos</h4>
-                              <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                                <Camera className="w-4 h-4 text-blue-500" />
-                                <span className="text-sm text-gray-700 dark:text-gray-300">
-                                  {report.photos.length} photo(s) attached to this report
-                                </span>
+                            {/* Photos */}
+                            {report.photos && report.photos.length > 0 && (
+                              <div>
+                                <h5 className="font-medium text-xs text-gray-600 dark:text-gray-300 mb-2">ATTACHED PHOTOS</h5>
+                                <div className="grid grid-cols-2 gap-3">
+                                  {report.photos.map((photo, index) => (
+                                    <div key={index} className="relative">
+                                      <img
+                                        src={photo}
+                                        alt={`Report photo ${index + 1}`}
+                                        className="w-full h-32 object-cover rounded border border-gray-300 dark:border-gray-600"
+                                        onError={(e) => {
+                                          // Fallback for missing images
+                                          (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEwIiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UGhvdG88L3RleHQ+PC9zdmc+';
+                                        }}
+                                      />
+                                      <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
+                                        {index + 1}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+
+                            {/* Next Steps */}
+                            {report.nextSteps && (
+                              <div>
+                                <h5 className="font-medium text-xs text-gray-600 dark:text-gray-300 mb-2">NEXT STEPS</h5>
+                                <p className="text-sm text-gray-700 dark:text-gray-300 italic">{report.nextSteps}</p>
+                              </div>
+                            )}
+
+                          </div>
                         </div>
                       </div>
                     )}
