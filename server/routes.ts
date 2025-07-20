@@ -56,18 +56,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { username, password } = req.body;
       
-      // Simple authentication - in production this would use proper authentication
-      if (password === "password") {
-        const user = await storage.getUserByUsername(username);
-        if (user) {
-          res.json({ success: true, user });
-        } else {
-          res.status(401).json({ message: "Invalid credentials" });
-        }
+      const user = await storage.getUserByUsername(username);
+      if (user && user.password === password) {
+        res.json({ success: true, user });
       } else {
         res.status(401).json({ message: "Invalid credentials" });
       }
     } catch (error) {
+      console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
     }
   });
