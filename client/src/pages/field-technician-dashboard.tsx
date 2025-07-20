@@ -163,23 +163,44 @@ export default function FieldTechnicianDashboard() {
     queryKey: ['/api/issues', { technicianId: currentTechnicianId }],
   });
 
-  // Fetch field reports
+  // Fetch field reports with explicit error handling
   const { data: fieldReports, isLoading: reportsLoading, error: reportsError } = useQuery<FieldReport[]>({
     queryKey: ['/api/field-reports', currentTechnicianId],
     queryFn: async () => {
-      console.log('Fetching field reports for technician:', currentTechnicianId);
-      const response = await fetch(`/api/field-reports?technicianId=${currentTechnicianId}`);
+      console.log('=== FETCHING FIELD REPORTS ===');
+      console.log('Technician ID:', currentTechnicianId);
+      
+      if (!currentTechnicianId) {
+        throw new Error('No technician ID available');
+      }
+      
+      const url = `/api/field-reports?technicianId=${currentTechnicianId}`;
+      console.log('Request URL:', url);
+      
+      const response = await fetch(url);
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status}`);
+      }
+      
       const data = await response.json();
-      console.log('Field reports API response:', data);
+      console.log('Raw API response:', data);
+      console.log('Response is array:', Array.isArray(data));
+      console.log('Response length:', data?.length);
+      
       return data;
     },
-    refetchInterval: 5000, // Refetch every 5 seconds to get latest reports
+    enabled: !!currentTechnicianId, // Only run query when we have a technician ID
+    refetchInterval: 5000,
   });
 
-  // Additional debugging
-  console.log('fieldReports state:', fieldReports);
+  // Enhanced debugging
+  console.log('=== QUERY STATE ===');
+  console.log('fieldReports:', fieldReports);
   console.log('reportsLoading:', reportsLoading);
   console.log('reportsError:', reportsError);
+  console.log('currentTechnicianId:', currentTechnicianId);
 
   // Fetch parts orders
   const { data: partsOrders = [], isLoading: ordersLoading } = useQuery({
@@ -683,7 +704,7 @@ export default function FieldTechnicianDashboard() {
                 onRemovePhoto={removePhoto}
               />
               <FieldReportsHistory
-                reports={fieldReports || []}
+                reports={Array.isArray(fieldReports) ? fieldReports : []}
                 isLoading={reportsLoading}
               />
             </div>
@@ -1188,6 +1209,23 @@ function FieldReportsHistory({ reports, isLoading }: { reports: FieldReport[]; i
   console.log('reports length:', reports?.length);
   console.log('reports type:', typeof reports);
   console.log('is array:', Array.isArray(reports));
+  console.log('Component will render:', isLoading ? 'LOADING' : (!reports || reports.length === 0) ? 'NO REPORTS' : 'REPORTS LIST');
+  
+  // Log each individual report
+  if (reports && reports.length > 0) {
+    console.log('Individual reports:');
+    reports.forEach((report, index) => {
+      console.log(`Report ${index + 1}:`, {
+        id: report.id,
+        type: report.reportType,
+        description: report.description?.substring(0, 50),
+        hasFindings: !!report.findings,
+        hasActions: !!report.actionsTaken,
+        materialsCount: report.materialsUsed?.length || 0,
+        photosCount: report.photos?.length || 0
+      });
+    });
+  }
 
   const toggleExpanded = (reportId: number) => {
     setExpandedReport(expandedReport === reportId ? null : reportId);
