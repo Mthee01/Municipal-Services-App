@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { X, MapPin, Camera, Plus, List } from "lucide-react";
+import { X, MapPin, Camera, Plus, List, CameraIcon, Upload, StopCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,8 +38,12 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
   const [photos, setPhotos] = useState<File[]>([]);
   const [locationLoading, setLocationLoading] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -180,6 +184,99 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
   const removePhoto = (index: number) => {
     setPhotos(photos.filter((_, i) => i !== index));
   };
+
+  // Camera functionality
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: 'environment', // Use back camera on mobile
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+      setCameraStream(stream);
+      setShowCamera(true);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      toast({
+        title: "Camera access denied",
+        description: "Please allow camera access to take photos",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+
+    if (!context) return;
+
+    // Set canvas dimensions to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    // Draw video frame to canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Convert canvas to blob
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const timestamp = Date.now();
+        const file = new File([blob], `camera-photo-${timestamp}.jpg`, {
+          type: 'image/jpeg',
+          lastModified: timestamp,
+        });
+
+        if (photos.length >= 5) {
+          toast({
+            title: "Maximum photos reached",
+            description: "You can upload up to 5 photos only",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setPhotos([...photos, file]);
+        toast({
+          title: "Photo captured",
+          description: "Photo added successfully",
+        });
+      }
+    }, 'image/jpeg', 0.8);
+  };
+
+  // Cleanup camera on component unmount or when form closes
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraStream]);
+
+  // Stop camera when form is closed
+  useEffect(() => {
+    if (!isOpen && cameraStream) {
+      stopCamera();
+    }
+  }, [isOpen, cameraStream]);
 
   // Common South African locations for quick selection
   const commonLocations = [
@@ -564,30 +661,91 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
 
               {/* Photo Upload */}
               <div>
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">Upload Photos</Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-green-400 transition-colors cursor-pointer">
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                    id="photo-upload"
-                  />
-                  <label htmlFor="photo-upload" className="cursor-pointer">
-                    <Camera className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <p className="text-gray-600 font-medium">Click to upload photos or drag and drop</p>
-                    <p className="text-sm text-gray-500 mt-1">PNG, JPG up to 10MB each (max 5 photos)</p>
-                  </label>
-                </div>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Add Photos ({photos.length}/5)
+                </Label>
                 
+                {!showCamera ? (
+                  <>
+                    {/* Photo options */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      {/* Upload from device */}
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors cursor-pointer">
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                          id="photo-upload"
+                        />
+                        <label htmlFor="photo-upload" className="cursor-pointer">
+                          <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                          <p className="text-gray-600 font-medium text-sm">Upload from device</p>
+                          <p className="text-xs text-gray-500 mt-1">Select photos</p>
+                        </label>
+                      </div>
+                      
+                      {/* Take photo with camera */}
+                      <div 
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors cursor-pointer"
+                        onClick={startCamera}
+                      >
+                        <CameraIcon className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                        <p className="text-gray-600 font-medium text-sm">Take photo</p>
+                        <p className="text-xs text-gray-500 mt-1">Use camera</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 text-center">PNG, JPG up to 10MB each (max 5 photos)</p>
+                  </>
+                ) : (
+                  /* Camera interface */
+                  <div className="space-y-4">
+                    <div className="relative bg-black rounded-lg overflow-hidden">
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full h-64 md:h-80 object-cover"
+                      />
+                      <canvas
+                        ref={canvasRef}
+                        className="hidden"
+                      />
+                    </div>
+                    
+                    <div className="flex justify-center space-x-4">
+                      <Button
+                        type="button"
+                        onClick={capturePhoto}
+                        className="bg-green-600 hover:bg-green-700"
+                        disabled={photos.length >= 5}
+                      >
+                        <Camera className="h-4 w-4 mr-2" />
+                        Capture Photo
+                      </Button>
+                      
+                      <Button
+                        type="button"
+                        onClick={stopCamera}
+                        variant="outline"
+                      >
+                        <StopCircle className="h-4 w-4 mr-2" />
+                        Close Camera
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Display uploaded/captured photos */}
                 {photos.length > 0 && (
                   <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
                     {photos.map((photo, index) => (
                       <div key={index} className="relative">
                         <img
                           src={URL.createObjectURL(photo)}
-                          alt={`Upload ${index + 1}`}
+                          alt={`Photo ${index + 1}`}
                           className="w-full h-24 object-cover rounded-lg"
                         />
                         <Button
