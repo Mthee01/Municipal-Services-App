@@ -695,7 +695,7 @@ export default function FieldTechnicianDashboard() {
           <TabsContent value="field-reports" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
               <FieldReportForm
-                onSubmit={(data) => createReportMutation.mutate(data)}
+                onSubmit={(data: any) => createReportMutation.mutate(data)}
                 isSubmitting={createReportMutation.isPending}
                 assignedIssues={assignedIssues}
                 photoCapture={photoCapture}
@@ -714,7 +714,7 @@ export default function FieldTechnicianDashboard() {
           <TabsContent value="parts-ordering" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
               <PartsOrderForm
-                onSubmit={(data) => createOrderMutation.mutate(data)}
+                onSubmit={(data: any) => createOrderMutation.mutate(data)}
                 isSubmitting={createOrderMutation.isPending}
                 partsInventory={partsInventory}
               />
@@ -729,7 +729,7 @@ export default function FieldTechnicianDashboard() {
           <TabsContent value="communication" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
               <CommunicationPanel
-                onSendMessage={(data) => sendMessageMutation.mutate(data)}
+                onSendMessage={(data: any) => sendMessageMutation.mutate(data)}
                 isSending={sendMessageMutation.isPending}
               />
               <MessagesHistory
@@ -1146,7 +1146,7 @@ function FieldReportForm({
                   </Button>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {photoCapture.map((file, index) => (
+                  {photoCapture.map((file: File, index: number) => (
                     <div key={index} className="relative bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
