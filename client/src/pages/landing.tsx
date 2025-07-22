@@ -320,22 +320,16 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              {/* Demo Logo replaces shield icon */}
+              {/* MTN Logo */}
               <div className="w-10 h-10 rounded-xl overflow-hidden">
-                <svg viewBox="0 0 100 100" className="w-full h-full">
-                  <defs>
-                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#22c55e" />
-                      <stop offset="100%" stopColor="#15803d" />
-                    </linearGradient>
-                  </defs>
-                  <circle cx="50" cy="50" r="45" fill="url(#logoGradient)" />
-                  <path d="M30 40 L50 25 L70 40 L70 65 L50 80 L30 65 Z" fill="white" opacity="0.9" />
-                  <circle cx="50" cy="50" r="8" fill="#22c55e" />
-                </svg>
+                <img 
+                  src="/attached_assets/mtn-logo_1753216420020.jpg" 
+                  alt="MTN Logo"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-black">ADA Smart Munic</h1>
+                <h1 className="text-xl font-bold text-black">Smart Munic</h1>
                 <p className="text-xs text-gray-600">Citizen Engagement Platform</p>
               </div>
             </div>

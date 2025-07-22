@@ -35,7 +35,7 @@ export function PaymentSection() {
       <section className="py-12 bg-civic-gray">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">ADA Smart Munic Payments</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Smart Munic Payments</h3>
             <p className="text-gray-600">Loading payment information...</p>
           </div>
         </div>
@@ -47,7 +47,7 @@ export function PaymentSection() {
     <section className="py-12 bg-civic-gray">
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-8">
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">ADA Smart Munic Payments</h3>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">Smart Munic Payments</h3>
           <p className="text-gray-600">Pay your bills and fines conveniently online</p>
         </div>
         

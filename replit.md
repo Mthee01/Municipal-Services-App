@@ -369,5 +369,6 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- July 22, 2025: Changed app name from "ADA Smart Munic" to "Smart Munic" and integrated MTN logo
 - June 23, 2025: Initial setup
 - June 24, 2025: Enhanced technician workflow and filtering

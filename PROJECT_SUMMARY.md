@@ -1,4 +1,4 @@
-# ADA Smart Munic - Project Summary
+# Smart Munic - Project Summary
 
 ## Project Overview
 ADA Smart Munic is a comprehensive citizen engagement platform for South African municipalities, providing seamless communication and intelligent service delivery. The platform enables citizens to report issues, track services, make payments, and purchase utility vouchers while providing municipal officials with analytics, technician management, and performance tracking.

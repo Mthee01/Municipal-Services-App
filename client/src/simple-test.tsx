@@ -8,7 +8,7 @@ function SimpleTest() {
     <div className="min-h-screen bg-gray-50 p-8">
       <Card className="max-w-md mx-auto">
         <CardHeader>
-          <CardTitle>ADA Smart Munic - Test</CardTitle>
+          <CardTitle>Smart Munic - Test</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-gray-600 mb-4">

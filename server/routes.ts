@@ -76,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Root API endpoint to prevent 403 errors
   app.get("/api", (req, res) => {
     res.json({ 
-      message: "ADA Smart Munic API", 
+      message: "Smart Munic API", 
       version: "1.0.0",
       status: "running",
       timestamp: new Date().toISOString()
