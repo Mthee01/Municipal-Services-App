@@ -2422,4 +2422,4 @@ export class DatabaseStorage implements IStorage {
   async getDepartmentStats(department?: string): Promise<any> { return {}; }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
