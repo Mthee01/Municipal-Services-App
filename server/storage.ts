@@ -2,6 +2,7 @@ import {
   users, issues, payments, teams, technicians, wards, issueUpdates, vouchers,
   fieldReports, partsInventory, partsOrders, technicianMessages, technicianLocations,
   chatMessages, whatsappMessages, whatsappConversations, issueNotes, issueEscalations,
+  jobCards,
   type User, type InsertUser, type Issue, type InsertIssue, 
   type Payment, type InsertPayment, type Team, type InsertTeam,
   type Technician, type InsertTechnician, type Ward, type InsertWard,
@@ -10,7 +11,8 @@ import {
   type PartsOrder, type InsertPartsOrder, type TechnicianMessage, type InsertTechnicianMessage,
   type TechnicianLocation, type InsertTechnicianLocation, type ChatMessage, type InsertChatMessage,
   type WhatsappMessage, type InsertWhatsappMessage, type WhatsappConversation, type InsertWhatsappConversation,
-  type IssueNote, type InsertIssueNote, type IssueEscalation, type InsertIssueEscalation
+  type IssueNote, type InsertIssueNote, type IssueEscalation, type InsertIssueEscalation,
+  type JobCard, type InsertJobCard
 } from "@shared/schema";
 
 export interface IStorage {
@@ -134,6 +136,14 @@ export interface IStorage {
   // Issue escalation operations
   getIssueEscalations(issueId: number): Promise<IssueEscalation[]>;
   createIssueEscalation(escalation: InsertIssueEscalation): Promise<IssueEscalation>;
+
+  // Job card operations  
+  getJobCards(): Promise<JobCard[]>;
+  getJobCard(id: number): Promise<JobCard | undefined>;
+  getJobCardByIssueId(issueId: number): Promise<JobCard | undefined>;
+  getJobCardsByTechnician(technicianId: number): Promise<JobCard[]>;
+  createJobCard(jobCard: InsertJobCard): Promise<JobCard>;
+  updateJobCard(id: number, updates: Partial<JobCard>): Promise<JobCard | undefined>;
 
   // Analytics operations
   getWardStats(wardNumber?: string): Promise<any>;
@@ -2189,6 +2199,42 @@ export class DatabaseStorage implements IStorage {
   async getLatestTechnicianLocation(technicianId: number): Promise<TechnicianLocation | undefined> { return undefined; }
 
   async getActiveWorkSessions(): Promise<{ issueId: number; arrivalTime: Date; isActive: boolean }[]> { return []; }
+
+  // Job card operations implementation
+  async getJobCards(): Promise<JobCard[]> {
+    return await db.select().from(jobCards);
+  }
+
+  async getJobCard(id: number): Promise<JobCard | undefined> {
+    const [jobCard] = await db.select().from(jobCards).where(eq(jobCards.id, id));
+    return jobCard || undefined;
+  }
+
+  async getJobCardByIssueId(issueId: number): Promise<JobCard | undefined> {
+    const [jobCard] = await db.select().from(jobCards).where(eq(jobCards.issueId, issueId));
+    return jobCard || undefined;
+  }
+
+  async getJobCardsByTechnician(technicianId: number): Promise<JobCard[]> {
+    return await db.select().from(jobCards).where(eq(jobCards.technicianId, technicianId));
+  }
+
+  async createJobCard(jobCard: InsertJobCard): Promise<JobCard> {
+    const [createdJobCard] = await db
+      .insert(jobCards)
+      .values(jobCard)
+      .returning();
+    return createdJobCard;
+  }
+
+  async updateJobCard(id: number, updates: Partial<JobCard>): Promise<JobCard | undefined> {
+    const [updatedJobCard] = await db
+      .update(jobCards)
+      .set(updates)
+      .where(eq(jobCards.id, id))
+      .returning();
+    return updatedJobCard || undefined;
+  }
 
   async getChatMessages(sessionId: string): Promise<ChatMessage[]> { return []; }
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> { throw new Error("Not implemented"); }

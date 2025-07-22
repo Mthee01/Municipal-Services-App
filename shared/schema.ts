@@ -131,6 +131,25 @@ export const issueEscalations = pgTable("issue_escalations", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const jobCards = pgTable("job_cards", {
+  id: serial("id").primaryKey(),
+  issueId: integer("issue_id").notNull().unique(),
+  technicianId: integer("technician_id").notNull(),
+  jobCardNumber: text("job_card_number").notNull().unique(),
+  assignedBy: text("assigned_by").notNull(),
+  assignedByRole: text("assigned_by_role").notNull(),
+  estimatedHours: integer("estimated_hours"),
+  priority: text("priority").notNull().default("medium"),
+  specialInstructions: text("special_instructions"),
+  materialsRequired: text("materials_required").array(),
+  skillsRequired: text("skills_required").array(),
+  safetyNotes: text("safety_notes"),
+  status: text("status").notNull().default("assigned"), // assigned, in_progress, completed, cancelled
+  assignedAt: timestamp("assigned_at").notNull().defaultNow(),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+});
+
 export const vouchers = pgTable("vouchers", {
   id: serial("id").primaryKey(),
   type: text("type").notNull(), // water, electricity
@@ -341,6 +360,11 @@ export type IssueNote = typeof issueNotes.$inferSelect;
 export type InsertIssueNote = z.infer<typeof insertIssueNoteSchema>;
 export type IssueEscalation = typeof issueEscalations.$inferSelect;
 export type InsertIssueEscalation = z.infer<typeof insertIssueEscalationSchema>;
+
+// Job Card schemas
+const insertJobCardSchema = createInsertSchema(jobCards);
+export type JobCard = typeof jobCards.$inferSelect;
+export type InsertJobCard = z.infer<typeof insertJobCardSchema>;
 
 // Chat Messages Table
 export const chatMessages = pgTable("chat_messages", {

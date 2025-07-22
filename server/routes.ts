@@ -93,8 +93,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { status, category, ward, technicianId } = req.query;
       let issues;
 
+      console.log('Fetching issues with params:', { status, category, ward, technicianId });
+
       if (technicianId) {
-        issues = await storage.getIssuesByTechnician(parseInt(technicianId as string));
+        const id = parseInt(technicianId as string);
+        console.log(`Fetching issues for technician ${id}`);
+        issues = await storage.getIssuesByTechnician(id);
+        console.log(`Found ${issues.length} assigned issues for technician ${id}`);
       } else if (status) {
         issues = await storage.getIssuesByStatus(status as string);
       } else if (category) {
@@ -107,6 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(issues);
     } catch (error) {
+      console.error('Error fetching issues:', error);
       res.status(500).json({ message: "Failed to fetch issues" });
     }
   });
@@ -534,15 +540,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const technicianId = parseInt(req.params.technicianId);
       const issueId = parseInt(req.params.issueId);
+      const { assignedBy = "Tech Manager", assignedByRole = "tech_manager" } = req.body;
+      
+      console.log(`Assigning issue ${issueId} to technician ${technicianId}`);
+
+      // Get issue and technician details
+      const issue = await storage.getIssue(issueId);
+      const technician = await storage.getTechnician(technicianId);
+
+      if (!issue) {
+        return res.status(404).json({ message: "Issue not found" });
+      }
+      
+      if (!technician) {
+        return res.status(404).json({ message: "Technician not found" });
+      }
       
       const success = await storage.assignTechnicianToIssue(technicianId, issueId);
       
       if (!success) {
-        return res.status(404).json({ message: "Technician or issue not found" });
+        return res.status(404).json({ message: "Failed to assign technician" });
       }
+
+      // Generate unique job card number
+      const jobCardNumber = `JC-${Date.now().toString().slice(-6)}-${technicianId}`;
+
+      // Create job card automatically
+      const jobCardData = {
+        issueId,
+        technicianId,
+        jobCardNumber,
+        assignedBy,
+        assignedByRole,
+        priority: issue.priority || 'medium',
+        specialInstructions: `Work assigned for ${issue.category} issue: ${issue.title}`,
+        status: 'assigned' as const
+      };
+
+      const jobCard = await storage.createJobCard(jobCardData);
+      console.log(`Job card ${jobCard.jobCardNumber} created for issue ${issueId}`);
       
-      res.json({ message: "Technician assigned successfully" });
+      res.json({ 
+        message: "Technician assigned and job card created successfully",
+        jobCard: jobCard.jobCardNumber
+      });
     } catch (error) {
+      console.error("Assignment error:", error);
       res.status(500).json({ message: "Failed to assign technician" });
     }
   });
@@ -1359,22 +1402,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!issueId || !technicianId) {
         return res.status(400).json({ error: "Missing issueId or technicianId" });
       }
+
+      console.log(`SECURITY CHECK: Technician ${technicianId} requesting work start on issue ${issueId}`);
       
-      // Update issue status to in_progress and assign technician
-      const issue = await storage.updateIssue(issueId, {
-        status: 'in_progress',
-        assignedTo: technicianId,
-        updatedAt: new Date()
-      });
-      
+      // Get the issue first
+      const issue = await storage.getIssue(issueId);
       if (!issue) {
         return res.status(404).json({ error: "Issue not found" });
       }
+
+      // CRITICAL SECURITY CHECK: Verify technician is assigned to this issue
+      const isAssigned = issue.assignedTo == technicianId || issue.assignedTo === technicianId.toString();
+      if (!isAssigned) {
+        console.log(`AUTHORIZATION DENIED: Issue ${issueId} not assigned to technician ${technicianId}`);
+        return res.status(403).json({ 
+          error: "You can only start work on issues assigned to you. Please contact your manager for assignment." 
+        });
+      }
+
+      // Check if issue has a job card (required for work authorization)
+      const jobCard = await storage.getJobCardByIssueId(issueId);
+      if (!jobCard) {
+        console.log(`AUTHORIZATION DENIED: No job card found for issue ${issueId}`);
+        return res.status(403).json({ 
+          error: "This issue requires a job card before work can begin. Please contact your manager." 
+        });
+      }
+
+      console.log(`AUTHORIZATION SUCCESS: Job card ${jobCard.jobCardNumber} found, allowing work start`);
+
+      // Update issue status and job card
+      const updatedIssue = await storage.updateIssue(issueId, {
+        status: 'in_progress',
+        updatedAt: new Date()
+      });
+
+      // Update job card status
+      await storage.updateJobCard(jobCard.id, { 
+        status: 'in_progress',
+        startedAt: new Date()
+      });
       
-      res.json({ message: "Work session started", issue });
+      res.json({ 
+        message: "Work session started successfully", 
+        issue: updatedIssue,
+        jobCard: jobCard.jobCardNumber
+      });
     } catch (error) {
       console.error("Start work session error:", error);
-      res.status(400).json({ error: "Failed to start work session" });
+      res.status(500).json({ error: "Failed to start work session" });
     }
   });
 
