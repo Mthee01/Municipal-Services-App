@@ -321,12 +321,19 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
               {/* MTN Logo */}
-              <div className="w-10 h-10 rounded-xl overflow-hidden">
+              <div className="w-10 h-10 rounded-xl overflow-hidden bg-white p-1">
                 <img 
                   src="/attached_assets/mtn-logo_1753216420020.jpg" 
                   alt="MTN Logo"
                   className="w-full h-full object-contain"
+                  onError={(e) => {
+                    console.error('Logo failed to load:', e);
+                    // Fallback to text if image fails
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    (e.target as HTMLImageElement).nextElementSibling!.textContent = 'MTN';
+                  }}
                 />
+                <div className="hidden text-xs font-bold text-center">MTN</div>
               </div>
               <div>
                 <h1 className="text-xl font-bold text-black">Smart Munic</h1>

@@ -50,6 +50,10 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded files
   app.use('/uploads', express.static(uploadDir));
+  
+  // Serve attached assets
+  const attachedAssetsDir = path.join(process.cwd(), "attached_assets");
+  app.use('/attached_assets', express.static(attachedAssetsDir));
 
   // Basic authentication endpoint to resolve 401 errors
   app.post("/api/auth/login", async (req, res) => {
