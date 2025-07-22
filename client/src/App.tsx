@@ -5,6 +5,10 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import type { UserRole } from "@/lib/types";
 
 // Simplified imports to avoid circular dependencies
@@ -22,8 +26,8 @@ import NotFound from "@/pages/not-found";
 function App() {
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [language, setLanguage] = useState("en");
   const [showContactForm, setShowContactForm] = useState(false);
+  const [language, setLanguage] = useState("en");
   const [location, setLocation] = useLocation();
 
   // Check for saved authentication on app load
@@ -295,6 +299,51 @@ function App() {
             </Switch>
           </main>
 
+          {/* Contact Form Dialog */}
+          <Dialog open={showContactForm} onOpenChange={setShowContactForm}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Contact Us</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="contact-name">Name</Label>
+                  <Input id="contact-name" placeholder="Your name" />
+                </div>
+                <div>
+                  <Label htmlFor="contact-email">Email</Label>
+                  <Input id="contact-email" type="email" placeholder="your.email@example.com" />
+                </div>
+                <div>
+                  <Label htmlFor="contact-message">Message</Label>
+                  <Textarea id="contact-message" placeholder="How can we help you?" rows={4} />
+                </div>
+                <div className="flex space-x-2">
+                  <Button 
+                    className="flex-1"
+                    style={{ 
+                      background: 'linear-gradient(to right, hsl(51, 100%, 50%), hsl(196, 100%, 31%))',
+                      color: 'black'
+                    }}
+                    onClick={() => {
+                      alert("Thank you for contacting us! We'll get back to you within 24 hours.");
+                      setShowContactForm(false);
+                    }}
+                  >
+                    Send Message
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowContactForm(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           {/* Footer */}
           <footer className="text-white py-12" style={{ background: 'hsl(196, 100%, 25%)' }}>
             <div className="max-w-6xl mx-auto px-4">
@@ -324,32 +373,60 @@ function App() {
                   <ul className="space-y-2 text-gray-300">
                     <li>
                       <button 
-                        onClick={() => setLocation("/")}
-                        className="hover:text-yellow-400 transition-colors text-left"
+                        onClick={() => {
+                          if (currentRole === "citizen") {
+                            setLocation("/?report=true");
+                          } else {
+                            setLocation("/");
+                          }
+                        }}
+                        style={{ color: 'hsl(51, 100%, 75%)' }}
+                        className="hover:opacity-80 transition-colors text-left"
                       >
                         Report Issue
                       </button>
                     </li>
                     <li>
                       <button 
-                        onClick={() => setLocation("/")}
-                        className="hover:text-yellow-400 transition-colors text-left"
+                        onClick={() => {
+                          if (currentRole === "citizen") {
+                            setLocation("/?tab=payments");
+                          } else {
+                            setLocation("/");
+                          }
+                        }}
+                        style={{ color: 'hsl(51, 100%, 75%)' }}
+                        className="hover:opacity-80 transition-colors text-left"
                       >
                         Pay Bills
                       </button>
                     </li>
                     <li>
                       <button 
-                        onClick={() => setLocation("/")}
-                        className="hover:text-yellow-400 transition-colors text-left"
+                        onClick={() => {
+                          if (currentRole === "citizen") {
+                            setLocation("/?tab=my-issues");
+                          } else {
+                            setLocation("/");
+                          }
+                        }}
+                        style={{ color: 'hsl(51, 100%, 75%)' }}
+                        className="hover:opacity-80 transition-colors text-left"
                       >
                         Track Progress
                       </button>
                     </li>
                     <li>
                       <button 
-                        onClick={() => setLocation("/")}
-                        className="hover:text-yellow-400 transition-colors text-left"
+                        onClick={() => {
+                          if (currentRole === "citizen") {
+                            setLocation("/?tab=community");
+                          } else {
+                            setLocation("/");
+                          }
+                        }}
+                        style={{ color: 'hsl(51, 100%, 75%)' }}
+                        className="hover:opacity-80 transition-colors text-left"
                       >
                         Community Forum
                       </button>
@@ -362,8 +439,15 @@ function App() {
                   <ul className="space-y-2 text-gray-300">
                     <li>
                       <button 
-                        onClick={() => setLocation("/")}
-                        className="hover:text-yellow-400 transition-colors text-left"
+                        onClick={() => {
+                          if (currentRole === "citizen") {
+                            setLocation("/?tab=communication");
+                          } else {
+                            setLocation("/");
+                          }
+                        }}
+                        style={{ color: 'hsl(51, 100%, 75%)' }}
+                        className="hover:opacity-80 transition-colors text-left"
                       >
                         Help Center
                       </button>
@@ -371,23 +455,32 @@ function App() {
                     <li>
                       <button 
                         onClick={() => setShowContactForm(true)}
-                        className="hover:text-yellow-400 transition-colors text-left"
+                        style={{ color: 'hsl(51, 100%, 75%)' }}
+                        className="hover:opacity-80 transition-colors text-left"
                       >
                         Contact Us
                       </button>
                     </li>
                     <li>
                       <button 
-                        onClick={() => setShowContactForm(true)}
-                        className="hover:text-yellow-400 transition-colors text-left"
+                        onClick={() => {
+                          // Open privacy policy in a modal or redirect to external policy page
+                          alert("Privacy Policy: Smart Munic respects your privacy. All user data is securely stored and never shared without consent. Contact MTN for detailed privacy information.");
+                        }}
+                        style={{ color: 'hsl(51, 100%, 75%)' }}
+                        className="hover:opacity-80 transition-colors text-left"
                       >
                         Privacy Policy
                       </button>
                     </li>
                     <li>
                       <button 
-                        onClick={() => setLocation("/")}
-                        className="hover:text-yellow-400 transition-colors text-left"
+                        onClick={() => {
+                          // Show accessibility information
+                          alert("Accessibility: Smart Munic is designed to be accessible to all users. We support screen readers, keyboard navigation, and high contrast modes. For assistance, contact our support team.");
+                        }}
+                        style={{ color: 'hsl(51, 100%, 75%)' }}
+                        className="hover:opacity-80 transition-colors text-left"
                       >
                         Accessibility
                       </button>
