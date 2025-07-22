@@ -16,9 +16,9 @@
   --card-foreground: hsl(220, 85%, 15%);
   --border: hsl(20, 5.9%, 90%);
   --input: hsl(20, 5.9%, 90%);
-  --primary: hsl(147, 100%, 24%);
-  --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(60, 4.8%, 95.9%);
+  --primary: hsl(51, 100%, 50%);
+  --primary-foreground: hsl(0, 0%, 0%);
+  --secondary: hsl(196, 100%, 31%);
   --secondary-foreground: hsl(220, 85%, 15%);
   --accent: hsl(60, 4.8%, 95.9%);
   --accent-foreground: hsl(220, 85%, 15%);
@@ -27,12 +27,12 @@
   --ring: hsl(20, 14.3%, 4.1%);
   --radius: 0.5rem;
   
-  /* South African themed colors */
-  --sa-green: hsl(147, 100%, 24%);
-  --sa-gold: hsl(45, 100%, 53%);
-  --trust-blue: hsl(207, 90%, 54%);
-  --civic-gray: hsl(0, 0%, 96%);
-  --alert-orange: hsl(14, 100%, 57%);
+  /* MTN Brand Colors */
+  --mtn-yellow: hsl(51, 100%, 50%);
+  --mtn-blue: hsl(196, 100%, 31%);
+  --mtn-dark-blue: hsl(196, 100%, 25%);
+  --mtn-light-yellow: hsl(51, 100%, 85%);
+  --mtn-gray: hsl(0, 0%, 96%);
 }
 
 /* Hide scrollbar for mobile tabs */
@@ -70,9 +70,9 @@
   --card-foreground: hsl(0, 0%, 98%);
   --border: hsl(240, 3.7%, 15.9%);
   --input: hsl(240, 3.7%, 15.9%);
-  --primary: hsl(147, 100%, 24%);
-  --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(51, 100%, 50%);
+  --primary-foreground: hsl(0, 0%, 0%);
+  --secondary: hsl(196, 100%, 31%);
   --secondary-foreground: hsl(0, 0%, 98%);
   --accent: hsl(240, 3.7%, 15.9%);
   --accent-foreground: hsl(0, 0%, 98%);

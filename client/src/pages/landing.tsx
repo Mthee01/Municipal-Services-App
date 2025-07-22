@@ -316,7 +316,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-50 bg-red-100/90 backdrop-blur-md border-b border-red-200/50">
+      <nav className="relative z-50" style={{ backgroundColor: 'hsl(51, 100%, 50%)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
@@ -348,7 +348,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                     const loginSection = document.querySelector('.auth-section');
                     loginSection?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="text-black hover:text-green-600 transition-colors font-medium"
+                  className="text-black hover:opacity-80 transition-colors font-medium"
                 >
                   Login
                 </button>
@@ -359,9 +359,9 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
         </div>
         
         {/* Running Welcome Message - Full Width */}
-        <div className="bg-blue-100 border-t border-blue-200 py-2 overflow-hidden">
+        <div className="border-t py-2 overflow-hidden" style={{ backgroundColor: 'hsl(196, 100%, 85%)', borderColor: 'hsl(196, 100%, 75%)' }}>
           <div className="animate-marquee whitespace-nowrap">
-            <span className="text-sa-green font-medium text-sm">
+            <span className="font-medium text-sm" style={{ color: 'hsl(196, 100%, 25%)' }}>
               {t.welcomeMessage} • {t.welcomeMessage} • {t.welcomeMessage} • {t.welcomeMessage} • {t.welcomeMessage} • {t.welcomeMessage}
             </span>
           </div>
@@ -369,7 +369,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       </nav>
 
       {/* Hero Section */}
-      <div className="relative z-20 pt-16 pb-20">
+      <div className="relative z-20 pt-16 pb-20" style={{ background: 'linear-gradient(135deg, hsl(51, 100%, 92%) 0%, hsl(196, 100%, 92%) 100%)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Column - Hero Content */}
@@ -379,9 +379,9 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                   <span className="text-black">Transform Your</span>
                   <br />
                   <span 
-                    className="bg-gradient-to-r from-sa-green via-green-500 to-blue-600 bg-clip-text text-transparent"
+                    className="bg-gradient-to-r bg-clip-text text-transparent"
                     style={{
-                      backgroundImage: 'linear-gradient(135deg, hsl(142, 76%, 36%) 0%, hsl(158, 64%, 52%) 50%, hsl(217, 91%, 60%) 100%)'
+                      backgroundImage: 'linear-gradient(135deg, hsl(51, 100%, 50%) 0%, hsl(196, 100%, 31%) 100%)'
                     }}
                   >
                     Municipality
@@ -406,7 +406,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
 
             {/* Right Column - Auth Forms (Top Right) */}
             <div className="relative auth-section">
-              <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-sa-green/20 to-blue-500/20 rounded-full blur-2xl"></div>
+              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-2xl" style={{ backgroundImage: 'linear-gradient(135deg, hsl(51, 100%, 50%, 0.2) 0%, hsl(196, 100%, 31%, 0.2) 100%)' }}></div>
               <Card className="relative z-10 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-2xl">
                 <CardHeader className="text-center space-y-2">
                   <CardTitle className="text-2xl font-bold text-black">
@@ -503,8 +503,8 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                           <Button
                             type="submit"
                             style={{
-                              background: 'linear-gradient(to right, hsl(147, 100%, 24%), #16a34a)',
-                              color: 'white',
+                              background: 'linear-gradient(to right, hsl(51, 100%, 50%), hsl(196, 100%, 31%))',
+                              color: 'black',
                               border: 'none'
                             }}
                             className="w-full font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
@@ -512,7 +512,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                           >
                             {loginMutation.isPending ? (
                               <>
-                                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                                <div className="animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full mr-2" />
                                 Signing In...
                               </>
                             ) : (
@@ -525,7 +525,8 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                               <button
                                 type="button"
                                 onClick={() => setShowForgotPassword(true)}
-                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                                style={{ color: 'hsl(196, 100%, 31%)' }}
+                                className="hover:opacity-80 hover:underline transition-colors"
                               >
                                 Forgot Password?
                               </button>
@@ -533,7 +534,8 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                               <button
                                 type="button"
                                 onClick={() => setShowForgotUsername(true)}
-                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                                style={{ color: 'hsl(196, 100%, 31%)' }}
+                                className="hover:opacity-80 hover:underline transition-colors"
                               >
                                 Forgot Username?
                               </button>
