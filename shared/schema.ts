@@ -366,6 +366,32 @@ const insertJobCardSchema = createInsertSchema(jobCards);
 export type JobCard = typeof jobCards.$inferSelect;
 export type InsertJobCard = z.infer<typeof insertJobCardSchema>;
 
+// Completion Reports Table
+export const completionReports = pgTable("completion_reports", {
+  id: serial("id").primaryKey(),
+  issueId: integer("issue_id").notNull(),
+  technicianId: integer("technician_id").notNull(),
+  jobCardNumber: text("job_card_number").notNull(),
+  workCompleted: text("work_completed").notNull(),
+  materialsUsed: text("materials_used").array(),
+  timeTaken: integer("time_taken").notNull(), // in minutes
+  issuesFound: text("issues_found"),
+  recommendations: text("recommendations"),
+  photos: text("photos").array(),
+  customerSatisfaction: integer("customer_satisfaction"),
+  additionalNotes: text("additional_notes"),
+  completedAt: timestamp("completed_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCompletionReportSchema = createInsertSchema(completionReports).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type CompletionReport = typeof completionReports.$inferSelect;
+export type InsertCompletionReport = z.infer<typeof insertCompletionReportSchema>;
+
 // Chat Messages Table
 export const chatMessages = pgTable("chat_messages", {
   id: serial("id").primaryKey(),

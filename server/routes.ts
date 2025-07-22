@@ -562,8 +562,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Failed to assign technician" });
       }
 
-      // Generate unique job card number
-      const jobCardNumber = `JC-${Date.now().toString().slice(-6)}-${technicianId}`;
+      // Generate unique job card number with proper format
+      const timestamp = Date.now().toString();
+      const jobCardNumber = `JC-${timestamp.slice(-6)}-${String(technicianId).padStart(3, '0')}`;
 
       // Create job card automatically
       const jobCardData = {
@@ -1451,6 +1452,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Start work session error:", error);
       res.status(500).json({ error: "Failed to start work session" });
+    }
+  });
+
+  // Completion reports endpoints
+  app.get("/api/completion-reports", async (req, res) => {
+    try {
+      const { technicianId } = req.query;
+      
+      if (technicianId) {
+        const reports = await storage.getCompletionReportsByTechnician(parseInt(technicianId as string));
+        res.json(reports);
+      } else {
+        const reports = await storage.getCompletionReports();
+        res.json(reports);
+      }
+    } catch (error) {
+      console.error("Completion reports fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch completion reports" });
+    }
+  });
+
+  app.get("/api/completion-reports/:id", async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      const report = await storage.getCompletionReport(reportId);
+      
+      if (!report) {
+        return res.status(404).json({ error: "Completion report not found" });
+      }
+      
+      res.json(report);
+    } catch (error) {
+      console.error("Completion report fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch completion report" });
+    }
+  });
+
+  app.post("/api/completion-reports", async (req, res) => {
+    try {
+      const reportData = req.body;
+      console.log("Creating completion report:", reportData);
+      
+      const report = await storage.createCompletionReport(reportData);
+      
+      // Mark the associated issue as resolved
+      if (reportData.issueId) {
+        await storage.updateIssue(reportData.issueId, {
+          status: 'resolved',
+          resolvedAt: new Date(),
+          updatedAt: new Date()
+        });
+
+        // Update job card as completed
+        const jobCard = await storage.getJobCardByIssueId(reportData.issueId);
+        if (jobCard) {
+          await storage.updateJobCard(jobCard.id, {
+            status: 'completed',
+            completedAt: new Date()
+          });
+        }
+      }
+      
+      console.log("Completion report created successfully:", report.id);
+      res.status(201).json(report);
+    } catch (error) {
+      console.error("Completion report creation error:", error);
+      res.status(500).json({ error: "Failed to create completion report" });
     }
   });
 

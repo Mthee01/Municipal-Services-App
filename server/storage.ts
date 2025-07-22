@@ -2,7 +2,7 @@ import {
   users, issues, payments, teams, technicians, wards, issueUpdates, vouchers,
   fieldReports, partsInventory, partsOrders, technicianMessages, technicianLocations,
   chatMessages, whatsappMessages, whatsappConversations, issueNotes, issueEscalations,
-  jobCards,
+  jobCards, completionReports,
   type User, type InsertUser, type Issue, type InsertIssue, 
   type Payment, type InsertPayment, type Team, type InsertTeam,
   type Technician, type InsertTechnician, type Ward, type InsertWard,
@@ -12,7 +12,7 @@ import {
   type TechnicianLocation, type InsertTechnicianLocation, type ChatMessage, type InsertChatMessage,
   type WhatsappMessage, type InsertWhatsappMessage, type WhatsappConversation, type InsertWhatsappConversation,
   type IssueNote, type InsertIssueNote, type IssueEscalation, type InsertIssueEscalation,
-  type JobCard, type InsertJobCard
+  type JobCard, type InsertJobCard, type CompletionReport, type InsertCompletionReport
 } from "@shared/schema";
 
 export interface IStorage {
@@ -145,6 +145,13 @@ export interface IStorage {
   createJobCard(jobCard: InsertJobCard): Promise<JobCard>;
   updateJobCard(id: number, updates: Partial<JobCard>): Promise<JobCard | undefined>;
 
+  // Completion report operations
+  getCompletionReports(): Promise<CompletionReport[]>;
+  getCompletionReport(id: number): Promise<CompletionReport | undefined>;
+  getCompletionReportsByTechnician(technicianId: number): Promise<CompletionReport[]>;
+  getCompletionReportByIssue(issueId: number): Promise<CompletionReport | undefined>;
+  createCompletionReport(report: InsertCompletionReport): Promise<CompletionReport>;
+
   // Analytics operations
   getWardStats(wardNumber?: string): Promise<any>;
   getTechnicianPerformance(): Promise<any>;
@@ -172,6 +179,8 @@ export class MemStorage implements IStorage {
   private issueNotes: Map<number, IssueNote>;
   private issueEscalations: Map<number, IssueEscalation>;
   private activeWorkSessions: Map<number, { issueId: number; arrivalTime: Date; isActive: boolean }>;
+  private completionReports: Map<number, CompletionReport>;
+  private jobCards: Map<number, JobCard>;
   private currentUserId: number;
   private currentIssueId: number;
   private currentPaymentId: number;
@@ -190,6 +199,8 @@ export class MemStorage implements IStorage {
   private currentWhatsappConversationId: number;
   private currentIssueNoteId: number;
   private currentIssueEscalationId: number;
+  private currentCompletionReportId: number;
+  private currentJobCardId: number;
 
   constructor() {
     this.users = new Map();
@@ -211,6 +222,8 @@ export class MemStorage implements IStorage {
     this.issueNotes = new Map();
     this.issueEscalations = new Map();
     this.activeWorkSessions = new Map();
+    this.completionReports = new Map();
+    this.jobCards = new Map();
     this.currentUserId = 1;
     this.currentIssueId = 1;
     this.currentPaymentId = 1;
@@ -229,6 +242,8 @@ export class MemStorage implements IStorage {
     this.currentWhatsappConversationId = 1;
     this.currentIssueNoteId = 1;
     this.currentIssueEscalationId = 1;
+    this.currentCompletionReportId = 1;
+    this.currentJobCardId = 1;
 
     this.seedData();
     this.seedFieldTechnicianData();
@@ -1924,6 +1939,70 @@ export class MemStorage implements IStorage {
       if (status === 'closed') conversation.closedAt = new Date();
     }
   }
+
+  // Job card operations
+  async getJobCards(): Promise<JobCard[]> {
+    return Array.from(this.jobCards.values());
+  }
+
+  async getJobCard(id: number): Promise<JobCard | undefined> {
+    return this.jobCards.get(id);
+  }
+
+  async getJobCardByIssueId(issueId: number): Promise<JobCard | undefined> {
+    return Array.from(this.jobCards.values()).find(card => card.issueId === issueId);
+  }
+
+  async getJobCardsByTechnician(technicianId: number): Promise<JobCard[]> {
+    return Array.from(this.jobCards.values()).filter(card => card.technicianId === technicianId);
+  }
+
+  async createJobCard(jobCard: InsertJobCard): Promise<JobCard> {
+    const newJobCard: JobCard = {
+      ...jobCard,
+      id: this.currentJobCardId++,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.jobCards.set(newJobCard.id, newJobCard);
+    return newJobCard;
+  }
+
+  async updateJobCard(id: number, updates: Partial<JobCard>): Promise<JobCard | undefined> {
+    const jobCard = this.jobCards.get(id);
+    if (!jobCard) return undefined;
+    
+    const updatedJobCard = { ...jobCard, ...updates, updatedAt: new Date() };
+    this.jobCards.set(id, updatedJobCard);
+    return updatedJobCard;
+  }
+
+  // Completion report operations
+  async getCompletionReports(): Promise<CompletionReport[]> {
+    return Array.from(this.completionReports.values());
+  }
+
+  async getCompletionReport(id: number): Promise<CompletionReport | undefined> {
+    return this.completionReports.get(id);
+  }
+
+  async getCompletionReportsByTechnician(technicianId: number): Promise<CompletionReport[]> {
+    return Array.from(this.completionReports.values()).filter(report => report.technicianId === technicianId);
+  }
+
+  async getCompletionReportByIssue(issueId: number): Promise<CompletionReport | undefined> {
+    return Array.from(this.completionReports.values()).find(report => report.issueId === issueId);
+  }
+
+  async createCompletionReport(report: InsertCompletionReport): Promise<CompletionReport> {
+    const newReport: CompletionReport = {
+      ...report,
+      id: this.currentCompletionReportId++,
+      completedAt: new Date(),
+    };
+    this.completionReports.set(newReport.id, newReport);
+    return newReport;
+  }
 }
 
 import { db } from "./db";
@@ -2234,6 +2313,35 @@ export class DatabaseStorage implements IStorage {
       .where(eq(jobCards.id, id))
       .returning();
     return updatedJobCard || undefined;
+  }
+
+  // Completion report operations implementation
+  async getCompletionReports(): Promise<CompletionReport[]> {
+    return await db.select().from(completionReports).orderBy(desc(completionReports.createdAt));
+  }
+
+  async getCompletionReport(id: number): Promise<CompletionReport | undefined> {
+    const [report] = await db.select().from(completionReports).where(eq(completionReports.id, id));
+    return report || undefined;
+  }
+
+  async getCompletionReportsByTechnician(technicianId: number): Promise<CompletionReport[]> {
+    return await db.select().from(completionReports)
+      .where(eq(completionReports.technicianId, technicianId))
+      .orderBy(desc(completionReports.createdAt));
+  }
+
+  async getCompletionReportByIssue(issueId: number): Promise<CompletionReport | undefined> {
+    const [report] = await db.select().from(completionReports).where(eq(completionReports.issueId, issueId));
+    return report || undefined;
+  }
+
+  async createCompletionReport(report: InsertCompletionReport): Promise<CompletionReport> {
+    const [createdReport] = await db
+      .insert(completionReports)
+      .values(report)
+      .returning();
+    return createdReport;
   }
 
   async getChatMessages(sessionId: string): Promise<ChatMessage[]> { return []; }

@@ -22,8 +22,9 @@ import {
   CheckCircle, AlertCircle, PlayCircle, StopCircle, Upload, Send,
   Phone, User, Calendar, MapIcon, Settings, Bell, Search, Filter,
   Map, RotateCcw, ExternalLink, X, Trash2, ChevronDown, ChevronUp,
-  FileText
+  FileText, ClipboardCheck, Award, TrendingUp, Eye, Zap
 } from "lucide-react";
+import CompletionReportModal from "@/components/CompletionReportModal";
 
 interface Issue {
   id: number;
@@ -160,6 +161,11 @@ export default function FieldTechnicianDashboard() {
   // Current technician ID (would come from auth context in real app)
   const currentTechnicianId = 6;
 
+  // Additional state for completion reports and enhanced functionality
+  const [completionModalOpen, setCompletionModalOpen] = useState(false);
+  const [completingIssue, setCompletingIssue] = useState<any>(null);
+  const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
+
   // Function to send location update to server
   const sendLocationUpdate = async (latitude: number, longitude: number, accuracy?: number) => {
     try {
@@ -226,6 +232,18 @@ export default function FieldTechnicianDashboard() {
   // Fetch parts orders
   const { data: partsOrders = [], isLoading: ordersLoading } = useQuery({
     queryKey: ['/api/parts-orders', { technicianId: currentTechnicianId }],
+  });
+
+  // Fetch completion reports for current technician
+  const { data: completionReports = [], isLoading: completionReportsLoading } = useQuery({
+    queryKey: ["/api/completion-reports", currentTechnicianId],
+    queryFn: async () => {
+      const response = await fetch(`/api/completion-reports?technicianId=${currentTechnicianId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch completion reports");
+      }
+      return response.json();
+    },
   });
 
   // Fetch messages
@@ -563,6 +581,37 @@ export default function FieldTechnicianDashboard() {
     });
   };
 
+  // Handle completing work with automatic completion report modal
+  const handleCompleteWork = async (issue: Issue) => {
+    try {
+      // Find job card for this issue
+      const response = await fetch(`/api/job-cards?issueId=${issue.id}`);
+      let jobCardNumber = `JC-${Date.now().toString().slice(-6)}-${String(currentTechnicianId).padStart(3, '0')}`;
+      
+      if (response.ok) {
+        const jobCards = await response.json();
+        const jobCard = jobCards.find((jc: any) => jc.issueId === issue.id);
+        if (jobCard) {
+          jobCardNumber = jobCard.jobCardNumber;
+        }
+      }
+      
+      setCompletingIssue({
+        ...issue,
+        jobCardNumber
+      });
+      setCompletionModalOpen(true);
+    } catch (error) {
+      console.error("Error finding job card:", error);
+      const tempJobCard = `JC-${Date.now().toString().slice(-6)}-${String(currentTechnicianId).padStart(3, '0')}`;
+      setCompletingIssue({
+        ...issue,
+        jobCardNumber: tempJobCard
+      });
+      setCompletionModalOpen(true);
+    }
+  };
+
   const getSessionForIssue = (issueId: number) => {
     return activeWorkSessions.find(session => session.issueId === issueId);
   };
@@ -709,11 +758,132 @@ export default function FieldTechnicianDashboard() {
                           key={session.issueId}
                           session={session}
                           issue={issue}
-                          onComplete={(notes) => completeWorkMutation.mutate({ issueId: session.issueId, notes })}
+                          onComplete={() => handleCompleteWork(issue)}
                           isCompleting={completeWorkMutation.isPending}
                         />
                       ) : null;
                     })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Completion Reports Tab */}
+          <TabsContent value="completion-reports" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardCheck className="w-5 h-5 text-green-600" />
+                  Work Completion Reports
+                </CardTitle>
+                <CardDescription>
+                  Summary of completed work and submitted reports
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {completionReportsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+                  </div>
+                ) : completionReports.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <ClipboardCheck className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>No completion reports submitted yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Complete work assignments to see reports here</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid gap-3 md:gap-4">
+                      {completionReports.map((report: any) => (
+                        <div 
+                          key={report.id} 
+                          className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => setSelectedReportId(report.id === selectedReportId ? null : report.id)}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-3">
+                              <Badge variant="outline" className="bg-green-50 text-green-700">
+                                Job #{report.jobCardNumber}
+                              </Badge>
+                              <span className="font-medium text-sm">
+                                Issue #{report.issueId}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <Clock className="w-4 h-4" />
+                              {report.timeTaken} min
+                              {selectedReportId === report.id ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" />
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="text-sm text-gray-600 mb-2">
+                            <div className="flex items-center gap-4">
+                              <span>Completed: {new Date(report.completedAt).toLocaleDateString()}</span>
+                              {report.customerSatisfaction && (
+                                <div className="flex items-center gap-1">
+                                  <Award className="w-4 h-4 text-yellow-500" />
+                                  <span>{report.customerSatisfaction}/5 stars</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="text-sm font-medium text-gray-800 mb-1">
+                            {report.workCompleted.length > 100 
+                              ? `${report.workCompleted.substring(0, 100)}...` 
+                              : report.workCompleted}
+                          </div>
+
+                          {selectedReportId === report.id && (
+                            <div className="mt-4 pt-4 border-t space-y-3">
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">Work Completed:</label>
+                                <p className="text-sm text-gray-600 mt-1">{report.workCompleted}</p>
+                              </div>
+                              
+                              {report.materialsUsed && report.materialsUsed.length > 0 && (
+                                <div>
+                                  <label className="text-sm font-medium text-gray-700">Materials Used:</label>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {report.materialsUsed.map((material: string, index: number) => (
+                                      <Badge key={index} variant="secondary" className="text-xs">
+                                        {material}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {report.issuesFound && (
+                                <div>
+                                  <label className="text-sm font-medium text-gray-700">Issues Found:</label>
+                                  <p className="text-sm text-gray-600 mt-1">{report.issuesFound}</p>
+                                </div>
+                              )}
+
+                              {report.recommendations && (
+                                <div>
+                                  <label className="text-sm font-medium text-gray-700">Recommendations:</label>
+                                  <p className="text-sm text-gray-600 mt-1">{report.recommendations}</p>
+                                </div>
+                              )}
+
+                              {report.additionalNotes && (
+                                <div>
+                                  <label className="text-sm font-medium text-gray-700">Additional Notes:</label>
+                                  <p className="text-sm text-gray-600 mt-1">{report.additionalNotes}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -791,6 +961,20 @@ export default function FieldTechnicianDashboard() {
         <IssueDetailsDialog
           issue={selectedIssue}
           onClose={() => setSelectedIssue(null)}
+        />
+      )}
+
+      {/* Completion Report Modal */}
+      {completionModalOpen && completingIssue && (
+        <CompletionReportModal
+          issue={completingIssue}
+          jobCardNumber={completingIssue.jobCardNumber}
+          technicianId={currentTechnicianId}
+          isOpen={completionModalOpen}
+          onClose={() => {
+            setCompletionModalOpen(false);
+            setCompletingIssue(null);
+          }}
         />
       )}
     </div>
