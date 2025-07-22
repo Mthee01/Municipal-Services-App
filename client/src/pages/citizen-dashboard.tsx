@@ -28,9 +28,9 @@ function getStatusColor(status: string): string {
     case "open":
       return "bg-red-50 text-red-700 border-red-200";
     case "assigned":
-      return "bg-blue-50 text-blue-700 border-blue-200";
+      return "text-white border-mtn-blue";
     case "in_progress":
-      return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      return "text-black border-mtn-yellow";
     case "resolved":
     case "closed":
       return "bg-green-50 text-green-700 border-green-200";
@@ -46,7 +46,7 @@ function getPriorityColor(priority: string): string {
     case "high":
       return "bg-orange-50 text-orange-700 border-orange-200";
     case "medium":
-      return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      return "text-black border-mtn-yellow";
     case "low":
       return "bg-green-50 text-green-700 border-green-200";
     default:
@@ -217,12 +217,12 @@ export default function CitizenDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(51, 100%, 98%) 0%, hsl(196, 100%, 98%) 100%)' }}>
       {/* Background geometric patterns */}
       <div className="absolute inset-0 z-0">
         {/* Animated geometric shapes */}
-        <div className="absolute top-20 left-10 w-64 h-64 bg-gradient-to-br from-blue-400/40 to-purple-400/40 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-green-400/40 to-blue-400/40 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
+        <div className="absolute top-20 left-10 w-64 h-64 rounded-full mix-blend-multiply filter blur-xl animate-pulse" style={{ background: 'linear-gradient(135deg, hsl(51, 100%, 50%, 0.4) 0%, hsl(196, 100%, 31%, 0.4) 100%)' }}></div>
+        <div className="absolute top-40 right-20 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000" style={{ background: 'linear-gradient(135deg, hsl(196, 100%, 31%, 0.4) 0%, hsl(51, 100%, 50%, 0.4) 100%)' }}></div>
         <div className="absolute -bottom-32 left-20 w-80 h-80 bg-gradient-to-br from-purple-400/40 to-pink-400/40 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
         <div className="absolute top-60 left-1/2 w-96 h-96 bg-gradient-to-br from-orange-400/30 to-red-400/30 rounded-full mix-blend-multiply filter blur-2xl animate-pulse delay-3000"></div>
         <div className="absolute bottom-40 right-10 w-60 h-60 bg-gradient-to-br from-cyan-400/35 to-teal-400/35 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-4000"></div>

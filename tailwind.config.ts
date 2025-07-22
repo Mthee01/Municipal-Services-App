@@ -13,6 +13,11 @@ export default {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        // MTN Brand Colors
+        "mtn-yellow": "hsl(51, 100%, 50%)",
+        "mtn-blue": "hsl(196, 100%, 31%)",
+        "mtn-dark-blue": "hsl(196, 100%, 25%)",
+        "mtn-light-yellow": "hsl(51, 100%, 85%)",
         card: {
           DEFAULT: "var(--card)",
           foreground: "var(--card-foreground)",

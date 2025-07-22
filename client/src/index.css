@@ -19,9 +19,9 @@
   --primary: hsl(51, 100%, 50%);
   --primary-foreground: hsl(0, 0%, 0%);
   --secondary: hsl(196, 100%, 31%);
-  --secondary-foreground: hsl(220, 85%, 15%);
-  --accent: hsl(60, 4.8%, 95.9%);
-  --accent-foreground: hsl(220, 85%, 15%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --accent: hsl(51, 100%, 85%);
+  --accent-foreground: hsl(196, 100%, 25%);
   --destructive: hsl(0, 84.2%, 60.2%);
   --destructive-foreground: hsl(60, 9.1%, 97.8%);
   --ring: hsl(20, 14.3%, 4.1%);
@@ -33,6 +33,11 @@
   --mtn-dark-blue: hsl(196, 100%, 25%);
   --mtn-light-yellow: hsl(51, 100%, 85%);
   --mtn-gray: hsl(0, 0%, 96%);
+  
+  /* Professional gradients */
+  --mtn-gradient: linear-gradient(135deg, hsl(51, 100%, 50%) 0%, hsl(196, 100%, 31%) 100%);
+  --mtn-gradient-soft: linear-gradient(135deg, hsl(51, 100%, 95%) 0%, hsl(196, 100%, 95%) 100%);
+  --mtn-shadow: 0 4px 20px rgba(0, 181, 226, 0.15);
 }
 
 /* Hide scrollbar for mobile tabs */
@@ -73,9 +78,9 @@
   --primary: hsl(51, 100%, 50%);
   --primary-foreground: hsl(0, 0%, 0%);
   --secondary: hsl(196, 100%, 31%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(240, 3.7%, 15.9%);
-  --accent-foreground: hsl(0, 0%, 98%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --accent: hsl(51, 100%, 85%);
+  --accent-foreground: hsl(196, 100%, 25%);
   --destructive: hsl(0, 62.8%, 30.6%);
   --destructive-foreground: hsl(0, 0%, 98%);
   --ring: hsl(240, 4.9%, 83.9%);

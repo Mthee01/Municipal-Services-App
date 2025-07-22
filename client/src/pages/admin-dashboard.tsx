@@ -50,13 +50,13 @@ const createUserSchema = z.object({
 type CreateUserData = z.infer<typeof createUserSchema>;
 
 const roleConfig = {
-  citizen: { icon: UserCheck, label: "Citizen", color: "bg-blue-500" },
-  call_centre_agent: { icon: Phone, label: "Call Centre Agent", color: "bg-green-500" },
+  citizen: { icon: UserCheck, label: "Citizen", color: "bg-mtn-blue" },
+  call_centre_agent: { icon: Phone, label: "Call Centre Agent", color: "bg-mtn-yellow" },
   admin: { icon: Shield, label: "Administrator", color: "bg-red-500" },
-  ward_councillor: { icon: Crown, label: "Ward Councillor", color: "bg-purple-500" },
-  mayor: { icon: Crown, label: "Mayor", color: "bg-gold-500" },
-  tech_manager: { icon: Briefcase, label: "Tech Manager", color: "bg-orange-500" },
-  field_technician: { icon: Wrench, label: "Field Technician", color: "bg-teal-500" },
+  ward_councillor: { icon: Crown, label: "Ward Councillor", color: "bg-mtn-dark-blue" },
+  mayor: { icon: Crown, label: "Mayor", color: "bg-mtn-yellow" },
+  tech_manager: { icon: Briefcase, label: "Tech Manager", color: "bg-mtn-blue" },
+  field_technician: { icon: Wrench, label: "Field Technician", color: "bg-mtn-dark-blue" },
 };
 
 interface User {
@@ -360,11 +360,16 @@ export default function AdminDashboard() {
   const getStatusBadge = (status: string) => {
     const statusColors = {
       active: "bg-green-500",
-      inactive: "bg-gray-500",
+      inactive: "bg-gray-500", 
       suspended: "bg-red-500",
     };
     return (
-      <Badge className={`${statusColors[status as keyof typeof statusColors]} text-white`}>
+      <Badge 
+        className={`${statusColors[status as keyof typeof statusColors]} text-white border-0`}
+        style={{
+          background: status === 'active' ? 'hsl(196, 100%, 31%)' : statusColors[status as keyof typeof statusColors]
+        }}
+      >
         {status}
       </Badge>
     );
@@ -377,19 +382,27 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, hsl(51, 100%, 98%) 0%, hsl(196, 100%, 98%) 100%)' }}>
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-sm" style={{ borderBottom: '3px solid hsl(196, 100%, 31%)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
-              <Shield className="w-8 h-8 text-red-500" />
+              <Shield className="w-8 h-8" style={{ color: 'hsl(196, 100%, 31%)' }} />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Administrator Dashboard</h1>
                 <p className="text-sm text-gray-500">Full System Access & User Management</p>
               </div>
             </div>
-            <Button variant="outline" onClick={handleLogout} className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={handleLogout} 
+              className="flex items-center space-x-2"
+              style={{ 
+                borderColor: 'hsl(196, 100%, 31%)',
+                color: 'hsl(196, 100%, 31%)'
+              }}
+            >
               <LogOut className="w-4 h-4" />
               <span>Logout</span>
             </Button>

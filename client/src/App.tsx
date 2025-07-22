@@ -184,25 +184,36 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, hsl(51, 100%, 95%) 0%, hsl(196, 100%, 95%) 100%)' }}>
           {/* Navigation Header */}
-          <nav className="bg-white shadow-sm border-b-2 border-green-600 sticky top-0 z-50">
+          <nav className="bg-white shadow-sm sticky top-0 z-50" style={{ borderBottom: '2px solid hsl(196, 100%, 31%)' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center py-4">
                 <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-lg">🏢</span>
+                  {/* MTN Logo */}
+                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-white p-1">
+                    <img 
+                      src="/attached_assets/mtn-logo_1753216420020.jpg" 
+                      alt="MTN Logo"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        console.error('Logo failed to load:', e);
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        (e.target as HTMLImageElement).nextElementSibling!.textContent = 'MTN';
+                      }}
+                    />
+                    <div className="hidden text-xs font-bold text-center">MTN</div>
                   </div>
                   <div>
-                    <h1 className="text-xl font-bold text-gray-900">ADA Smart Munic</h1>
+                    <h1 className="text-xl font-bold text-gray-900">Smart Munic</h1>
                     <p className="text-sm text-gray-600">Citizen Engagement Platform</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center space-x-4">
                   {/* Current User Role Display */}
-                  <div className="bg-gray-100 px-3 py-1 rounded-full">
-                    <span className="text-sm font-medium text-gray-700 capitalize">
+                  <div className="px-3 py-1 rounded-full" style={{ background: 'hsl(51, 100%, 85%)' }}>
+                    <span className="text-sm font-medium capitalize" style={{ color: 'hsl(196, 100%, 25%)' }}>
                       {currentRole?.replace('_', ' ') || 'User'}
                     </span>
                   </div>
@@ -212,7 +223,11 @@ function App() {
                     variant="outline"
                     size="sm"
                     onClick={handleLogout}
-                    className="text-gray-600 hover:text-gray-900"
+                    style={{ 
+                      borderColor: 'hsl(196, 100%, 31%)',
+                      color: 'hsl(196, 100%, 31%)'
+                    }}
+                    className="hover:opacity-80"
                   >
                     Sign Out
                   </Button>
@@ -281,15 +296,19 @@ function App() {
           </main>
 
           {/* Footer */}
-          <footer className="bg-gray-900 text-white py-12">
+          <footer className="text-white py-12" style={{ background: 'hsl(196, 100%, 25%)' }}>
             <div className="max-w-6xl mx-auto px-4">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div className="col-span-1 md:col-span-2">
                   <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-lg">🏢</span>
+                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-white p-1">
+                      <img 
+                        src="/attached_assets/mtn-logo_1753216420020.jpg" 
+                        alt="MTN Logo"
+                        className="w-full h-full object-contain"
+                      />
                     </div>
-                    <h3 className="text-xl font-bold">ADA Smart Munic</h3>
+                    <h3 className="text-xl font-bold">Smart Munic</h3>
                   </div>
                   <p className="text-gray-300 mb-4">
                     Connecting citizens with their local government for better service delivery and community engagement.

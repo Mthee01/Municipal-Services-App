@@ -681,8 +681,8 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                           <Button
                             type="submit"
                             style={{
-                              background: 'linear-gradient(to right, hsl(147, 100%, 24%), #16a34a)',
-                              color: 'white',
+                              background: 'linear-gradient(to right, hsl(51, 100%, 50%), hsl(196, 100%, 31%))',
+                              color: 'black',
                               border: 'none'
                             }}
                             className="w-full font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
@@ -690,7 +690,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                           >
                             {registerMutation.isPending ? (
                               <>
-                                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                                <div className="animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full mr-2" />
                                 Creating Account...
                               </>
                             ) : (
