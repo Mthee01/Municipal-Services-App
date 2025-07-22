@@ -764,7 +764,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       <footer className="bg-gray-900 text-white py-8">
         <div className="max-w-6xl mx-auto px-4 text-center text-gray-400">
           <p>&copy; 2024 Municipal Service Delivery Platform. All rights reserved.</p>
-          <p className="mt-2">Developed by Adacode - Empowering Local Government</p>
+          <p className="mt-2">Developed by MTN - Empowering Local Government</p>
         </div>
       </footer>
 

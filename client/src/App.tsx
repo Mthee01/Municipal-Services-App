@@ -379,7 +379,7 @@ function App() {
               
               <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
                 <p>&copy; 2024 Municipal Service Delivery Platform. All rights reserved.</p>
-                <p className="mt-2">Developed by Adacode - Empowering Local Government</p>
+                <p className="mt-2">Developed by MTN - Empowering Local Government</p>
               </div>
             </div>
           </footer>
