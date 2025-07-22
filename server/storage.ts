@@ -247,6 +247,7 @@ export class MemStorage implements IStorage {
 
     this.seedData();
     this.seedFieldTechnicianData();
+    this.seedCompletionReportsData();
   }
 
   private seedData() {
@@ -2002,6 +2003,111 @@ export class MemStorage implements IStorage {
     };
     this.completionReports.set(newReport.id, newReport);
     return newReport;
+  }
+
+  // Seed completion reports data
+  private seedCompletionReportsData() {
+    const sampleReports = [
+      {
+        id: this.currentCompletionReportId++,
+        technicianId: 6,
+        issueId: 12,
+        jobCardNumber: "JC-789456-006",
+        workCompleted: "Repaired water pipe leak using new coupling and sealed connection points. Tested water pressure and flow.",
+        materialsUsed: ["PVC Coupling", "Pipe Sealant", "Pipe Clamps"],
+        timeTaken: 120,
+        issuesFound: "Old pipe coupling was cracked due to age and weather exposure.",
+        recommendations: "Recommend inspection of similar connections in the area within 6 months.",
+        customerSatisfaction: 5,
+        additionalNotes: "Customer was very satisfied with quick resolution. Area cleaned up after work.",
+        completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+      },
+      {
+        id: this.currentCompletionReportId++,
+        technicianId: 6,
+        issueId: 15,
+        jobCardNumber: "JC-123789-006",
+        workCompleted: "Fixed streetlight wiring issue, replaced damaged cables and connection box.",
+        materialsUsed: ["Electrical Cable", "Junction Box", "Wire Connectors"],
+        timeTaken: 90,
+        issuesFound: "Water damage to electrical connections caused intermittent power loss.",
+        recommendations: "Install weatherproof housing to prevent future water damage.",
+        customerSatisfaction: 4,
+        additionalNotes: "Coordinated with electricity department for power isolation during repairs.",
+        completedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+      },
+      {
+        id: this.currentCompletionReportId++,
+        technicianId: 6,
+        issueId: 18,
+        jobCardNumber: "JC-456123-006",
+        workCompleted: "Cleared blocked storm drain and removed debris. Verified proper water flow.",
+        materialsUsed: ["Drain Rod", "High Pressure Hose"],
+        timeTaken: 60,
+        issuesFound: "Heavy leaf accumulation and small debris blocking drainage system.",
+        recommendations: "Schedule regular drainage maintenance before rainy season.",
+        customerSatisfaction: 5,
+        additionalNotes: "Educated community members about proper waste disposal to prevent future blockages.",
+        completedAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
+      }
+    ];
+
+    sampleReports.forEach(report => {
+      this.completionReports.set(report.id, report);
+    });
+
+    // Create sample job cards
+    const sampleJobCards = [
+      {
+        id: this.currentJobCardId++,
+        jobCardNumber: "JC-789456-006",
+        issueId: 12,
+        technicianId: 6,
+        description: "Water pipe leak repair",
+        priority: "high",
+        status: "completed",
+        estimatedHours: 2,
+        actualHours: 2,
+        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+        updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        startedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      },
+      {
+        id: this.currentJobCardId++,
+        jobCardNumber: "JC-123789-006",
+        issueId: 15,
+        technicianId: 6,
+        description: "Streetlight electrical repair",
+        priority: "medium",
+        status: "completed",
+        estimatedHours: 1.5,
+        actualHours: 1.5,
+        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        startedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      },
+      {
+        id: this.currentJobCardId++,
+        jobCardNumber: "JC-456123-006",
+        issueId: 18,
+        technicianId: 6,
+        description: "Storm drain cleaning",
+        priority: "medium",
+        status: "completed",
+        estimatedHours: 1,
+        actualHours: 1,
+        createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+        updatedAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
+        startedAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
+      }
+    ];
+
+    sampleJobCards.forEach(jobCard => {
+      this.jobCards.set(jobCard.id, jobCard);
+    });
   }
 }
 
