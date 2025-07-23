@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Users, Wrench, MapPin, Clock, Star, AlertCircle, CheckCircle, Navigation, StickyNote, Eye } from "lucide-react";
+import { Users, Wrench, MapPin, Clock, Star, AlertCircle, CheckCircle, Navigation, StickyNote, Eye, FileText, Download, Printer, Calendar, User, Phone, Mail } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
@@ -22,6 +22,10 @@ export default function TechManagerDashboard() {
   const [nearestTechnicians, setNearestTechnicians] = useState<any[]>([]);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [selectedIssueForNotes, setSelectedIssueForNotes] = useState<any>(null);
+  const [showIssueDetails, setShowIssueDetails] = useState(false);
+  const [selectedIssueForDetails, setSelectedIssueForDetails] = useState<any>(null);
+  const [selectedIssuesForExport, setSelectedIssuesForExport] = useState<Set<number>>(new Set());
+  const [showExportModal, setShowExportModal] = useState(false);
   const { toast } = useToast();
 
   const { data: technicians = [], isLoading: techLoading } = useQuery({
@@ -178,6 +182,170 @@ export default function TechManagerDashboard() {
     return `JO-${paddedId}-${year}`;
   };
 
+  // Handle viewing issue details
+  const handleViewIssueDetails = (issue: any) => {
+    setSelectedIssueForDetails(issue);
+    setShowIssueDetails(true);
+  };
+
+  // Handle issue selection for export
+  const handleIssueSelection = (issueId: number, selected: boolean) => {
+    const newSelection = new Set(selectedIssuesForExport);
+    if (selected) {
+      newSelection.add(issueId);
+    } else {
+      newSelection.delete(issueId);
+    }
+    setSelectedIssuesForExport(newSelection);
+  };
+
+  // Handle select all issues
+  const handleSelectAllIssues = () => {
+    const allIssueIds = new Set(issuesList.map((issue: any) => issue.id));
+    setSelectedIssuesForExport(allIssueIds);
+  };
+
+  // Handle clear selection
+  const handleClearSelection = () => {
+    setSelectedIssuesForExport(new Set());
+  };
+
+  // Export selected issues as JSON
+  const exportAsJSON = () => {
+    const selectedIssues = issuesList.filter((issue: any) => 
+      selectedIssuesForExport.has(issue.id)
+    );
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      totalIssues: selectedIssues.length,
+      issues: selectedIssues.map(issue => ({
+        ...issue,
+        jobOrderNumber: generateJobOrderNumber(issue.id)
+      }))
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
+      type: 'application/json' 
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `issues-report-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    toast({ title: `Exported ${selectedIssues.length} issues as JSON` });
+    setShowExportModal(false);
+  };
+
+  // Export selected issues as CSV
+  const exportAsCSV = () => {
+    const selectedIssues = issuesList.filter((issue: any) => 
+      selectedIssuesForExport.has(issue.id)
+    );
+    
+    const headers = [
+      'Job Order Number', 'Reference Number', 'Title', 'Category', 'Priority', 
+      'Status', 'Location', 'Ward', 'Assigned To', 'Reported By', 'Created At', 
+      'Updated At', 'Description'
+    ];
+    
+    const csvContent = [
+      headers.join(','),
+      ...selectedIssues.map(issue => [
+        generateJobOrderNumber(issue.id),
+        issue.referenceNumber || '',
+        `"${issue.title.replace(/"/g, '""')}"`,
+        issue.category,
+        issue.priority,
+        issue.status,
+        `"${issue.location.replace(/"/g, '""')}"`,
+        issue.ward || '',
+        issue.assignedTo || '',
+        issue.reportedBy || '',
+        new Date(issue.createdAt).toLocaleDateString(),
+        new Date(issue.updatedAt).toLocaleDateString(),
+        `"${(issue.description || '').replace(/"/g, '""')}"`
+      ].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `issues-report-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    toast({ title: `Exported ${selectedIssues.length} issues as CSV` });
+    setShowExportModal(false);
+  };
+
+  // Print selected issues
+  const printSelectedIssues = () => {
+    const selectedIssues = issuesList.filter((issue: any) => 
+      selectedIssuesForExport.has(issue.id)
+    );
+    
+    const printContent = `
+      <html>
+        <head>
+          <title>Issues Report - ${new Date().toLocaleDateString()}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .issue { border: 1px solid #ccc; margin: 15px 0; padding: 15px; page-break-inside: avoid; }
+            .job-order { background: #e3f2fd; padding: 5px 10px; display: inline-block; margin-bottom: 10px; }
+            .title { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+            .details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+            .detail-item { margin-bottom: 5px; }
+            .label { font-weight: bold; }
+            .description { margin-top: 15px; padding: 10px; background: #f5f5f5; }
+            @media print { .no-print { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Municipal Issues Report</h1>
+            <p>Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+            <p>Total Issues: ${selectedIssues.length}</p>
+          </div>
+          ${selectedIssues.map(issue => `
+            <div class="issue">
+              <div class="job-order">Job Order: ${generateJobOrderNumber(issue.id)}</div>
+              <div class="title">${issue.title}</div>
+              <div class="details">
+                <div class="detail-item"><span class="label">Reference:</span> ${issue.referenceNumber || 'N/A'}</div>
+                <div class="detail-item"><span class="label">Category:</span> ${issue.category}</div>
+                <div class="detail-item"><span class="label">Priority:</span> ${issue.priority}</div>
+                <div class="detail-item"><span class="label">Status:</span> ${issue.status}</div>
+                <div class="detail-item"><span class="label">Location:</span> ${issue.location}</div>
+                <div class="detail-item"><span class="label">Ward:</span> ${issue.ward || 'N/A'}</div>
+                <div class="detail-item"><span class="label">Assigned To:</span> ${issue.assignedTo || 'Unassigned'}</div>
+                <div class="detail-item"><span class="label">Reported By:</span> ${issue.reportedBy || 'N/A'}</div>
+                <div class="detail-item"><span class="label">Created:</span> ${new Date(issue.createdAt).toLocaleDateString()}</div>
+                <div class="detail-item"><span class="label">Updated:</span> ${new Date(issue.updatedAt).toLocaleDateString()}</div>
+              </div>
+              ${issue.description ? `<div class="description"><strong>Description:</strong> ${issue.description}</div>` : ''}
+            </div>
+          `).join('')}
+        </body>
+      </html>
+    `;
+    
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+    
+    toast({ title: `Preparing to print ${selectedIssues.length} issues` });
+    setShowExportModal(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative overflow-hidden">
       {/* Background geometric patterns */}
@@ -296,6 +464,47 @@ export default function TechManagerDashboard() {
         </TabsList>
 
         <TabsContent value="assignments" className="space-y-4">
+          {/* Export Controls */}
+          <Card className="mb-4">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Issue Management & Export</CardTitle>
+                  <CardDescription>Select issues to view details, print, or export reports</CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">
+                    {selectedIssuesForExport.size} selected
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSelectAllIssues}
+                    disabled={selectedIssuesForExport.size === issuesList.length}
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearSelection}
+                    disabled={selectedIssuesForExport.size === 0}
+                  >
+                    Clear
+                  </Button>
+                  <Button
+                    onClick={() => setShowExportModal(true)}
+                    disabled={selectedIssuesForExport.size === 0}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export ({selectedIssuesForExport.size})
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             <Card>
               <CardHeader>
@@ -350,7 +559,22 @@ export default function TechManagerDashboard() {
                               {issue.priority}
                             </Badge>
                           </div>
-                          <div className="flex space-x-2 ml-3 shrink-0">
+                          <div className="flex items-center space-x-2 ml-3 shrink-0">
+                            <input
+                              type="checkbox"
+                              checked={selectedIssuesForExport.has(issue.id)}
+                              onChange={(e) => handleIssueSelection(issue.id, e.target.checked)}
+                              className="w-4 h-4 text-blue-600 rounded border-gray-300"
+                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewIssueDetails(issue)}
+                              className="text-xs"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              Details
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
@@ -414,6 +638,12 @@ export default function TechManagerDashboard() {
                       )}
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedIssuesForExport.has(issue.id)}
+                            onChange={(e) => handleIssueSelection(issue.id, e.target.checked)}
+                            className="w-4 h-4 text-blue-600 rounded border-gray-300"
+                          />
                           <span className="text-xs font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded">
                             {jobOrderNumber}
                           </span>
@@ -426,9 +656,19 @@ export default function TechManagerDashboard() {
                             </Badge>
                           )}
                         </div>
-                        <Badge variant="outline" className={getStatusColor(issue.status)}>
-                          {issue.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewIssueDetails(issue)}
+                            className="text-xs"
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <Badge variant="outline" className={getStatusColor(issue.status)}>
+                            {issue.status}
+                          </Badge>
+                        </div>
                       </div>
                       <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">
                         Assigned to: {issue.assignedTo}
@@ -701,6 +941,226 @@ export default function TechManagerDashboard() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNotesModal(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Issue Details Modal */}
+      <Dialog open={showIssueDetails} onOpenChange={setShowIssueDetails}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Issue Details - {selectedIssueForDetails?.title}
+            </DialogTitle>
+            <DialogDescription>
+              Complete information for {selectedIssueForDetails?.referenceNumber || `Issue #${selectedIssueForDetails?.id}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedIssueForDetails && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Basic Information */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      Basic Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Job Order Number</Label>
+                        <p className="text-sm font-mono bg-blue-50 px-2 py-1 rounded mt-1">
+                          {generateJobOrderNumber(selectedIssueForDetails.id)}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Reference Number</Label>
+                        <p className="text-sm mt-1">{selectedIssueForDetails.referenceNumber || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Category</Label>
+                        <p className="text-sm mt-1 capitalize">{selectedIssueForDetails.category.replace('_', ' ')}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Priority</Label>
+                        <Badge variant="outline" className={`mt-1 ${getPriorityColor(selectedIssueForDetails.priority)}`}>
+                          {selectedIssueForDetails.priority}
+                        </Badge>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Status</Label>
+                        <Badge variant="outline" className={`mt-1 ${getStatusColor(selectedIssueForDetails.status)}`}>
+                          {selectedIssueForDetails.status}
+                        </Badge>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Ward</Label>
+                        <p className="text-sm mt-1">{selectedIssueForDetails.ward || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Location Information */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      Location Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Address</Label>
+                      <p className="text-sm mt-1">{selectedIssueForDetails.location}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Assignment & Timeline */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Assignment Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Assigned To</Label>
+                      <p className="text-sm mt-1">{selectedIssueForDetails.assignedTo || 'Unassigned'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Reported By</Label>
+                      <p className="text-sm mt-1">{selectedIssueForDetails.reportedBy || 'N/A'}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      Timeline
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Created</Label>
+                      <p className="text-sm mt-1">
+                        {new Date(selectedIssueForDetails.createdAt).toLocaleDateString()} at{' '}
+                        {new Date(selectedIssueForDetails.createdAt).toLocaleTimeString()}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Last Updated</Label>
+                      <p className="text-sm mt-1">
+                        {new Date(selectedIssueForDetails.updatedAt).toLocaleDateString()} at{' '}
+                        {new Date(selectedIssueForDetails.updatedAt).toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Description */}
+              {selectedIssueForDetails.description && (
+                <div className="lg:col-span-2">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">Description</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm leading-relaxed">{selectedIssueForDetails.description}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowIssueDetails(false)}>
+              Close
+            </Button>
+            <Button 
+              onClick={() => {
+                handleIssueSelection(selectedIssueForDetails.id, true);
+                setShowIssueDetails(false);
+                setShowExportModal(true);
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export This Issue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Modal */}
+      <Dialog open={showExportModal} onOpenChange={setShowExportModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="w-5 h-5" />
+              Export Issues Report
+            </DialogTitle>
+            <DialogDescription>
+              Export {selectedIssuesForExport.size} selected issue{selectedIssuesForExport.size !== 1 ? 's' : ''} in your preferred format
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <Button 
+                onClick={exportAsJSON}
+                className="w-full justify-start h-auto p-4"
+                variant="outline"
+              >
+                <FileText className="w-5 h-5 mr-3" />
+                <div className="text-left">
+                  <div className="font-medium">Export as JSON</div>
+                  <div className="text-xs text-gray-500">Structured data format for systems</div>
+                </div>
+              </Button>
+              
+              <Button 
+                onClick={exportAsCSV}
+                className="w-full justify-start h-auto p-4"
+                variant="outline"
+              >
+                <FileText className="w-5 h-5 mr-3" />
+                <div className="text-left">
+                  <div className="font-medium">Export as CSV</div>
+                  <div className="text-xs text-gray-500">Spreadsheet format for analysis</div>
+                </div>
+              </Button>
+              
+              <Button 
+                onClick={printSelectedIssues}
+                className="w-full justify-start h-auto p-4"
+                variant="outline"
+              >
+                <Printer className="w-5 h-5 mr-3" />
+                <div className="text-left">
+                  <div className="font-medium">Print Report</div>
+                  <div className="text-xs text-gray-500">Formatted printable document</div>
+                </div>
+              </Button>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExportModal(false)}>
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>
