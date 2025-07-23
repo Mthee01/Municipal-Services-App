@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Users, Wrench, MapPin, Clock, Star, AlertCircle, CheckCircle, Navigation, StickyNote, Eye } from "lucide-react";
+import { Users, Wrench, MapPin, Clock, Star, AlertCircle, CheckCircle, Navigation, StickyNote, Eye, ClipboardList, Plus, BarChart3 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
@@ -57,13 +57,7 @@ export default function TechManagerDashboard() {
   const { data: issueEscalations = [], isLoading: escalationsLoading } = useQuery({
     queryKey: [`/api/issues/${selectedIssueForNotes?.id}/escalations`],
     enabled: !!selectedIssueForNotes,
-    refetchOnWindowFocus: false,
-    onSuccess: (data) => {
-      console.log(`Fetched escalations for issue ${selectedIssueForNotes?.id}:`, data);
-    },
-    onError: (error) => {
-      console.error(`Error fetching escalations for issue ${selectedIssueForNotes?.id}:`, error);
-    }
+    refetchOnWindowFocus: false
   });
 
   // Handle viewing notes
