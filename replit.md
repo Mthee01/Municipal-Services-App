@@ -369,6 +369,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- July 23, 2025: ADDED JOB ORDER NUMBERS TO ACTIVE ASSIGNMENTS DISPLAY
+  * IMPLEMENTED generateJobOrderNumber function to create unique job order IDs for assigned issues
+  * JOB ORDER FORMAT: JO-{padded_issue_id}-{year} (e.g., JO-029-2025, JO-045-2025)
+  * Added job order number display as blue badge in Active Assignments section
+  * Each assigned issue now shows its unique job order number prominently
+  * Job order numbers help technicians and managers track work orders systematically
+  * Maintains clean visual hierarchy with job order number, issue title, and assignment status
 - July 23, 2025: REMOVED JOB ORDER MANAGEMENT TAB FROM TECHNICAL MANAGER DASHBOARD
   * DELETED job-orders TabsContent and all related job order UI components per user request
   * REMOVED job-orders TabsTrigger from navigation - reduced from 6 tabs to 5 tabs total

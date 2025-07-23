@@ -171,6 +171,13 @@ export default function TechManagerDashboard() {
     updateTechnicianMutation.mutate({ id: technicianId, status });
   };
 
+  // Generate unique job order number based on issue ID
+  const generateJobOrderNumber = (issueId: number) => {
+    const year = new Date().getFullYear();
+    const paddedId = String(issueId).padStart(3, '0');
+    return `JO-${paddedId}-${year}`;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative overflow-hidden">
       {/* Background geometric patterns */}
@@ -393,6 +400,8 @@ export default function TechManagerDashboard() {
                       issue.priority === 'urgent'
                     );
                     
+                    const jobOrderNumber = generateJobOrderNumber(issue.id);
+                    
                     return (
                     <div key={issue.id} className={`p-3 border rounded-lg relative ${
                       isEscalated ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''
@@ -405,6 +414,9 @@ export default function TechManagerDashboard() {
                       )}
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                            {jobOrderNumber}
+                          </span>
                           <h4 className={`font-semibold text-sm ${
                             isEscalated ? 'text-red-900 dark:text-red-100' : ''
                           }`}>{issue.title}</h4>
