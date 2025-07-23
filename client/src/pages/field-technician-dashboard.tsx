@@ -120,6 +120,17 @@ export default function FieldTechnicianDashboard() {
   });
   const [showPartsStatusDialog, setShowPartsStatusDialog] = useState(false);
   const [selectedPartsOrder, setSelectedPartsOrder] = useState<PartsOrder | null>(null);
+  const [showCompletionReportDialog, setShowCompletionReportDialog] = useState(false);
+  const [selectedSessionForCompletion, setSelectedSessionForCompletion] = useState<WorkSession | null>(null);
+  const [completionReportData, setCompletionReportData] = useState({
+    workCompleted: '',
+    materialsUsed: [''],
+    timeTaken: '',
+    issuesFound: '',
+    recommendations: '',
+    customerSatisfaction: 5,
+    additionalNotes: ''
+  });
 
   // API Queries
   const { data: issues = [], isLoading: issuesLoading } = useQuery({
@@ -212,6 +223,28 @@ export default function FieldTechnicianDashboard() {
     }
   });
 
+  const createCompletionReportMutation = useMutation({
+    mutationFn: (reportData: any) => apiRequest('/api/technicians/completion-reports', 'POST', reportData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/technicians/completion-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/technicians/work-sessions'] });
+      setShowCompletionReportDialog(false);
+      setCompletionReportData({
+        workCompleted: '',
+        materialsUsed: [''],
+        timeTaken: '',
+        issuesFound: '',
+        recommendations: '',
+        customerSatisfaction: 5,
+        additionalNotes: ''
+      });
+      toast({ title: 'Completion report submitted', description: 'Report has been sent to technical manager.' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to submit completion report', variant: 'destructive' });
+    }
+  });
+
   // Location tracking functions
   const startLocationTracking = () => {
     if (!navigator.geolocation) {
@@ -264,14 +297,9 @@ export default function FieldTechnicianDashboard() {
     startWorkMutation.mutate(issue.id);
   };
 
-  const handleCompleteWork = (sessionId: number, notes: string) => {
-    if (!notes.trim()) {
-      toast({ title: 'Error', description: 'Please provide completion notes', variant: 'destructive' });
-      return;
-    }
-    
+  const handleCompleteWork = (sessionId: number) => {
     // Check if there are pending parts orders for this work session
-    const session = workSessions.find(s => s.id === sessionId);
+    const session = workSessions.find((s: WorkSession) => s.id === sessionId);
     if (session) {
       const issuePartsOrders = partsOrders.filter((order: PartsOrder) => order.issueId === session.issueId);
       const pendingOrders = issuePartsOrders.filter((order: PartsOrder) => 
@@ -288,7 +316,9 @@ export default function FieldTechnicianDashboard() {
       }
     }
     
-    completeWorkMutation.mutate({ sessionId, notes });
+    // Open completion report dialog instead of directly completing work
+    setSelectedSessionForCompletion(session);
+    setShowCompletionReportDialog(true);
   };
 
   const handleOrderParts = (session: WorkSession) => {
@@ -339,6 +369,52 @@ export default function FieldTechnicianDashboard() {
 
   const getPartsOrderForIssue = (issueId: number) => {
     return partsOrders.find((order: PartsOrder) => order.issueId === issueId && order.status !== 'cancelled');
+  };
+
+  const handleSubmitCompletionReport = () => {
+    if (!selectedSessionForCompletion || !completionReportData.workCompleted.trim() || !completionReportData.timeTaken.trim()) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+
+    const reportData = {
+      issueId: selectedSessionForCompletion.issueId,
+      technicianId: currentUserId,
+      jobCardNumber: `JC-${String(selectedSessionForCompletion.issueId).padStart(3, '0')}-${new Date().getFullYear()}`,
+      workCompleted: completionReportData.workCompleted,
+      materialsUsed: completionReportData.materialsUsed.filter(m => m.trim()),
+      timeTaken: parseInt(completionReportData.timeTaken),
+      issuesFound: completionReportData.issuesFound,
+      recommendations: completionReportData.recommendations,
+      customerSatisfaction: completionReportData.customerSatisfaction,
+      additionalNotes: completionReportData.additionalNotes
+    };
+
+    createCompletionReportMutation.mutate(reportData);
+    
+    // After successful report submission, complete the work session
+    completeWorkMutation.mutate({ 
+      sessionId: selectedSessionForCompletion.id, 
+      notes: `Work completed with report: ${completionReportData.workCompleted}` 
+    });
+  };
+
+  const addMaterialField = () => {
+    setCompletionReportData(prev => ({ ...prev, materialsUsed: [...prev.materialsUsed, ''] }));
+  };
+
+  const removeMaterialField = (index: number) => {
+    setCompletionReportData(prev => ({ 
+      ...prev, 
+      materialsUsed: prev.materialsUsed.filter((_, i) => i !== index) 
+    }));
+  };
+
+  const updateMaterialField = (index: number, value: string) => {
+    setCompletionReportData(prev => ({ 
+      ...prev, 
+      materialsUsed: prev.materialsUsed.map((material, i) => i === index ? value : material) 
+    }));
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -545,17 +621,12 @@ export default function FieldTechnicianDashboard() {
                               )}
                               <Button
                                 size="sm"
-                                onClick={() => {
-                                  const notes = prompt('Enter completion notes:');
-                                  if (notes) {
-                                    handleCompleteWork(session.id, notes);
-                                  }
-                                }}
+                                onClick={() => handleCompleteWork(session.id)}
                                 disabled={completeWorkMutation.isPending || !canComplete}
                                 className={`text-white ${canComplete 
                                   ? 'bg-green-600 hover:bg-green-700' 
                                   : 'bg-gray-400 cursor-not-allowed'}`}
-                                title={!canComplete ? 'Parts must be delivered before completing work' : 'Complete work'}
+                                title={!canComplete ? 'Parts must be delivered before completing work' : 'Submit completion report and close work'}
                               >
                                 <CheckCircle className="w-4 h-4 mr-2" />
                                 Complete Work
@@ -913,6 +984,174 @@ export default function FieldTechnicianDashboard() {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Completion Report Dialog */}
+        <Dialog open={showCompletionReportDialog} onOpenChange={setShowCompletionReportDialog}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Work Completion Report</DialogTitle>
+              <p className="text-sm text-gray-600">Complete this report to close the work session and notify technical manager</p>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {selectedSessionForCompletion && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200">
+                  <div className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    Issue: {selectedSessionForCompletion.issueTitle}
+                  </div>
+                  <div className="text-sm text-blue-800 dark:text-blue-200">
+                    Job Card: JC-{String(selectedSessionForCompletion.issueId).padStart(3, '0')}-{new Date().getFullYear()}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <Label className="text-sm font-medium">Work Completed *</Label>
+                <Textarea
+                  placeholder="Describe the work that was completed..."
+                  value={completionReportData.workCompleted}
+                  onChange={(e) => setCompletionReportData(prev => ({ 
+                    ...prev, 
+                    workCompleted: e.target.value 
+                  }))}
+                  rows={3}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Materials Used</Label>
+                <div className="space-y-2 mt-2">
+                  {completionReportData.materialsUsed.map((material, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        placeholder="Enter material/part used"
+                        value={material}
+                        onChange={(e) => updateMaterialField(index, e.target.value)}
+                        className="flex-1"
+                      />
+                      {completionReportData.materialsUsed.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeMaterialField(index)}
+                          className="px-2"
+                        >
+                          ×
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addMaterialField}
+                    className="w-full"
+                  >
+                    + Add Material
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Time Taken (minutes) *</Label>
+                  <Input
+                    type="number"
+                    placeholder="120"
+                    value={completionReportData.timeTaken}
+                    onChange={(e) => setCompletionReportData(prev => ({ 
+                      ...prev, 
+                      timeTaken: e.target.value 
+                    }))}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Customer Satisfaction (1-5)</Label>
+                  <div className="flex gap-1 mt-2">
+                    {[1, 2, 3, 4, 5].map((rating) => (
+                      <Button
+                        key={rating}
+                        type="button"
+                        variant={completionReportData.customerSatisfaction === rating ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCompletionReportData(prev => ({ 
+                          ...prev, 
+                          customerSatisfaction: rating 
+                        }))}
+                        className="w-8 h-8 p-0"
+                      >
+                        {rating}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Issues Found</Label>
+                <Textarea
+                  placeholder="Describe any additional issues discovered during work..."
+                  value={completionReportData.issuesFound}
+                  onChange={(e) => setCompletionReportData(prev => ({ 
+                    ...prev, 
+                    issuesFound: e.target.value 
+                  }))}
+                  rows={2}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Recommendations</Label>
+                <Textarea
+                  placeholder="Any recommendations for preventive maintenance or follow-up..."
+                  value={completionReportData.recommendations}
+                  onChange={(e) => setCompletionReportData(prev => ({ 
+                    ...prev, 
+                    recommendations: e.target.value 
+                  }))}
+                  rows={2}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Additional Notes</Label>
+                <Textarea
+                  placeholder="Any additional comments or observations..."
+                  value={completionReportData.additionalNotes}
+                  onChange={(e) => setCompletionReportData(prev => ({ 
+                    ...prev, 
+                    additionalNotes: e.target.value 
+                  }))}
+                  rows={2}
+                  className="mt-2"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowCompletionReportDialog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSubmitCompletionReport}
+                  disabled={createCompletionReportMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Submit Report & Complete Work
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
