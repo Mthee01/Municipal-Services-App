@@ -89,6 +89,13 @@ export default function OfficialDashboard() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
+  // Generate unique job order number based on issue ID
+  const generateJobOrderNumber = (issueId: number) => {
+    const year = new Date().getFullYear();
+    const paddedId = String(issueId).padStart(3, '0');
+    return `JO-${paddedId}-${year}`;
+  };
+
   // State
   const [searchTerm, setSearchTerm] = useState("");
   const [showExportModal, setShowExportModal] = useState(false);
@@ -717,9 +724,16 @@ export default function OfficialDashboard() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm text-gray-700">
-                              {issue.assignedTo || 'Unassigned'}
-                            </span>
+                            <div className="flex flex-col gap-1">
+                              {issue.assignedTo && (
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-1 whitespace-nowrap font-mono w-fit">
+                                  {generateJobOrderNumber(issue.id)}
+                                </Badge>
+                              )}
+                              <span className="text-sm text-gray-700">
+                                {issue.assignedTo || 'Unassigned'}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell>
                             <span className="text-xs text-gray-500">

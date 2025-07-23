@@ -108,6 +108,13 @@ export default function FieldTechnicianDashboard() {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const { toast } = useToast();
 
+  // Generate unique job order number based on issue ID
+  const generateJobOrderNumber = (issueId: number) => {
+    const year = new Date().getFullYear();
+    const paddedId = String(issueId).padStart(3, '0');
+    return `JO-${paddedId}-${year}`;
+  };
+
   const handleNavigateToLocation = (location: string, event?: React.MouseEvent) => {
     if (event) {
       event.stopPropagation();
@@ -169,15 +176,12 @@ export default function FieldTechnicianDashboard() {
   // Function to send location update to server
   const sendLocationUpdate = async (latitude: number, longitude: number, accuracy?: number) => {
     try {
-      await apiRequest('/api/technician-locations', {
-        method: 'POST',
-        body: {
-          technicianId: currentTechnicianId,
-          latitude: latitude.toString(),
-          longitude: longitude.toString(),
-          accuracy: accuracy ? Math.round(accuracy) : undefined,
-          timestamp: new Date().toISOString()
-        }
+      await apiRequest('POST', '/api/technician-locations', {
+        technicianId: currentTechnicianId,
+        latitude: latitude.toString(),
+        longitude: longitude.toString(),
+        accuracy: accuracy ? Math.round(accuracy) : undefined,
+        timestamp: new Date().toISOString()
       });
       console.log('Location update sent successfully', { latitude, longitude, accuracy });
     } catch (error) {
@@ -198,7 +202,8 @@ export default function FieldTechnicianDashboard() {
       console.log("Raw issues data:", data);
       // Filter to only show issues actually assigned to this technician
       const filteredIssues = data.filter((issue: Issue) => 
-        issue.assignedTo === currentTechnicianId.toString() || issue.assignedTo === currentTechnicianId
+        issue.assignedTo === currentTechnicianId.toString() || issue.assignedTo === currentTechnicianId || 
+        (typeof issue.assignedTo === 'string' && parseInt(issue.assignedTo) === currentTechnicianId)
       );
       console.log("Filtered assigned issues:", filteredIssues.length, "out of", data.length);
       return filteredIssues;
@@ -837,6 +842,9 @@ export default function FieldTechnicianDashboard() {
                         >
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-3">
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-mono text-xs">
+                                {generateJobOrderNumber(report.issueId)}
+                              </Badge>
                               <Badge variant="outline" className="bg-green-50 text-green-700">
                                 Job #{report.jobCardNumber}
                               </Badge>
@@ -1031,6 +1039,13 @@ function WorkAssignmentCard({
 }) {
   const { toast } = useToast();
 
+  // Generate job order number for assigned issues
+  const generateJobOrderNumber = (issueId: number) => {
+    const year = new Date().getFullYear();
+    const paddedId = String(issueId).padStart(3, '0');
+    return `JO-${paddedId}-${year}`;
+  };
+
   // Handle navigation to location
   const handleNavigateToLocation = (location: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -1056,6 +1071,9 @@ function WorkAssignmentCard({
               <h3 className="font-semibold text-base leading-tight break-words flex-1 min-w-0">{issue.title}</h3>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-1 whitespace-nowrap font-mono">
+                {generateJobOrderNumber(issue.id)}
+              </Badge>
               <Badge variant="outline" className={`${getPriorityColor(issue.priority)} text-xs px-2 py-1 whitespace-nowrap`}>
                 {issue.priority}
               </Badge>
@@ -1174,6 +1192,13 @@ function ActiveSessionCard({
   const [completionNotes, setCompletionNotes] = useState('');
   const { toast } = useToast();
 
+  // Generate job order number for assigned issues
+  const generateJobOrderNumber = (issueId: number) => {
+    const year = new Date().getFullYear();
+    const paddedId = String(issueId).padStart(3, '0');
+    return `JO-${paddedId}-${year}`;
+  };
+
   // Handle navigation to location
   const handleNavigateToLocation = (location: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -1194,7 +1219,12 @@ function ActiveSessionCard({
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <h3 className="font-semibold">{issue.title}</h3>
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <h3 className="font-semibold">{issue.title}</h3>
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-1 whitespace-nowrap font-mono">
+                {generateJobOrderNumber(issue.id)}
+              </Badge>
+            </div>
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <button
                 onClick={(e) => {
