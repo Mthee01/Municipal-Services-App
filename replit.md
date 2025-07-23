@@ -369,6 +369,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- July 23, 2025: REMOVED REPORTS AND PARTS TABS FROM TECHNICIAN DASHBOARD
+  * DELETED "field-reports" and "parts-ordering" tabs from field technician dashboard per user request
+  * REMOVED unused queries, mutations, and interfaces for field reports and parts ordering functionality
+  * CLEANED UP photo capture state and related handlers no longer needed
+  * SIMPLIFIED dashboard from 6 tabs to 4 tabs: Work Orders, Active Work, Messages, Location
+  * Updated TabsList grid layout from 6 columns to 4 columns for better responsive design
+  * Technician dashboard now focuses on core workflow: work assignments, active sessions, communication, and location tracking
+  * All TypeScript compilation errors resolved with streamlined codebase
 - July 23, 2025: IMPLEMENTED COMPREHENSIVE ISSUE DETAILS VIEW AND EXPORT FUNCTIONALITY
   * CREATED detailed issue modal with complete information including job order numbers, timelines, and assignments
   * ADDED issue selection functionality with checkboxes for bulk operations on both unassigned and assigned issues

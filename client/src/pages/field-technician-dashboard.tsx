@@ -1,1963 +1,597 @@
-import { useState, useEffect, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/hooks/use-toast";
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import React, { useState, useEffect, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 import { 
-  MapPin, Clock, Wrench, Camera, Package, MessageSquare, Navigation, 
-  CheckCircle, AlertCircle, PlayCircle, StopCircle, Upload, Send,
-  Phone, User, Calendar, MapIcon, Settings, Bell, Search, Filter,
-  Map, RotateCcw, ExternalLink, X, Trash2, ChevronDown, ChevronUp,
-  FileText, ClipboardCheck, Award, TrendingUp, Eye, Zap
-} from "lucide-react";
-import CompletionReportModal from "@/components/CompletionReportModal";
+  ClipboardList, 
+  MapPin, 
+  MessageSquare, 
+  FileText,
+  Play, 
+  Square, 
+  Navigation,
+  Send,
+  Clock,
+  User,
+  CheckCircle,
+  AlertTriangle
+} from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
 
 interface Issue {
   id: number;
   title: string;
   description: string;
-  category: string;
-  priority: string;
-  status: string;
   location: string;
-  ward: string | null;
-  createdAt: Date;
-  assignedTo?: string;
-  technicianId?: number;
+  category: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent' | 'emergency';
+  status: 'open' | 'assigned' | 'in_progress' | 'resolved' | 'closed';
+  assignedTo: number | null;
+  assignedToName: string | null;
+  createdAt: string;
+  referenceNumber: string;
 }
 
-interface FieldReport {
+interface WorkSession {
   id: number;
   issueId: number;
   technicianId: number;
-  reportType: string;
-  description: string;
-  findings: string;
-  actionsTaken: string;
-  materialsUsed: string[];
-  photos: string[] | null;
-  nextSteps: string;
-  createdAt: string;
+  startTime: string;
+  endTime?: string;
+  status: 'active' | 'completed';
+  notes?: string;
+  issueTitle?: string;
+  issueLocation?: string;
 }
 
-interface PartsOrder {
+interface CompletionReport {
   id: number;
+  issueId: number;
   technicianId: number;
-  partName: string;
-  quantity: number;
-  urgency: string;
-  status: string;
-  justification: string;
-  orderDate: Date;
-  expectedDelivery: Date | null;
+  workDescription: string;
+  timeSpent: number;
+  materialsUsed: string;
+  customerSatisfaction: number;
+  completedAt: string;
+  issueTitle?: string;
 }
 
-interface TechnicianMessage {
+interface Message {
   id: number;
   fromUserId: number;
   toUserId: number;
   subject: string;
   content: string;
-  messageType: string;
-  priority: string;
-  sentAt: Date;
-  readAt: Date | null;
+  createdAt: string;
+  isRead: boolean;
+  fromUserName?: string;
 }
-
-interface WorkSession {
-  issueId: number;
-  arrivalTime?: Date;
-  isActive: boolean;
-}
-
-// Navigation utility functions
-const openGoogleMaps = (location: string) => {
-  const query = encodeURIComponent(location);
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${query}`;
-  window.open(googleMapsUrl, '_blank');
-};
-
-const openWaze = (location: string) => {
-  const query = encodeURIComponent(location);
-  const wazeUrl = `https://waze.com/ul?q=${query}`;
-  window.open(wazeUrl, '_blank');
-};
-
-const openAppleMaps = (location: string) => {
-  const query = encodeURIComponent(location);
-  const appleMapsUrl = `http://maps.apple.com/?q=${query}`;
-  window.open(appleMapsUrl, '_blank');
-};
 
 export default function FieldTechnicianDashboard() {
-  const [activeWorkSessions, setActiveWorkSessions] = useState<WorkSession[]>([]);
-  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const { toast } = useToast();
-
-  // Generate unique job order number based on issue ID
-  const generateJobOrderNumber = (issueId: number) => {
-    const year = new Date().getFullYear();
-    const paddedId = String(issueId).padStart(3, '0');
-    return `JO-${paddedId}-${year}`;
-  };
-
-  const handleNavigateToLocation = (location: string, event?: React.MouseEvent) => {
-    if (event) {
-      event.stopPropagation();
-    }
-
-    // Show toast notification
-    toast({
-      title: "Opening Navigation",
-      description: `Getting directions to ${location}`,
-    });
-
-    // Detect user agent for better default navigation app
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isIOS = /iphone|ipad|ipod/.test(userAgent);
-    const isAndroid = /android/.test(userAgent);
-    const isMobile = isIOS || isAndroid;
-
-    try {
-      if (isMobile) {
-        // On mobile devices, try to open the native maps app
-        if (isIOS) {
-          // Try Apple Maps first on iOS
-          openAppleMaps(location);
-        } else {
-          // Try Google Maps on Android
-          openGoogleMaps(location);
-        }
-      } else {
-        // On desktop, always use Google Maps web
-        openGoogleMaps(location);
-      }
-    } catch (error) {
-      toast({
-        title: "Navigation Error",
-        description: "Could not open navigation app. Please manually search for the location.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [isRealTimeTracking, setIsRealTimeTracking] = useState(false);
-  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
-  const watchIdRef = useRef<number | null>(null);
-  const [photoCapture, setPhotoCapture] = useState<File[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  
+  // Current user ID - would typically come from auth context
+  const currentUserId = 7; // Field technician user ID
+  
+  // State for UI
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [showIssueDetails, setShowIssueDetails] = useState(false);
+  const [messageData, setMessageData] = useState({ subject: '', content: '' });
+  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
+  const [isTracking, setIsTracking] = useState(false);
 
-  // Current technician ID (would come from auth context in real app)
-  const currentTechnicianId = 6;
+  // API Queries
+  const { data: issues = [], isLoading: issuesLoading } = useQuery({
+    queryKey: ['/api/technicians/issues', currentUserId],
+    queryFn: () => apiRequest(`/api/technicians/issues?technicianId=${currentUserId}`),
+  });
 
-  // Additional state for completion reports and enhanced functionality
-  const [completionModalOpen, setCompletionModalOpen] = useState(false);
-  const [completingIssue, setCompletingIssue] = useState<any>(null);
-  const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
+  const { data: workSessions = [], isLoading: sessionsLoading } = useQuery({
+    queryKey: ['/api/technicians/work-sessions', currentUserId],
+    queryFn: () => apiRequest(`/api/technicians/work-sessions?technicianId=${currentUserId}`),
+  });
 
-  // Function to send location update to server
-  const sendLocationUpdate = async (latitude: number, longitude: number, accuracy?: number) => {
-    try {
-      await apiRequest('POST', '/api/technician-locations', {
-        technicianId: currentTechnicianId,
-        latitude: latitude.toString(),
-        longitude: longitude.toString(),
-        accuracy: accuracy ? Math.round(accuracy) : undefined,
-        timestamp: new Date().toISOString()
-      });
-      console.log('Location update sent successfully', { latitude, longitude, accuracy });
-    } catch (error) {
-      console.error('Failed to send location update:', error);
+  const { data: completionReports = [] } = useQuery({
+    queryKey: ['/api/technicians/completion-reports', currentUserId],
+    queryFn: () => apiRequest(`/api/technicians/completion-reports?technicianId=${currentUserId}`),
+  });
+
+  const { data: messages = [] } = useQuery({
+    queryKey: ['/api/technicians/messages', currentUserId],
+    queryFn: () => apiRequest(`/api/technicians/messages?technicianId=${currentUserId}`),
+  });
+
+  // Mutations
+  const startWorkMutation = useMutation({
+    mutationFn: (issueId: number) => apiRequest('/api/technicians/start-work', 'POST', { issueId, technicianId: currentUserId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/technicians/work-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/technicians/issues'] });
+      toast({ title: 'Work session started', description: 'You can now track your progress on this issue.' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to start work session', variant: 'destructive' });
     }
-  };
+  });
 
-  // Fetch assigned issues
-  const { data: assignedIssues = [], isLoading: issuesLoading } = useQuery<Issue[]>({
-    queryKey: ['/api/issues', { technicianId: currentTechnicianId }],
-    queryFn: async () => {
-      console.log("Fetching issues for technician:", currentTechnicianId);
-      const response = await fetch(`/api/issues?technicianId=${currentTechnicianId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch issues');
-      }
-      const data = await response.json();
-      console.log("Raw issues data:", data);
-      // Filter to only show issues actually assigned to this technician
-      const filteredIssues = data.filter((issue: Issue) => 
-        issue.assignedTo === currentTechnicianId.toString() || issue.assignedTo === currentTechnicianId || 
-        (typeof issue.assignedTo === 'string' && parseInt(issue.assignedTo) === currentTechnicianId)
-      );
-      console.log("Filtered assigned issues:", filteredIssues.length, "out of", data.length);
-      return filteredIssues;
+  const completeWorkMutation = useMutation({
+    mutationFn: (data: { sessionId: number; notes: string }) => 
+      apiRequest('/api/technicians/complete-work', 'POST', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/technicians/work-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/technicians/issues'] });
+      toast({ title: 'Work completed', description: 'Issue has been resolved successfully.' });
     },
-    enabled: !!currentTechnicianId,
-  });
-
-  // Fetch field reports with explicit error handling
-  const { data: fieldReports, isLoading: reportsLoading, error: reportsError } = useQuery<FieldReport[]>({
-    queryKey: ['/api/field-reports', currentTechnicianId],
-    queryFn: async () => {
-      console.log('=== FETCHING FIELD REPORTS ===');
-      console.log('Technician ID:', currentTechnicianId);
-      
-      if (!currentTechnicianId) {
-        throw new Error('No technician ID available');
-      }
-      
-      const url = `/api/field-reports?technicianId=${currentTechnicianId}`;
-      console.log('Request URL:', url);
-      
-      const response = await fetch(url);
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Raw API response:', data);
-      console.log('Response is array:', Array.isArray(data));
-      console.log('Response length:', data?.length);
-      
-      return data;
-    },
-    enabled: !!currentTechnicianId, // Only run query when we have a technician ID
-    refetchInterval: 5000,
-  });
-
-  // Enhanced debugging
-  console.log('=== QUERY STATE ===');
-  console.log('fieldReports:', fieldReports);
-  console.log('reportsLoading:', reportsLoading);
-  console.log('reportsError:', reportsError);
-  console.log('currentTechnicianId:', currentTechnicianId);
-
-  // Fetch parts orders
-  const { data: partsOrders = [], isLoading: ordersLoading } = useQuery({
-    queryKey: ['/api/parts-orders', { technicianId: currentTechnicianId }],
-  });
-
-  // Fetch completion reports for current technician
-  const { data: completionReports = [], isLoading: completionReportsLoading } = useQuery({
-    queryKey: ["/api/completion-reports", currentTechnicianId],
-    queryFn: async () => {
-      const response = await fetch(`/api/completion-reports?technicianId=${currentTechnicianId}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch completion reports");
-      }
-      return response.json();
-    },
-  });
-
-  // Fetch messages
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: ['/api/technician-messages', { userId: currentTechnicianId }],
-  });
-
-  // Fetch parts inventory
-  const { data: partsInventory = [] } = useQuery({
-    queryKey: ['/api/parts-inventory'],
-  });
-
-  // Fetch active work sessions
-  const { data: fetchedActiveSessions = [] } = useQuery({
-    queryKey: ['/api/work-sessions/active', { technicianId: currentTechnicianId }],
-    queryFn: async () => {
-      console.log("Fetching active work sessions for technician:", currentTechnicianId);
-      const response = await fetch(`/api/work-sessions/active?technicianId=${currentTechnicianId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch work sessions');
-      }
-      const data = await response.json();
-      console.log("Active work sessions:", data);
-      return data;
-    },
-    enabled: !!currentTechnicianId,
-  });
-
-  // Combine fetched sessions with local state
-  useEffect(() => {
-    if (Array.isArray(fetchedActiveSessions) && fetchedActiveSessions.length > 0) {
-      const sessionsWithDates = fetchedActiveSessions.map((session: any) => ({
-        ...session,
-        arrivalTime: session.arrivalTime ? new Date(session.arrivalTime) : undefined
-      }));
-      setActiveWorkSessions(sessionsWithDates as WorkSession[]);
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to complete work', variant: 'destructive' });
     }
-  }, [fetchedActiveSessions]);
+  });
 
-  // Start real-time location tracking
-  const startRealTimeTracking = () => {
+  const sendMessageMutation = useMutation({
+    mutationFn: (messageData: any) => apiRequest('/api/technicians/messages', 'POST', messageData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/technicians/messages'] });
+      setMessageData({ subject: '', content: '' });
+      toast({ title: 'Message sent', description: 'Your message has been sent successfully.' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to send message', variant: 'destructive' });
+    }
+  });
+
+  // Location tracking functions
+  const startLocationTracking = () => {
     if (!navigator.geolocation) {
-      setLocationError("Geolocation not supported by this browser");
+      toast({ title: 'Error', description: 'Geolocation not supported by this browser', variant: 'destructive' });
       return;
     }
 
-    setLocationLoading(true);
-    setLocationError(null);
-    setIsRealTimeTracking(true);
-
+    setIsTracking(true);
+    
     const options = {
-      enableHighAccuracy: false, // Less accurate but faster on mobile
-      timeout: 30000, // Increased timeout for mobile
-      maximumAge: 60000 // Accept cached location up to 1 minute for real-time
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 60000
     };
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
-        const location = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        };
-        setCurrentLocation(location);
-        setLocationAccuracy(position.coords.accuracy);
-        setLocationLoading(false);
-        setLocationError(null);
+        const { latitude, longitude, accuracy } = position.coords;
+        setCurrentLocation({ lat: latitude, lng: longitude });
+        setLocationAccuracy(accuracy);
         
-        // Send location update to server for call center tracking
-        sendLocationUpdate(location.lat, location.lng, position.coords.accuracy);
+        // Send location update to server
+        apiRequest('/api/technicians/location', 'POST', {
+          technicianId: currentUserId,
+          latitude,
+          longitude,
+          accuracy,
+          timestamp: new Date().toISOString()
+        });
       },
       (error) => {
-        let errorMessage = "Unable to access location";
-        
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = "Location information unavailable";
-            break;
-          case error.TIMEOUT:
-            errorMessage = "Location request timed out";
-            break;
-        }
-        
-        setLocationError(errorMessage);
-        setLocationLoading(false);
-        toast({
-          title: "Location Tracking Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
+        console.error('Geolocation error:', error);
+        toast({ title: 'Location Error', description: 'Failed to get current location', variant: 'destructive' });
+        setIsTracking(false);
       },
       options
     );
 
-    watchIdRef.current = watchId;
-    
-    toast({
-      title: "Real-time Tracking Started",
-      description: "Your location is now being tracked continuously",
-    });
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+      setIsTracking(false);
+    };
   };
 
-  // Stop real-time location tracking
-  const stopRealTimeTracking = () => {
-    if (watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
-    }
-    setIsRealTimeTracking(false);
-    
-    toast({
-      title: "Tracking Stopped",
-      description: "Real-time location tracking has been disabled",
-    });
+  const stopLocationTracking = () => {
+    setIsTracking(false);
   };
 
-  // Request location permission and get current location (one-time)
-  const requestLocationAccess = async () => {
-    setLocationLoading(true);
-    setLocationError(null);
-    
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation not supported by this browser");
-      setLocationLoading(false);
+  const handleStartWork = (issue: Issue) => {
+    startWorkMutation.mutate(issue.id);
+  };
+
+  const handleCompleteWork = (sessionId: number, notes: string) => {
+    if (!notes.trim()) {
+      toast({ title: 'Error', description: 'Please provide completion notes', variant: 'destructive' });
       return;
     }
-
-    try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: false, // Less accurate but faster on mobile
-          timeout: 30000, // Increased timeout for mobile
-          maximumAge: 300000 // Accept cached location up to 5 minutes
-        });
-      });
-
-      const location = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude
-      };
-      setCurrentLocation(location);
-      setLocationAccuracy(position.coords.accuracy);
-      
-      // Send initial location update to server for call center tracking
-      sendLocationUpdate(location.lat, location.lng, position.coords.accuracy);
-      
-      toast({
-        title: "Location Access Granted",
-        description: "GPS location retrieved successfully",
-      });
-    } catch (error: any) {
-      let errorMessage = "Unable to access location";
-      
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
-          break;
-        case error.POSITION_UNAVAILABLE:
-          errorMessage = "Location information unavailable";
-          break;
-        case error.TIMEOUT:
-          errorMessage = "Location request timed out";
-          break;
-      }
-      
-      setLocationError(errorMessage);
-      toast({
-        title: "Location Access Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setLocationLoading(false);
-    }
+    completeWorkMutation.mutate({ sessionId, notes });
   };
 
-  // Auto-request location on mount if geolocation is available
-  useEffect(() => {
-    if (navigator.geolocation) {
-      // Try to get location immediately on load
-      requestLocationAccess();
-    } else {
-      setLocationError("Geolocation not supported by this browser");
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageData.subject.trim() || !messageData.content.trim()) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
     }
-  }, []);
-
-  // Cleanup location watcher on component unmount
-  useEffect(() => {
-    return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-    };
-  }, []);
-
-  // Start work session mutation
-  const startWorkMutation = useMutation({
-    mutationFn: async (issueId: number) => {
-      return apiRequest("POST", "/api/work-sessions/start", {
-        issueId,
-        technicianId: currentTechnicianId,
-        latitude: currentLocation?.lat?.toString() || '0',
-        longitude: currentLocation?.lng?.toString() || '0',
-        address: 'On site'
-      });
-    },
-    onSuccess: (data, issueId) => {
-      setActiveWorkSessions(prev => [...prev, { issueId, arrivalTime: new Date(), isActive: true }]);
-      queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/work-sessions/active'] });
-      toast({
-        title: "Work Session Started",
-        description: "You have successfully started working on this issue.",
-      });
-    },
-    onError: (error) => {
-      console.error("Start work error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to start work session.",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Complete work session mutation
-  const completeWorkMutation = useMutation({
-    mutationFn: async ({ issueId, notes }: { issueId: number; notes: string }) => {
-      console.log("Completing work for issue:", issueId, "with notes:", notes);
-      return apiRequest("POST", "/api/work-sessions/complete", {
-        issueId,
-        technicianId: currentTechnicianId,
-        completionNotes: notes
-      });
-    },
-    onSuccess: (data, { issueId, notes }) => {
-      console.log("Work completion successful:", data);
-      setActiveWorkSessions(prev => prev.filter(session => session.issueId !== issueId));
-      queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/work-sessions/active'] });
-      toast({
-        title: "Issue Closed Successfully",
-        description: "Work has been completed and the issue is now resolved.",
-      });
-    },
-    onError: (error: any) => {
-      console.error("Complete work error:", error);
-      toast({
-        title: "Failed to Close Issue",
-        description: error?.message || "Unable to complete work session. Please try again.",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Create field report mutation
-  const createReportMutation = useMutation({
-    mutationFn: async (reportData: any) => {
-      const formData = new FormData();
-      Object.keys(reportData).forEach(key => {
-        if (key === 'photos' && reportData[key]) {
-          reportData[key].forEach((file: File) => {
-            formData.append('photos', file);
-          });
-        } else if (key === 'materialsUsed') {
-          formData.append(key, JSON.stringify(reportData[key]));
-        } else {
-          formData.append(key, reportData[key]);
-        }
-      });
-      
-      return fetch('/api/field-reports', {
-        method: 'POST',
-        body: formData,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/field-reports'] });
-      setPhotoCapture([]);
-      toast({
-        title: "Report Submitted",
-        description: "Field report has been successfully submitted.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to submit field report.",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Create parts order mutation
-  const createOrderMutation = useMutation({
-    mutationFn: async (orderData: any) => {
-      return apiRequest("POST", "/api/parts-orders", orderData);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/parts-orders'] });
-      toast({
-        title: "Parts Order Submitted",
-        description: "Your parts order has been submitted for approval.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to submit parts order.",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Send message mutation
-  const sendMessageMutation = useMutation({
-    mutationFn: async (messageData: any) => {
-      return apiRequest("POST", "/api/technician-messages", messageData);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/technician-messages'] });
-      toast({
-        title: "Message Sent",
-        description: "Your message has been sent successfully.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to send message.",
-        variant: "destructive",
-      });
-    }
-  });
-
-  const handlePhotoCapture = (files: FileList | null) => {
-    if (files) {
-      const newPhotos = Array.from(files).slice(0, 5 - photoCapture.length);
-      setPhotoCapture(prev => [...prev, ...newPhotos]);
-    }
-  };
-
-  const removePhoto = (indexToRemove: number) => {
-    setPhotoCapture(prev => prev.filter((_, index) => index !== indexToRemove));
-    toast({
-      title: "Photo removed",
-      description: "Photo has been removed from the report",
+    
+    sendMessageMutation.mutate({
+      fromUserId: currentUserId,
+      toUserId: 5, // Tech manager ID
+      subject: messageData.subject,
+      content: messageData.content
     });
   };
 
-  // Handle completing work with automatic completion report modal
-  const handleCompleteWork = async (issue: Issue) => {
-    try {
-      // Find job card for this issue
-      const response = await fetch(`/api/job-cards?issueId=${issue.id}`);
-      let jobCardNumber = `JC-${Date.now().toString().slice(-6)}-${String(currentTechnicianId).padStart(3, '0')}`;
-      
-      if (response.ok) {
-        const jobCards = await response.json();
-        const jobCard = jobCards.find((jc: any) => jc.issueId === issue.id);
-        if (jobCard) {
-          jobCardNumber = jobCard.jobCardNumber;
-        }
-      }
-      
-      setCompletingIssue({
-        ...issue,
-        jobCardNumber
-      });
-      setCompletionModalOpen(true);
-    } catch (error) {
-      console.error("Error finding job card:", error);
-      const tempJobCard = `JC-${Date.now().toString().slice(-6)}-${String(currentTechnicianId).padStart(3, '0')}`;
-      setCompletingIssue({
-        ...issue,
-        jobCardNumber: tempJobCard
-      });
-      setCompletionModalOpen(true);
-    }
-  };
-
-  const getSessionForIssue = (issueId: number) => {
-    return activeWorkSessions.find(session => session.issueId === issueId);
-  };
-
-  const calculateWorkDuration = (startTime: Date) => {
-    const now = new Date();
-    const diffMs = now.getTime() - startTime.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const hours = Math.floor(diffMins / 60);
-    const minutes = diffMins % 60;
-    return `${hours}h ${minutes}m`;
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'emergency': return 'bg-red-100 text-red-800 border-red-200';
-      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'assigned': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'in_progress': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'resolved': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+  const generateJobOrderNumber = (issueId: number) => {
+    const paddedId = issueId.toString().padStart(3, '0');
+    const year = new Date().getFullYear();
+    return `JO-${paddedId}-${year}`;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 truncate">
-              Field Technician Dashboard
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Manage work assignments, reports, and communication
-            </p>
-          </div>
-          <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex-shrink-0">
-              <Navigation className="w-3 h-3 mr-1" />
-              <span className="hidden sm:inline">
-                {currentLocation ? 'Location Active' : 'Location Unavailable'}
-              </span>
-              <span className="sm:hidden">
-                {currentLocation ? 'GPS On' : 'GPS Off'}
-              </span>
-            </Badge>
-            <Button variant="outline" size="sm" className="flex-shrink-0 min-w-[44px] sm:min-w-[120px] px-2 sm:px-3">
-              <Bell className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Notifications</span>
-            </Button>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="container mx-auto p-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Field Technician Dashboard
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Manage your work assignments and track progress
+          </p>
         </div>
-      </div>
 
-      <div className="p-4 sm:p-6">
-        <Tabs defaultValue="work-assignments" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-1">
-            <TabsTrigger value="work-assignments" className="text-xs sm:text-sm">Work Orders</TabsTrigger>
-            <TabsTrigger value="active-sessions" className="text-xs sm:text-sm">Active Work</TabsTrigger>
-            <TabsTrigger value="field-reports" className="text-xs sm:text-sm">Reports</TabsTrigger>
-            <TabsTrigger value="parts-ordering" className="text-xs sm:text-sm">Parts</TabsTrigger>
-            <TabsTrigger value="communication" className="text-xs sm:text-sm">Messages</TabsTrigger>
-            <TabsTrigger value="location-tracking" className="text-xs sm:text-sm">Location</TabsTrigger>
+        <Tabs defaultValue="work-orders" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="work-orders" className="flex items-center gap-2">
+              <ClipboardList className="w-4 h-4" />
+              Work Orders
+            </TabsTrigger>
+            <TabsTrigger value="active-work" className="flex items-center gap-2">
+              <Play className="w-4 h-4" />
+              Active Work
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Messages
+            </TabsTrigger>
+            <TabsTrigger value="location" className="flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
+              Location
+            </TabsTrigger>
           </TabsList>
 
-          {/* Work Assignments Tab */}
-          <TabsContent value="work-assignments" className="space-y-6">
+          <TabsContent value="work-orders">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wrench className="w-5 h-5" />
-                  Assigned Work Orders
-                </CardTitle>
+                <CardTitle>Assigned Work Orders</CardTitle>
                 <CardDescription>
-                  New work assignments ready to start
+                  Issues assigned to you that need attention
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {issuesLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
                   </div>
-                ) : (() => {
-                  // Filter out in-progress issues - work orders should only show work that needs to be started
-                  const pendingWorkOrders = assignedIssues.filter((issue: Issue) => 
-                    issue.status !== 'in_progress' && issue.status !== 'resolved'
-                  );
-                  
-                  return pendingWorkOrders.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      No pending work orders. Check "Active Work" tab for ongoing assignments.
-                    </div>
-                  ) : (
-                    <div className="grid gap-4">
-                      {pendingWorkOrders.map((issue: Issue) => (
-                        <WorkAssignmentCard
-                          key={issue.id}
-                          issue={issue}
-                          session={getSessionForIssue(issue.id)}
-                          onStartWork={() => startWorkMutation.mutate(issue.id)}
-                          onViewDetails={() => setSelectedIssue(issue)}
-                          isStarting={startWorkMutation.isPending}
-                        />
-                      ))}
-                    </div>
-                  );
-                })()}
+                ) : issues.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No work orders assigned
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {issues.map((issue: Issue) => (
+                      <div key={issue.id} className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              {generateJobOrderNumber(issue.id)}
+                            </Badge>
+                            <Badge className={getPriorityColor(issue.priority)}>
+                              {issue.priority}
+                            </Badge>
+                            <Badge className={getStatusColor(issue.status)}>
+                              {issue.status.replace('_', ' ')}
+                            </Badge>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedIssue(issue);
+                                setShowIssueDetails(true);
+                              }}
+                            >
+                              Details
+                            </Button>
+                            {issue.status === 'assigned' && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleStartWork(issue)}
+                                disabled={startWorkMutation.isPending}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                              >
+                                <Play className="w-4 h-4 mr-2" />
+                                Start Work
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <h3 className="font-medium text-gray-900 dark:text-white">
+                            {issue.title}
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                            {issue.description}
+                          </p>
+                          <div className="flex items-center gap-4 text-sm text-gray-500">
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-4 h-4" />
+                              {issue.location}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              {new Date(issue.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Active Sessions Tab */}
-          <TabsContent value="active-sessions" className="space-y-6">
+          <TabsContent value="active-work">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PlayCircle className="w-5 h-5" />
-                  Active Work Sessions
-                </CardTitle>
+                <CardTitle>Active Work Sessions</CardTitle>
                 <CardDescription>
-                  Currently active work sessions and timers
+                  Track your ongoing work and complete tasks
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {activeWorkSessions.length === 0 ? (
+                {sessionsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+                  </div>
+                ) : workSessions.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     No active work sessions
                   </div>
                 ) : (
-                  <div className="grid gap-4">
-                    {activeWorkSessions.map((session) => {
-                      const issue = assignedIssues.find((i: Issue) => i.id === session.issueId);
-                      return issue ? (
-                        <ActiveSessionCard
-                          key={session.issueId}
-                          session={session}
-                          issue={issue}
-                          onComplete={(notes: string) => {
-                            console.log("ActiveSessionCard onComplete called with notes:", notes);
-                            completeWorkMutation.mutate({ issueId: issue.id, notes });
-                          }}
-                          isCompleting={completeWorkMutation.isPending}
-                        />
-                      ) : null;
-                    })}
+                  <div className="space-y-4">
+                    {workSessions.map((session: WorkSession) => (
+                      <div key={session.id} className="border rounded-lg p-4 bg-yellow-50 dark:bg-yellow-900/20">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              IN PROGRESS
+                            </Badge>
+                            <span className="text-sm text-gray-600">
+                              Started: {new Date(session.startTime).toLocaleTimeString()}
+                            </span>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              const notes = prompt('Enter completion notes:');
+                              if (notes) {
+                                handleCompleteWork(session.id, notes);
+                              }
+                            }}
+                            disabled={completeWorkMutation.isPending}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Complete Work
+                          </Button>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <h3 className="font-medium text-gray-900 dark:text-white">
+                            {session.issueTitle || `Issue #${session.issueId}`}
+                          </h3>
+                          <div className="flex items-center gap-4 text-sm text-gray-500">
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-4 h-4" />
+                              {session.issueLocation || 'Location not specified'}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              Duration: {calculateWorkDuration(new Date(session.startTime))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Completion Reports Tab */}
-          <TabsContent value="completion-reports" className="space-y-6">
+          <TabsContent value="messages">
+            <div className="grid gap-6 md:grid-cols-2">
+              <SendMessageForm 
+                messageData={messageData} 
+                setMessageData={setMessageData}
+                onSubmit={handleSendMessage}
+                isSending={sendMessageMutation.isPending}
+              />
+              
+              <MessagesHistory 
+                messages={messages} 
+                isLoading={false}
+                currentUserId={currentUserId}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="location">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ClipboardCheck className="w-5 h-5 text-green-600" />
-                  Work Completion Reports
-                </CardTitle>
+                <CardTitle>Location Tracking</CardTitle>
                 <CardDescription>
-                  Summary of completed work and submitted reports
+                  Share your location with the dispatch center
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {completionReportsLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-                  </div>
-                ) : completionReports.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <ClipboardCheck className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>No completion reports submitted yet</p>
-                    <p className="text-sm text-gray-400 mt-1">Complete work assignments to see reports here</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="grid gap-3 md:gap-4">
-                      {completionReports.map((report: any) => (
-                        <div 
-                          key={report.id} 
-                          className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                          onClick={() => setSelectedReportId(report.id === selectedReportId ? null : report.id)}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-3">
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-mono text-xs">
-                                {generateJobOrderNumber(report.issueId)}
-                              </Badge>
-                              <Badge variant="outline" className="bg-green-50 text-green-700">
-                                Job #{report.jobCardNumber}
-                              </Badge>
-                              <span className="font-medium text-sm">
-                                Issue #{report.issueId}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-gray-500">
-                              <Clock className="w-4 h-4" />
-                              {report.timeTaken} min
-                              {selectedReportId === report.id ? (
-                                <ChevronUp className="w-4 h-4" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4" />
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="text-sm text-gray-600 mb-2">
-                            <div className="flex items-center gap-4">
-                              <span>Completed: {new Date(report.completedAt).toLocaleDateString()}</span>
-                              {report.customerSatisfaction && (
-                                <div className="flex items-center gap-1">
-                                  <Award className="w-4 h-4 text-yellow-500" />
-                                  <span>{report.customerSatisfaction}/5 stars</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="text-sm font-medium text-gray-800 mb-1">
-                            {report.workCompleted.length > 100 
-                              ? `${report.workCompleted.substring(0, 100)}...` 
-                              : report.workCompleted}
-                          </div>
-
-                          {selectedReportId === report.id && (
-                            <div className="mt-4 pt-4 border-t space-y-3">
-                              <div>
-                                <label className="text-sm font-medium text-gray-700">Work Completed:</label>
-                                <p className="text-sm text-gray-600 mt-1">{report.workCompleted}</p>
-                              </div>
-                              
-                              {report.materialsUsed && report.materialsUsed.length > 0 && (
-                                <div>
-                                  <label className="text-sm font-medium text-gray-700">Materials Used:</label>
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {report.materialsUsed.map((material: string, index: number) => (
-                                      <Badge key={index} variant="secondary" className="text-xs">
-                                        {material}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              {report.issuesFound && (
-                                <div>
-                                  <label className="text-sm font-medium text-gray-700">Issues Found:</label>
-                                  <p className="text-sm text-gray-600 mt-1">{report.issuesFound}</p>
-                                </div>
-                              )}
-
-                              {report.recommendations && (
-                                <div>
-                                  <label className="text-sm font-medium text-gray-700">Recommendations:</label>
-                                  <p className="text-sm text-gray-600 mt-1">{report.recommendations}</p>
-                                </div>
-                              )}
-
-                              {report.additionalNotes && (
-                                <div>
-                                  <label className="text-sm font-medium text-gray-700">Additional Notes:</label>
-                                  <p className="text-sm text-gray-600 mt-1">{report.additionalNotes}</p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-base font-medium">GPS Tracking</Label>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Allow the system to track your location for dispatch coordination
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {!isTracking ? (
+                        <Button onClick={startLocationTracking} className="bg-green-600 hover:bg-green-700 text-white">
+                          <Navigation className="w-4 h-4 mr-2" />
+                          Start Tracking
+                        </Button>
+                      ) : (
+                        <Button onClick={stopLocationTracking} variant="outline">
+                          <Square className="w-4 h-4 mr-2" />
+                          Stop Tracking
+                        </Button>
+                      )}
                     </div>
                   </div>
-                )}
+
+                  {currentLocation && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <MapPin className="w-5 h-5 text-blue-600" />
+                        <span className="font-medium text-blue-900 dark:text-blue-100">Current Location</span>
+                        {isTracking && (
+                          <div className="flex items-center gap-1 text-green-600">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <span className="text-sm">Live</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-sm text-blue-800 dark:text-blue-200">
+                        <div>Latitude: {currentLocation.lat.toFixed(6)}</div>
+                        <div>Longitude: {currentLocation.lng.toFixed(6)}</div>
+                        {locationAccuracy && (
+                          <div>Accuracy: ±{Math.round(locationAccuracy)}m</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {!currentLocation && isTracking && (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-center">
+                        <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">Getting your location...</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
-
-          {/* Field Reports Tab */}
-          <TabsContent value="field-reports" className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <FieldReportForm
-                onSubmit={(data: any) => createReportMutation.mutate(data)}
-                isSubmitting={createReportMutation.isPending}
-                assignedIssues={assignedIssues}
-                photoCapture={photoCapture}
-                onPhotoCapture={handlePhotoCapture}
-                fileInputRef={fileInputRef}
-                onRemovePhoto={removePhoto}
-              />
-              <FieldReportsHistory
-                reports={Array.isArray(fieldReports) ? fieldReports : []}
-                isLoading={reportsLoading}
-              />
-            </div>
-          </TabsContent>
-
-          {/* Parts & Inventory Tab */}
-          <TabsContent value="parts-ordering" className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <PartsOrderForm
-                onSubmit={(data: any) => createOrderMutation.mutate(data)}
-                isSubmitting={createOrderMutation.isPending}
-                partsInventory={partsInventory}
-              />
-              <PartsOrderHistory
-                orders={Array.isArray(partsOrders) ? partsOrders : []}
-                isLoading={ordersLoading}
-              />
-            </div>
-          </TabsContent>
-
-          {/* Communication Tab */}
-          <TabsContent value="communication" className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <CommunicationPanel
-                onSendMessage={(data: any) => sendMessageMutation.mutate(data)}
-                isSending={sendMessageMutation.isPending}
-              />
-              <MessagesHistory
-                messages={messages}
-                isLoading={messagesLoading}
-                currentUserId={currentTechnicianId}
-              />
-            </div>
-          </TabsContent>
-
-          {/* Location & Travel Tab */}
-          <TabsContent value="location-tracking" className="space-y-6">
-            <LocationTrackingPanel
-              currentLocation={currentLocation}
-              activeWorkSessions={activeWorkSessions}
-              locationError={locationError}
-              locationLoading={locationLoading}
-              onRequestLocation={requestLocationAccess}
-              isRealTimeTracking={isRealTimeTracking}
-              locationAccuracy={locationAccuracy}
-              onStartRealTimeTracking={startRealTimeTracking}
-              onStopRealTimeTracking={stopRealTimeTracking}
-            />
-          </TabsContent>
         </Tabs>
+
+        {/* Issue Details Dialog */}
+        <Dialog open={showIssueDetails} onOpenChange={setShowIssueDetails}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Issue Details</DialogTitle>
+            </DialogHeader>
+            
+            {selectedIssue && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    {generateJobOrderNumber(selectedIssue.id)}
+                  </Badge>
+                  <Badge className={getPriorityColor(selectedIssue.priority)}>
+                    {selectedIssue.priority}
+                  </Badge>
+                  <Badge className={getStatusColor(selectedIssue.status)}>
+                    {selectedIssue.status.replace('_', ' ')}
+                  </Badge>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Title</Label>
+                  <p className="mt-1 text-sm">{selectedIssue.title}</p>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</Label>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{selectedIssue.description}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Location</Label>
+                    <p className="mt-1 text-sm">{selectedIssue.location}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Category</Label>
+                    <p className="mt-1 text-sm">{selectedIssue.category}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Created</Label>
+                  <p className="mt-1 text-sm">{new Date(selectedIssue.createdAt).toLocaleString()}</p>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <Button variant="outline" onClick={() => setShowIssueDetails(false)}>
+                    Close
+                  </Button>
+                  {selectedIssue.status === 'assigned' && (
+                    <Button
+                      onClick={() => {
+                        handleStartWork(selectedIssue);
+                        setShowIssueDetails(false);
+                      }}
+                      disabled={startWorkMutation.isPending}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Start Work
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
-
-      {/* Issue Details Dialog */}
-      {selectedIssue && (
-        <IssueDetailsDialog
-          issue={selectedIssue}
-          onClose={() => setSelectedIssue(null)}
-        />
-      )}
-
-      {/* Completion Report Modal */}
-      {completionModalOpen && completingIssue && (
-        <CompletionReportModal
-          issue={completingIssue}
-          jobCardNumber={completingIssue.jobCardNumber}
-          technicianId={currentTechnicianId}
-          isOpen={completionModalOpen}
-          onClose={() => {
-            setCompletionModalOpen(false);
-            setCompletingIssue(null);
-          }}
-        />
-      )}
     </div>
   );
 }
 
-// Work Assignment Card Component
-function WorkAssignmentCard({ 
-  issue, 
-  session, 
-  onStartWork, 
-  onViewDetails,
-  isStarting 
-}: { 
-  issue: Issue; 
-  session?: WorkSession; 
-  onStartWork: () => void;
-  onViewDetails: () => void;
-  isStarting: boolean;
-}) {
-  const { toast } = useToast();
-
-  // Generate job order number for assigned issues
-  const generateJobOrderNumber = (issueId: number) => {
-    const year = new Date().getFullYear();
-    const paddedId = String(issueId).padStart(3, '0');
-    return `JO-${paddedId}-${year}`;
-  };
-
-  // Handle navigation to location
-  const handleNavigateToLocation = (location: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    toast({
-      title: "Opening Navigation",
-      description: `Getting directions to ${location}`,
-    });
-
-    const encoded = encodeURIComponent(location);
-    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
-    window.open(googleMapsUrl, '_blank');
-  };
-  return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        {/* Content area with proper spacing */}
-        <div className="p-4 pb-0">
-          {/* Header with title and badges */}
-          <div className="mb-3">
-            <div className="flex flex-wrap items-start gap-2 mb-2">
-              <h3 className="font-semibold text-base leading-tight break-words flex-1 min-w-0">{issue.title}</h3>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-1 whitespace-nowrap font-mono">
-                {generateJobOrderNumber(issue.id)}
-              </Badge>
-              <Badge variant="outline" className={`${getPriorityColor(issue.priority)} text-xs px-2 py-1 whitespace-nowrap`}>
-                {issue.priority}
-              </Badge>
-              <Badge variant="outline" className={`${getStatusColor(issue.status)} text-xs px-2 py-1 whitespace-nowrap`}>
-                {issue.status}
-              </Badge>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="mb-3">
-            <p className="text-sm text-gray-600 dark:text-gray-400 break-words leading-relaxed">
-              {issue.description}
-            </p>
-          </div>
-
-          {/* Location and date info */}
-          <div className="mb-4 space-y-2">
-            <div className="flex items-start gap-2 text-sm text-gray-500">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNavigateToLocation(issue.location, e);
-                }}
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors cursor-pointer p-1 -m-1 rounded hover:bg-blue-50"
-                title={`Navigate to ${issue.location} - Click to open in maps`}
-              >
-                <Navigation className="w-4 h-4 flex-shrink-0" />
-                <ExternalLink className="w-3 h-3 flex-shrink-0" />
-              </button>
-              <span className="break-words leading-relaxed flex-1">{issue.location}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Calendar className="w-3 h-3 flex-shrink-0" />
-              <span className="whitespace-nowrap">{new Date(issue.createdAt).toLocaleDateString()}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Action buttons section */}
-        <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3 mt-2">
-          <div className="flex flex-col gap-2">
-            {issue.status === 'resolved' || issue.status === 'completed' ? (
-              <>
-                <div className="flex items-center justify-center p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-md">
-                  <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span className="text-sm font-medium">Issue Resolved</span>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={onViewDetails}
-                  className="w-full min-h-[40px] px-4 py-2 text-sm font-medium"
-                >
-                  <Search className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span>View Details</span>
-                </Button>
-              </>
-            ) : session ? (
-              <>
-                <div className="flex items-center justify-center p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 rounded-md">
-                  <PlayCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span className="text-sm font-medium">Work In Progress</span>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={onViewDetails}
-                  className="w-full min-h-[40px] px-4 py-2 text-sm font-medium"
-                >
-                  <Search className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span>View Details</span>
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button 
-                  size="sm" 
-                  onClick={onStartWork}
-                  disabled={isStarting}
-                  className="w-full min-h-[40px] px-4 py-2 text-sm font-medium"
-                >
-                  <PlayCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span>{isStarting ? 'Starting...' : 'Start Work'}</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={onViewDetails}
-                  className="w-full min-h-[40px] px-4 py-2 text-sm font-medium"
-                >
-                  <Search className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span>View Details</span>
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Active Session Card Component
-function ActiveSessionCard({ 
-  session, 
-  issue, 
-  onComplete,
-  isCompleting 
-}: { 
-  session: WorkSession; 
-  issue: Issue; 
-  onComplete: (notes: string) => void;
-  isCompleting: boolean;
-}) {
-  const [completionNotes, setCompletionNotes] = useState('');
-  const { toast } = useToast();
-
-  // Generate job order number for assigned issues
-  const generateJobOrderNumber = (issueId: number) => {
-    const year = new Date().getFullYear();
-    const paddedId = String(issueId).padStart(3, '0');
-    return `JO-${paddedId}-${year}`;
-  };
-
-  // Handle navigation to location
-  const handleNavigateToLocation = (location: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    toast({
-      title: "Opening Navigation",
-      description: `Getting directions to ${location}`,
-    });
-
-    const encoded = encodeURIComponent(location);
-    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
-    window.open(googleMapsUrl, '_blank');
-  };
-
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <h3 className="font-semibold">{issue.title}</h3>
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-1 whitespace-nowrap font-mono">
-                {generateJobOrderNumber(issue.id)}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNavigateToLocation(issue.location, e);
-                }}
-                className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors cursor-pointer p-1 -m-1 rounded hover:bg-blue-50"
-                title={`Navigate to ${issue.location} - Click to open in maps`}
-              >
-                <Navigation className="w-3 h-3 flex-shrink-0" />
-                <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
-              </button>
-              <span>{issue.location}</span>
-            </div>
-          </div>
-          <div className="text-right">
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mb-2">
-              <Clock className="w-3 h-3 mr-1" />
-              {session.arrivalTime ? calculateWorkDuration(session.arrivalTime) : '0h 0m'}
-            </Badge>
-          </div>
-        </div>
-        
-        <div className="space-y-3">
-          <div>
-            <Label htmlFor="completion-notes" className="text-sm font-medium">
-              Work Completion Summary <span className="text-red-500">*</span>
-            </Label>
-            <Textarea
-              id="completion-notes"
-              placeholder="Describe what work was completed, parts used, and current status..."
-              value={completionNotes}
-              onChange={(e) => setCompletionNotes(e.target.value)}
-              rows={4}
-              className="resize-none"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Required: Provide details about the work completed to close this issue
-            </p>
-          </div>
-          
-          <Button 
-            onClick={() => {
-              console.log("Close Issue button clicked with notes:", completionNotes);
-              onComplete(completionNotes);
-            }}
-            disabled={isCompleting || !completionNotes.trim()}
-            className="w-full min-h-[44px] text-sm bg-green-600 hover:bg-green-700 text-white"
-          >
-            <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span>{isCompleting ? 'Closing Issue...' : 'Close Issue & Complete Work'}</span>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Field Report Form Component
-function FieldReportForm({ 
-  onSubmit, 
-  isSubmitting, 
-  assignedIssues, 
-  photoCapture, 
-  onPhotoCapture,
-  fileInputRef,
-  onRemovePhoto 
-}: any) {
-  const [formData, setFormData] = useState({
-    issueId: '',
-    reportType: 'progress',
-    description: '',
-    findings: '',
-    actionsTaken: '',
-    materialsUsed: '',
-    nextSteps: ''
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({
-      ...formData,
-      issueId: parseInt(formData.issueId),
-      technicianId: 1, // Current technician
-      materialsUsed: formData.materialsUsed.split('\n').filter(Boolean),
-      photos: photoCapture
-    });
-    setFormData({
-      issueId: '',
-      reportType: 'progress',
-      description: '',
-      findings: '',
-      actionsTaken: '',
-      materialsUsed: '',
-      nextSteps: ''
-    });
-  };
-
+// Send Message Form Component
+function SendMessageForm({ messageData, setMessageData, onSubmit, isSending }: any) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Camera className="w-5 h-5" />
-          Submit Field Report
-        </CardTitle>
+        <CardTitle>Send Message</CardTitle>
         <CardDescription>
-          Document your work progress and findings
+          Send a message to your supervisor or dispatch
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="issue-select">Select Issue</Label>
-            <Select value={formData.issueId} onValueChange={(value) => setFormData(prev => ({ ...prev, issueId: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose an issue..." />
-              </SelectTrigger>
-              <SelectContent>
-                {assignedIssues.map((issue: Issue) => (
-                  <SelectItem key={issue.id} value={issue.id.toString()}>
-                    {issue.title} - {issue.location}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="report-type">Report Type</Label>
-            <Select value={formData.reportType} onValueChange={(value) => setFormData(prev => ({ ...prev, reportType: value }))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="progress">Progress Update</SelectItem>
-                <SelectItem value="completion">Work Completion</SelectItem>
-                <SelectItem value="issue">Issue Found</SelectItem>
-                <SelectItem value="safety">Safety Report</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="Describe the current status..."
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="findings">Findings</Label>
-            <Textarea
-              id="findings"
-              placeholder="What did you discover..."
-              value={formData.findings}
-              onChange={(e) => setFormData(prev => ({ ...prev, findings: e.target.value }))}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="actions">Actions Taken</Label>
-            <Textarea
-              id="actions"
-              placeholder="What work was performed..."
-              value={formData.actionsTaken}
-              onChange={(e) => setFormData(prev => ({ ...prev, actionsTaken: e.target.value }))}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="materials">Materials Used (one per line)</Label>
-            <Textarea
-              id="materials"
-              placeholder="List materials used..."
-              value={formData.materialsUsed}
-              onChange={(e) => setFormData(prev => ({ ...prev, materialsUsed: e.target.value }))}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="next-steps">Next Steps</Label>
-            <Textarea
-              id="next-steps"
-              placeholder="What needs to be done next..."
-              value={formData.nextSteps}
-              onChange={(e) => setFormData(prev => ({ ...prev, nextSteps: e.target.value }))}
-            />
-          </div>
-
-          <div className="space-y-3">
-            <Label>Photos ({photoCapture.length}/5)</Label>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={photoCapture.length >= 5}
-                className="min-h-[44px] text-sm whitespace-nowrap"
-              >
-                <Camera className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span>Add Photos</span>
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={(e) => onPhotoCapture(e.target.files)}
-                className="hidden"
-              />
-            </div>
-            {photoCapture.length > 0 && (
-              <div className="mt-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Selected Photos:
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      // Clear all photos - this should be handled by parent component
-                      if (onPhotoCapture) {
-                        // Reset photo capture
-                        const event = { target: { files: null } } as any;
-                        onPhotoCapture(null);
-                      }
-                    }}
-                    className="text-xs h-7"
-                  >
-                    <Trash2 className="w-3 h-3 mr-1" />
-                    Clear All
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {photoCapture.map((file: File, index: number) => (
-                    <div key={index} className="relative bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Camera className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                              {file.name}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {(file.size / (1024 * 1024)).toFixed(1)} MB • {file.type}
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onRemovePhoto && onRemovePhoto(index)}
-                          className="h-8 w-8 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex-shrink-0"
-                          title={`Remove ${file.name}`}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      
-                      {/* Photo preview if it's an image */}
-                      {file.type.startsWith('image/') && (
-                        <div className="mt-2 rounded border overflow-hidden bg-gray-100 dark:bg-gray-700">
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt={file.name}
-                            className="w-full h-20 object-cover"
-                            onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <Button 
-            type="submit" 
-            disabled={isSubmitting || !formData.issueId || !formData.description} 
-            className="w-full min-h-[48px] text-sm"
-          >
-            <Upload className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span>{isSubmitting ? 'Submitting...' : 'Submit Report'}</span>
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Field Reports History Component
-function FieldReportsHistory({ reports, isLoading }: { reports: FieldReport[]; isLoading: boolean }) {
-  const [expandedReport, setExpandedReport] = useState<number | null>(null);
-
-  // Enhanced debug logging
-  console.log('=== FieldReportsHistory Component ===');
-  console.log('reports:', reports);
-  console.log('isLoading:', isLoading);
-  console.log('reports length:', reports?.length);
-  console.log('reports type:', typeof reports);
-  console.log('is array:', Array.isArray(reports));
-  console.log('Component will render:', isLoading ? 'LOADING' : (!reports || reports.length === 0) ? 'NO REPORTS' : 'REPORTS LIST');
-  
-  // Log each individual report
-  if (reports && reports.length > 0) {
-    console.log('Individual reports:');
-    reports.forEach((report, index) => {
-      console.log(`Report ${index + 1}:`, {
-        id: report.id,
-        type: report.reportType,
-        description: report.description?.substring(0, 50),
-        hasFindings: !!report.findings,
-        hasActions: !!report.actionsTaken,
-        materialsCount: report.materialsUsed?.length || 0,
-        photosCount: report.photos?.length || 0
-      });
-    });
-  }
-
-  const toggleExpanded = (reportId: number) => {
-    setExpandedReport(expandedReport === reportId ? null : reportId);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString(),
-      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Report History</CardTitle>
-        <CardDescription>
-          Click on any report to view full details
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-          </div>
-        ) : !reports || reports.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            No reports submitted yet
-          </div>
-        ) : (
-          <ScrollArea className="h-96">
-            <div className="space-y-3">
-              {reports.map((report) => {
-                const { date, time } = formatDate(report.createdAt);
-                const isExpanded = expandedReport === report.id;
-                
-                return (
-                  <div 
-                    key={report.id} 
-                    className="border rounded-lg bg-white dark:bg-gray-800 hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => toggleExpanded(report.id)}
-                  >
-                    {/* Summary View */}
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline" className="capitalize">{report.reportType}</Badge>
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            Report #{report.id}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500">{date} {time}</span>
-                          {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-gray-400" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-gray-400" />
-                          )}
-                        </div>
-                      </div>
-                      
-                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 line-clamp-2">
-                        {report.description}
-                      </p>
-                      
-                      {/* Consolidated Report Preview */}
-                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-2">
-                        <div className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">Consolidated Report</div>
-                        <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-                          <div><span className="font-medium">Findings:</span> {report.findings?.substring(0, 50)}...</div>
-                          <div><span className="font-medium">Actions:</span> {report.actionsTaken?.substring(0, 50)}...</div>
-                          <div><span className="font-medium">Materials:</span> {report.materialsUsed?.slice(0, 2).join(', ')}{report.materialsUsed?.length > 2 ? '...' : ''}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <FileText className="w-3 h-3" />
-                          Details
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Package className="w-3 h-3" />
-                          {report.materialsUsed?.length || 0} Items
-                        </span>
-                        {report.photos && report.photos.length > 0 && (
-                          <span className="flex items-center gap-1">
-                            <Camera className="w-3 h-3" />
-                            {report.photos.length} Photos
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Detailed View (Expanded) */}
-                    {isExpanded && (
-                      <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-700">
-                        <div className="pt-4">
-                          <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-3">Complete Field Report</h4>
-                          
-                          {/* Consolidated Report Format */}
-                          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg space-y-4">
-                            
-                            {/* Description */}
-                            <div>
-                              <h5 className="font-medium text-xs text-gray-600 dark:text-gray-300 mb-2">DESCRIPTION</h5>
-                              <p className="text-sm text-gray-700 dark:text-gray-300">{report.description}</p>
-                            </div>
-
-                            {/* Findings */}
-                            {report.findings && (
-                              <div>
-                                <h5 className="font-medium text-xs text-gray-600 dark:text-gray-300 mb-2">FINDINGS</h5>
-                                <p className="text-sm text-gray-700 dark:text-gray-300">{report.findings}</p>
-                              </div>
-                            )}
-
-                            {/* Actions Taken */}
-                            {report.actionsTaken && (
-                              <div>
-                                <h5 className="font-medium text-xs text-gray-600 dark:text-gray-300 mb-2">ACTIONS TAKEN</h5>
-                                <p className="text-sm text-gray-700 dark:text-gray-300">{report.actionsTaken}</p>
-                              </div>
-                            )}
-
-                            {/* Materials Used */}
-                            {report.materialsUsed && report.materialsUsed.length > 0 && (
-                              <div>
-                                <h5 className="font-medium text-xs text-gray-600 dark:text-gray-300 mb-2">MATERIALS USED</h5>
-                                <div className="flex flex-wrap gap-2">
-                                  {report.materialsUsed.map((material, index) => (
-                                    <span key={index} className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs">
-                                      {material}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Photos */}
-                            {report.photos && report.photos.length > 0 && (
-                              <div>
-                                <h5 className="font-medium text-xs text-gray-600 dark:text-gray-300 mb-2">ATTACHED PHOTOS</h5>
-                                <div className="grid grid-cols-2 gap-3">
-                                  {report.photos.map((photo, index) => (
-                                    <div key={index} className="relative">
-                                      <img
-                                        src={photo}
-                                        alt={`Report photo ${index + 1}`}
-                                        className="w-full h-32 object-cover rounded border border-gray-300 dark:border-gray-600"
-                                        onError={(e) => {
-                                          // Fallback for missing images
-                                          (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEwIiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UGhvdG88L3RleHQ+PC9zdmc+';
-                                        }}
-                                      />
-                                      <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
-                                        {index + 1}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Next Steps */}
-                            {report.nextSteps && (
-                              <div>
-                                <h5 className="font-medium text-xs text-gray-600 dark:text-gray-300 mb-2">NEXT STEPS</h5>
-                                <p className="text-sm text-gray-700 dark:text-gray-300 italic">{report.nextSteps}</p>
-                              </div>
-                            )}
-
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </ScrollArea>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// Parts Order Form Component
-function PartsOrderForm({ onSubmit, isSubmitting, partsInventory }: any) {
-  const [formData, setFormData] = useState({
-    partName: '',
-    quantity: 1,
-    urgency: 'medium',
-    justification: ''
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({
-      ...formData,
-      technicianId: 1, // Current technician
-      status: 'pending'
-    });
-    setFormData({
-      partName: '',
-      quantity: 1,
-      urgency: 'medium',
-      justification: ''
-    });
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Package className="w-5 h-5" />
-          Order Parts
-        </CardTitle>
-        <CardDescription>
-          Request parts and materials for your work
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="part-name">Part Name</Label>
-            <Input
-              id="part-name"
-              placeholder="Enter part name..."
-              value={formData.partName}
-              onChange={(e) => setFormData(prev => ({ ...prev, partName: e.target.value }))}
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="quantity">Quantity</Label>
-            <Input
-              id="quantity"
-              type="number"
-              min="1"
-              value={formData.quantity}
-              onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) }))}
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="urgency">Urgency</Label>
-            <Select value={formData.urgency} onValueChange={(value) => setFormData(prev => ({ ...prev, urgency: value }))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="emergency">Emergency</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="justification">Justification</Label>
-            <Textarea
-              id="justification"
-              placeholder="Why is this part needed..."
-              value={formData.justification}
-              onChange={(e) => setFormData(prev => ({ ...prev, justification: e.target.value }))}
-              required
-            />
-          </div>
-
-          <Button type="submit" disabled={isSubmitting} className="w-full min-h-[48px] text-sm">
-            <Package className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span>{isSubmitting ? 'Submitting...' : 'Submit Order'}</span>
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Parts Order History Component
-function PartsOrderHistory({ orders, isLoading }: { orders: PartsOrder[]; isLoading: boolean }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Order History</CardTitle>
-        <CardDescription>
-          Status of your parts orders
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-          </div>
-        ) : orders.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            No parts orders yet
-          </div>
-        ) : (
-          <ScrollArea className="h-96">
-            <div className="space-y-4">
-              {orders.map((order) => (
-                <div key={order.id} className="border rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{order.partName}</span>
-                    <Badge variant="outline" className={
-                      order.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' :
-                      order.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                      'bg-red-50 text-red-700 border-red-200'
-                    }>
-                      {order.status}
-                    </Badge>
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    <p>Quantity: {order.quantity}</p>
-                    <p>Urgency: {order.urgency}</p>
-                    <p>Ordered: {new Date(order.orderDate).toLocaleDateString()}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// Communication Panel Component
-function CommunicationPanel({ onSendMessage, isSending }: any) {
-  const [messageData, setMessageData] = useState({
-    toUserId: '',
-    subject: '',
-    content: '',
-    messageType: 'general',
-    priority: 'medium'
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSendMessage({
-      ...messageData,
-      fromUserId: 1, // Current technician
-      toUserId: parseInt(messageData.toUserId)
-    });
-    setMessageData({
-      toUserId: '',
-      subject: '',
-      content: '',
-      messageType: 'general',
-      priority: 'medium'
-    });
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="w-5 h-5" />
-          Send Message
-        </CardTitle>
-        <CardDescription>
-          Communicate with managers and call center
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="recipient">Recipient</Label>
-            <Select value={messageData.toUserId} onValueChange={(value) => setMessageData(prev => ({ ...prev, toUserId: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select recipient..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="2">Technical Manager</SelectItem>
-                <SelectItem value="3">Call Center Agent</SelectItem>
-                <SelectItem value="4">Supervisor</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="message-type">Message Type</Label>
-            <Select value={messageData.messageType} onValueChange={(value) => setMessageData(prev => ({ ...prev, messageType: value }))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="general">General</SelectItem>
-                <SelectItem value="urgent">Urgent Request</SelectItem>
-                <SelectItem value="status_update">Status Update</SelectItem>
-                <SelectItem value="help_request">Help Request</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
+        <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <Label htmlFor="subject">Subject</Label>
             <Input
               id="subject"
               placeholder="Message subject..."
               value={messageData.subject}
-              onChange={(e) => setMessageData(prev => ({ ...prev, subject: e.target.value }))}
+              onChange={(e) => setMessageData((prev: any) => ({ ...prev, subject: e.target.value }))}
               required
             />
           </div>
@@ -1968,7 +602,7 @@ function CommunicationPanel({ onSendMessage, isSending }: any) {
               id="content"
               placeholder="Type your message..."
               value={messageData.content}
-              onChange={(e) => setMessageData(prev => ({ ...prev, content: e.target.value }))}
+              onChange={(e) => setMessageData((prev: any) => ({ ...prev, content: e.target.value }))}
               rows={4}
               required
             />
@@ -2004,291 +638,25 @@ function MessagesHistory({ messages, isLoading, currentUserId }: any) {
             No messages yet
           </div>
         ) : (
-          <ScrollArea className="h-96">
-            <div className="space-y-4">
-              {messages.map((message: TechnicianMessage) => (
-                <div key={message.id} className="border rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{message.subject}</span>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={
-                        message.priority === 'high' ? 'bg-red-50 text-red-700 border-red-200' :
-                        message.priority === 'medium' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                        'bg-green-50 text-green-700 border-green-200'
-                      }>
-                        {message.priority}
-                      </Badge>
-                      <span className="text-xs text-gray-500">
-                        {new Date(message.sentAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{message.content}</p>
-                  <div className="mt-2 text-xs text-gray-500">
-                    {message.fromUserId === currentUserId ? 'Sent' : 'Received'}
-                  </div>
+          <div className="space-y-3">
+            {messages.map((message: Message) => (
+              <div key={message.id} className="p-3 border rounded bg-gray-50 dark:bg-gray-800">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-sm">{message.subject}</span>
+                  <span className="text-xs text-gray-500">
+                    {new Date(message.createdAt).toLocaleDateString()}
+                  </span>
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{message.content}</p>
+                <div className="text-xs text-gray-500 mt-1">
+                  From: {message.fromUserName || 'System'}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </CardContent>
     </Card>
-  );
-}
-
-// Location Tracking Panel Component
-function LocationTrackingPanel({ 
-  currentLocation, 
-  activeWorkSessions, 
-  locationError, 
-  locationLoading, 
-  onRequestLocation,
-  isRealTimeTracking,
-  locationAccuracy,
-  onStartRealTimeTracking,
-  onStopRealTimeTracking
-}: { 
-  currentLocation: {lat: number, lng: number} | null; 
-  activeWorkSessions: WorkSession[]; 
-  locationError: string | null;
-  locationLoading: boolean;
-  onRequestLocation: () => void;
-  isRealTimeTracking: boolean;
-  locationAccuracy: number | null;
-  onStartRealTimeTracking: () => void;
-  onStopRealTimeTracking: () => void;
-}) {
-  return (
-    <div className="grid gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapIcon className="w-5 h-5" />
-            Current Location
-          </CardTitle>
-          <CardDescription>
-            Real-time location tracking
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {currentLocation ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <Badge variant="outline" className={`${isRealTimeTracking ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
-                  <Navigation className="w-3 h-3 mr-1" />
-                  {isRealTimeTracking ? 'Real-time Tracking' : 'GPS Active'}
-                </Badge>
-                <div className="flex gap-2">
-                  {!isRealTimeTracking ? (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={onRequestLocation}
-                        disabled={locationLoading}
-                      >
-                        <RotateCcw className="w-4 h-4 mr-2" />
-                        Refresh
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={onStartRealTimeTracking}
-                        disabled={locationLoading}
-                      >
-                        <Navigation className="w-4 h-4 mr-2" />
-                        Start Live Tracking
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={onStopRealTimeTracking}
-                    >
-                      <StopCircle className="w-4 h-4 mr-2" />
-                      Stop Tracking
-                    </Button>
-                  )}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Latitude</Label>
-                  <p className="text-sm font-mono">{currentLocation.lat.toFixed(6)}</p>
-                </div>
-                <div>
-                  <Label>Longitude</Label>
-                  <p className="text-sm font-mono">{currentLocation.lng.toFixed(6)}</p>
-                </div>
-              </div>
-              {locationAccuracy && (
-                <div className="pt-2 border-t">
-                  <Label>Accuracy</Label>
-                  <p className="text-sm text-gray-600">±{Math.round(locationAccuracy)} meters</p>
-                </div>
-              )}
-              {isRealTimeTracking && (
-                <div className="pt-2 border-t">
-                  <div className="flex items-center gap-2 text-sm text-blue-600">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    Location updating continuously
-                  </div>
-                </div>
-              )}
-              {/* Interactive Map Component */}
-              <LocationMap 
-                currentLocation={currentLocation}
-                activeWorkSessions={activeWorkSessions}
-                isRealTimeTracking={isRealTimeTracking}
-              />
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              {locationLoading ? (
-                <div className="space-y-4">
-                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
-                  <p className="text-gray-500">Requesting location access...</p>
-                  <p className="text-xs text-gray-400">May take up to 30 seconds on mobile devices</p>
-                </div>
-              ) : locationError ? (
-                <div className="space-y-4">
-                  <div className="text-red-500 mb-2">
-                    <AlertCircle className="w-8 h-8 mx-auto mb-2" />
-                    <p className="text-sm">{locationError}</p>
-                  </div>
-                  <Button onClick={onRequestLocation} variant="outline">
-                    <MapIcon className="w-4 h-4 mr-2" />
-                    Enable Location Access
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="text-gray-500 mb-2">
-                    <MapIcon className="w-8 h-8 mx-auto mb-2" />
-                    <p className="text-sm">Location access not available</p>
-                  </div>
-                  <Button onClick={onRequestLocation} variant="outline">
-                    <MapIcon className="w-4 h-4 mr-2" />
-                    Request Location Access
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Travel & Time Tracking</CardTitle>
-          <CardDescription>
-            Track time spent traveling between sites
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {activeWorkSessions.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                No active sessions to track
-              </div>
-            ) : (
-              activeWorkSessions.map((session: WorkSession) => (
-                <div key={session.issueId} className="border rounded-lg p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Issue #{session.issueId}</span>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {session.arrivalTime ? calculateWorkDuration(session.arrivalTime) : '0h 0m'}
-                    </Badge>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// Issue Details Dialog Component
-function IssueDetailsDialog({ issue, onClose }: { issue: Issue; onClose: () => void }) {
-  return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="pb-4">
-          <DialogTitle className="text-lg font-semibold truncate">{issue.title}</DialogTitle>
-          <DialogDescription className="flex items-center gap-2 text-sm">
-            <span>Issue #{issue.id}</span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              {issue.location}
-            </span>
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Category</Label>
-              <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded">{issue.category}</p>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Priority</Label>
-              <div>
-                <Badge variant="outline" className={getPriorityColor(issue.priority)}>
-                  {issue.priority}
-                </Badge>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Status</Label>
-              <div>
-                <Badge variant="outline" className={getStatusColor(issue.status)}>
-                  {issue.status}
-                </Badge>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Ward</Label>
-              <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded">{issue.ward || 'Not specified'}</p>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Description</Label>
-            <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-              <p className="text-sm leading-relaxed">{issue.description}</p>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Created Date</Label>
-            <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded">
-              {new Date(issue.createdAt).toLocaleString()}
-            </p>
-          </div>
-
-          {(issue.status === 'resolved' || issue.status === 'completed') && (
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Status Update</Label>
-              <p className="text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 p-2 rounded border border-blue-200 dark:border-blue-800">
-                Issue {issue.status}
-              </p>
-            </div>
-          )}
-        </div>
-        
-        <div className="flex justify-end gap-3 pt-6 border-t mt-6">
-          <Button variant="outline" onClick={onClose} className="min-w-[100px]">
-            Close
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }
 
@@ -2318,120 +686,4 @@ function calculateWorkDuration(startTime: Date) {
   const hours = Math.floor(diffMins / 60);
   const minutes = diffMins % 60;
   return `${hours}h ${minutes}m`;
-}
-
-// Enhanced Location Map Component with Leaflet
-function LocationMap({ 
-  currentLocation, 
-  activeWorkSessions, 
-  isRealTimeTracking 
-}: { 
-  currentLocation: {lat: number, lng: number} | null;
-  activeWorkSessions: WorkSession[];
-  isRealTimeTracking: boolean;
-}) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const leafletMapRef = useRef<L.Map | null>(null);
-  const currentLocationMarkerRef = useRef<L.Marker | null>(null);
-
-  // Initialize map
-  useEffect(() => {
-    if (!mapRef.current || leafletMapRef.current) return;
-
-    // Fix for Leaflet default markers in Webpack
-    delete (L.Icon.Default.prototype as any)._getIconUrl;
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAApCAYAAADAk4LOAAAFgUlEQVR4Aa1XA5BjWRTN2oW17d3YaZtr2962HUzbXNfN1+2bZsGmQHFP4P1cEcB1KS0GcTLlM3E6XJ1dPXmJHOKlP8JLf3pf5rkYf/8q/9n7uJbU+Fs5e0nqcqiXf12DXNl2L+BKv6RYWX7V/8p8K6dMOEJIgRHhLc5v/xpCyM3pPnhUIGqg3O6d8Nzjz8Kx+WBYVCsm3VVXvDZbwYd9oqKHbHJ5kVKE2G0iU9E1gn7wPfpvnLDi68JN/l1wlT5yJdQyoQ3iZJCMVMKWLZjM8mNGjJnYWbLI8bG1h0OWxd6mNKBi1jx0PzlIVmR8MKMhKTAzEEbRhNK8p2vWVbZjZDtjPGJ5WNH7yQR3q+w8/cHNSWcW+DBNF21t8+4l6fNr2RbWvJNEcXJvJVE6RhI+i5KIoKtpJWNTMwBKXCc6E1MK3QL9KmZk7UdbOkO7mfL8r5JZdKIrpJtV1RWprT6g+JK8sR4PmVdYZJBq9VKyqSBFu8+E1z0tKYZcK3p+HJPk4U0hG8qJ3dePjM5kz19tpOYNDRuC3iMX7rpMEBE8IiDkGP9C6aDkKmOJFFIEH8qI3MWJvRJ3BNQwgTNTqaO8zILd3VF2BcOpIAXYrHKGxRSLaJLzJZZBxMFz6HIlTZeFBt2J0R+CwRtNfaEJGqDpOD0Qhh5o4ycxwgWmyZ3SkAqHDw0HEQgpTpNOr8rJnPMANRbKSMI0ZRDF+4MPSRH8mqKvHCeN9GGBW/rPa8qPUeqAAaI+D2THBGZQKdNi9MF6v6QKSGaMZBrKhSIZnKzLVgJvhGhSLdEVqyuJvYUO9KwDWqnlhKXhEqpwR5/sOJoF9YzCcSjvRk9EuJxiHBAKlYYiB//DHINQKnJZLYiqNhPjJEbwFq9zNhJgMK1hJ/ZGhCvLLfNJj4I9nnDvGLK5n5LLNR9R4xLZQ4jz8/w3XMKQw7KF+p2fxaDwkn4Q7mjWwUxzlSS6QQQJKQWC0Sk4Gw/UhLdUcVK2QdM1dxQKB3s6W8s5iOlSwPFiL5Uo5Zc5rNfEVeBXQk8j+jklBQ9TtGqgsjhgwHFtLo3G/NqAyNGcFJBE0YPfJfOt0AGcfKjG9ys91t0kFyC9lrJqV9/rLLBnI1WLZ7pEjEpOiUe2F8k+EXTl3hJT6Ec7F8EHeBN9iNQdB9eTSWjKBiZDY+Nj+7Q6JfYgQ8C7jC9D3+C9u7YZjZ8lJHl9jFwV6XfI5aHe1xKLjdlfJPl59t4t8/GCtEL7T/qgjcFJBe+1VVEJ6oj47YQz4FFWr2FN0NJPl0EqD9cGw9TKkKPjvVPZxm7iXUJ7CpUFGe/kNBQ5I0VcGYKLBb7IHbOzgCOb9FJq5D9JnwHMEZFrVRz+O+ycOhq9HJAj7ZhcJ3VrCbKKbcOkhsNEJLUjH2dKW5yC0dj/AAlhgk6XQvUNUQzRPU6FYz2IjZQ7jbp1BjOFu/F+7QQQHgKi3nnKNBPe7RNx7vLR2tYdlCY1tKIDL9A5zAY2GYD9yY0xbKwb9YxfHfgqNY0gFpYzOLQEe11NhMkSlBFKoRnFCGcGCXNlV2IeQdM9ZJJLmkJdJr0pBdYQp9eCNZW1KZANt0PJsKWcNSP9yPp8t0+DLGLAhGwTZXlTLnBgBpYnmNgcUBNgJj1LRKRvREJ8eIGNuFzTF3tKEJ/BAQHQB2NaEBTNEu2YZjk+xNZNUbYPdhp+vqRGTzJZMqgWx/s2R+WEh4oK8MYMJ9PfL1ZDIVnVMBL8I9FbGK8CjZEOVDR9kWd5GNfXJOBLmJDvdJkmLNYQlpzlTNz7aPJ4DfwUKRvFuRxJJOCZEfxWPIkmKdXJXBOECqGFJ+8KaQQ0HgXpVpIcS8E9Dl/ZrTJXo+v4ZAAA=',
-      iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAApCAYAAADAk4LOAAAFgUlEQVR4Aa1XA5BjWRTN2oW17d3YaZtr2962HUzbXNfN1+2bZsGmQHFP4P1cEcB1KS0GcTLlM3E6XJ1dPXmJHOKlP8JLf3pf5rkYf/8q/9n7uJbU+Fs5e0nqcqiXf12DXNl2L+BKv6RYWX7V/8p8K6dMOEJIgRHhLc5v/xpCyM3pPnhUIGqg3O6d8Nzjz8Kx+WBYVCsm3VVXvDZbwYd9oqKHbHJ5kVKE2G0iU9E1gn7wPfpvnLDi68JN/l1wlT5yJdQyoQ3iZJCMVMKWLZjM8mNGjJnYWbLI8bG1h0OWxd6mNKBi1jx0PzlIVmR8MKMhKTAzEEbRhNK8p2vWVbZjZDtjPGJ5WNH7yQR3q+w8/cHNSWcW+DBNF21t8+4l6fNr2RbWvJNEcXJvJVE6RhI+i5KIoKtpJWNTMwBKXCc6E1MK3QL9KmZk7UdbOkO7mfL8r5JZdKIrpJtV1RWprT6g+JK8sR4PmVdYZJBq9VKyqSBFu8+E1z0tKYZcK3p+HJPk4U0hG8qJ3dePjM5kz19tpOYNDRuC3iMX7rpMEBE8IiDkGP9C6aDkKmOJFFIEH8qI3MWJvRJ3BNQwgTNTqaO8zILd3VF2BcOpIAXYrHKGxRSLaJLzJZZBxMFz6HIlTZeFBt2J0R+CwRtNfaEJGqDpOD0Qhh5o4ycxwgWmyZ3SkAqHDw0HEQgpTpNOr8rJnPMANRbKSMI0ZRDF+4MPSRH8mqKvHCeN9GGBW/rPa8qPUeqAAaI+D2THBGZQKdNi9MF6v6QKSGaMZBrKhSIZnKzLVgJvhGhSLdEVqyuJvYUO9KwDWqnlhKXhEqpwR5/sOJoF9YzCcSjvRk9EuJxiHBAKlYYiB//DHINQKnJZLYiqNhPjJEbwFq9zNhJgMK1hJ/ZGhCvLLfNJj4I9nnDvGLK5n5LLNR9R4xLZQ4jz8/w3XMKQw7KF+p2fxaDwkn4Q7mjWwUxzlSS6QQQJKQWC0Sk4Gw/UhLdUcVK2QdM1dxQKB3s6W8s5iOlSwPFiL5Uo5Zc5rNfEVeBXQk8j+jklBQ9TtGqgsjhgwHFtLo3G/NqAyNGcFJBE0YPfJfOt0AGcfKjG9ys91t0kFyC9lrJqV9/rLLBnI1WLZ7pEjEpOiUe2F8k+EXTl3hJT6Ec7F8EHeBN9iNQdB9eTSWjKBiZDY+Nj+7Q6JfYgQ8C7jC9D3+C9u7YZjZ8lJHl9jFwV6XfI5aHe1xKLjdlfJPl59t4t8/GCtEL7T/qgjcFJBe+1VVEJ6oj47YQz4FFWr2FN0NJPl0EqD9cGw9TKkKPjvVPZxm7iXUJ7CpUFGe/kNBQ5I0VcGYKLBb7IHbOzgCOb9FJq5D9JnwHMEZFrVRz+O+ycOhq9HJAj7ZhcJ3VrCbKKbcOkhsNEJLUjH2dKW5yC0dj/AAlhgk6XQvUNUQzRPU6FYz2IjZQ7jbp1BjOFu/F+7QQQHgKi3nnKNBPe7RNx7vLR2tYdlCY1tKIDL9A5zAY2GYD9yY0xbKwb9YxfHfgqNY0gFpYzOLQEe11NhMkSlBFKoRnFCGcGCXNlV2IeQdM9ZJJLmkJdJr0pBdYQp9eCNZW1KZANt0PJsKWcNSP9yPp8t0+DLGLAhGwTZXlTLnBgBpYnmNgcUBNgJj1LRKRvREJ8eIGNuFzTF3tKEJ/BAQHQB2NaEBTNEu2YZjk+xNZNUbYPdhp+vqRGTzJZMqgWx/s2R+WEh4oK8MYMJ9PfL1ZDIVnVMBL8I9FbGK8CjZEOVDR9kWd5GNfXJOBLmJDvdJkmLNYQlpzlTNz7aPJ4DfwUKRvFuRxJJOCZEfxWPIkmKdXJXBOECqGFJ+8KaQQ0HgXpVpIcS8E9Dl/ZrTJXo+v4ZAAA=',
-      shadowUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACkAAAApCAYAAACoYKUBAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAABmJLR0QA/wD/AP+gvaeTAAAAB3RJTUUH4wgJCzcEkJIjHwAABqFJREFUWMPtl21sU1UYx5/b3natt73rOsetmyN0Q2CKxW0MLJKJGYkxJhpJjIkvIMZEP6AkxkQTNcYPmg/Ej2o0fhCjSQwxZvgNjZHwgQQZm5hJdDBebF27KW1tS9/a9fauPXfnHD907XW8b2VmBH+JaXNzzv95zvM/5/lfnOPAf17OOddE05zbOOeaI5zFr/5e0jnHSgTTOxp1XZfuv4Df70+MZZtj3dbtfLHeLpwOeS2iCITQ5XT96yQkJgAQExNzPp9vCqFbUZRB8ODBg3/evn375osXLtZOTU2pAwMD8w1JDwwGOGhwMNDhZg+qeunWO37q+rGI76d6e3ulhYWFLClGXrlq9fP19atOZuJZY9duOTR3w9XXR/m2xoZr6o93ZC8Kp+H/+vRHBz1NTAf95A6oKyurz5bXLWk5ndPTWLrE3iayNy++1bMJBv4FgA7HFJz5+s1aMvF4jJQ9Gkx9trDv4qS6t9O+lD7m1pnZmafPnB5wJO8tOfHdTKWr6srvCZDPHUaQhd8APLKdp7wj05p6cXJOzGOTefXv3JBB6vKIAgKJOGb3E8P+JKhEv0tEwDi37ezZskEqyAKsqOKpTKUQ7P/VVUtEUWhBBkx6PAQyc7kSQRHGlJktOzp0b6b52gm/wONDd+3Oq9tMOVv16qtvunJOcMwgyzm9qEhHnZzG8o7SzN9vRVEUGdQbE8VdE9VdkOOwcP7bF18vGGOj5+2yQwfP/0g7qG9j9A6wjq2V6nVVbJNTW2H4rqcWKDCIo87AxKJ1DqJ0e8u2gC5Py8VLrmf+0aNzYz1bXlreW3nCxgzJG3E+kYh5gEK4fgvd2/FTdj9R6sTp07uTcUzzuNH7hvXPpLyL5O7L4vr73o8h3bZw93f3N+e6sdrpL5pPvNBQ=',
-    });
-
-    // Create the map with default South African coordinates
-    const defaultCoords: [number, number] = [-26.2041, 28.0473]; // Johannesburg
-    const map = L.map(mapRef.current).setView(defaultCoords, 13);
-
-    // Add OpenStreetMap tiles (free alternative to Google Maps)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    leafletMapRef.current = map;
-
-    return () => {
-      if (leafletMapRef.current) {
-        leafletMapRef.current.remove();
-        leafletMapRef.current = null;
-      }
-    };
-  }, []);
-
-  // Update current location marker
-  useEffect(() => {
-    if (!leafletMapRef.current || !currentLocation) return;
-
-    const map = leafletMapRef.current;
-
-    // Remove existing current location marker
-    if (currentLocationMarkerRef.current) {
-      map.removeLayer(currentLocationMarkerRef.current);
-    }
-
-    // Create a custom icon for current location
-    const currentLocationIcon = L.divIcon({
-      className: 'current-location-marker',
-      html: `<div style="width: 20px; height: 20px; background: #3b82f6; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-      iconSize: [20, 20],
-      iconAnchor: [10, 10]
-    });
-
-    // Add current location marker
-    const marker = L.marker([currentLocation.lat, currentLocation.lng], {
-      icon: currentLocationIcon
-    }).addTo(map);
-
-    marker.bindPopup(`
-      <div style="text-align: center;">
-        <strong>Your Location</strong><br/>
-        ${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}<br/>
-        ${isRealTimeTracking ? '<span style="color: #3b82f6;">🔄 Live Tracking</span>' : '📍 Current Position'}
-      </div>
-    `);
-
-    currentLocationMarkerRef.current = marker;
-
-    // Center map on current location
-    map.setView([currentLocation.lat, currentLocation.lng], 15);
-  }, [currentLocation, isRealTimeTracking]);
-
-  // Add work session markers
-  useEffect(() => {
-    if (!leafletMapRef.current) return;
-
-    // This would typically load issue locations and show them on the map
-    // For now, we'll show a simple demonstration
-  }, [activeWorkSessions]);
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium">Live Location Map</Label>
-        {isRealTimeTracking && (
-          <div className="flex items-center gap-2 text-sm text-blue-600">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-            Real-time tracking active
-          </div>
-        )}
-      </div>
-      <div 
-        ref={mapRef} 
-        className="h-64 w-full rounded-lg border border-gray-200 dark:border-gray-700"
-        style={{ minHeight: '256px' }}
-      />
-      {currentLocation && (
-        <div className="text-xs text-gray-500 bg-gray-50 dark:bg-gray-800 p-2 rounded text-center">
-          📍 Current: {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
-        </div>
-      )}
-    </div>
-  );
 }
