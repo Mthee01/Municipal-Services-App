@@ -21,7 +21,11 @@ import {
   Clock,
   User,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Package,
+  ShoppingCart,
+  Truck,
+  CheckSquare
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -49,6 +53,23 @@ interface WorkSession {
   notes?: string;
   issueTitle?: string;
   issueLocation?: string;
+  partsOrderId?: number;
+  partsOrderStatus?: 'none' | 'pending' | 'approved' | 'ordered' | 'delivered' | 'installed';
+}
+
+interface PartsOrder {
+  id: number;
+  technicianId: number;
+  issueId: number;
+  orderNumber: string;
+  status: 'pending' | 'approved' | 'ordered' | 'delivered' | 'cancelled';
+  priority: 'urgent' | 'high' | 'normal' | 'low';
+  partsRequested: string[];
+  justification: string;
+  totalEstimatedCost?: number;
+  createdAt: string;
+  approvedAt?: string;
+  deliveredAt?: string;
 }
 
 interface CompletionReport {
@@ -88,6 +109,17 @@ export default function FieldTechnicianDashboard() {
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
   const [isTracking, setIsTracking] = useState(false);
+  
+  // Parts ordering state
+  const [showPartsOrderDialog, setShowPartsOrderDialog] = useState(false);
+  const [selectedWorkSession, setSelectedWorkSession] = useState<WorkSession | null>(null);
+  const [partsOrderData, setPartsOrderData] = useState({
+    parts: [''],
+    justification: '',
+    priority: 'normal' as 'urgent' | 'high' | 'normal' | 'low'
+  });
+  const [showPartsStatusDialog, setShowPartsStatusDialog] = useState(false);
+  const [selectedPartsOrder, setSelectedPartsOrder] = useState<PartsOrder | null>(null);
 
   // API Queries
   const { data: issues = [], isLoading: issuesLoading } = useQuery({
@@ -108,6 +140,11 @@ export default function FieldTechnicianDashboard() {
   const { data: messages = [] } = useQuery({
     queryKey: ['/api/technicians/messages', currentUserId],
     queryFn: () => apiRequest(`/api/technicians/messages?technicianId=${currentUserId}`),
+  });
+
+  const { data: partsOrders = [] } = useQuery({
+    queryKey: ['/api/parts-orders', currentUserId],
+    queryFn: () => apiRequest(`/api/parts-orders?technicianId=${currentUserId}`),
   });
 
   // Mutations
@@ -145,6 +182,33 @@ export default function FieldTechnicianDashboard() {
     },
     onError: (error: any) => {
       toast({ title: 'Error', description: error.message || 'Failed to send message', variant: 'destructive' });
+    }
+  });
+
+  const createPartsOrderMutation = useMutation({
+    mutationFn: (orderData: any) => apiRequest('/api/parts-orders', 'POST', orderData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/parts-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/technicians/work-sessions'] });
+      setShowPartsOrderDialog(false);
+      setPartsOrderData({ parts: [''], justification: '', priority: 'normal' });
+      toast({ title: 'Parts order created', description: 'Your parts order has been submitted for approval.' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to create parts order', variant: 'destructive' });
+    }
+  });
+
+  const updatePartsOrderMutation = useMutation({
+    mutationFn: ({ orderId, updates }: { orderId: number; updates: any }) => 
+      apiRequest(`/api/parts-orders/${orderId}`, 'PATCH', updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/parts-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/technicians/work-sessions'] });
+      toast({ title: 'Parts status updated', description: 'Parts order status has been updated.' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to update parts order', variant: 'destructive' });
     }
   });
 
@@ -205,7 +269,76 @@ export default function FieldTechnicianDashboard() {
       toast({ title: 'Error', description: 'Please provide completion notes', variant: 'destructive' });
       return;
     }
+    
+    // Check if there are pending parts orders for this work session
+    const session = workSessions.find(s => s.id === sessionId);
+    if (session) {
+      const issuePartsOrders = partsOrders.filter((order: PartsOrder) => order.issueId === session.issueId);
+      const pendingOrders = issuePartsOrders.filter((order: PartsOrder) => 
+        order.status !== 'cancelled' && order.status !== 'delivered'
+      );
+      
+      if (pendingOrders.length > 0) {
+        toast({ 
+          title: 'Cannot complete work', 
+          description: 'Please ensure all parts are delivered and installed before completing work.',
+          variant: 'destructive' 
+        });
+        return;
+      }
+    }
+    
     completeWorkMutation.mutate({ sessionId, notes });
+  };
+
+  const handleOrderParts = (session: WorkSession) => {
+    setSelectedWorkSession(session);
+    setShowPartsOrderDialog(true);
+  };
+
+  const handleSubmitPartsOrder = () => {
+    if (!selectedWorkSession || !partsOrderData.justification.trim() || partsOrderData.parts.filter(p => p.trim()).length === 0) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+
+    const orderData = {
+      technicianId: currentUserId,
+      issueId: selectedWorkSession.issueId,
+      partsRequested: partsOrderData.parts.filter(p => p.trim()),
+      justification: partsOrderData.justification,
+      priority: partsOrderData.priority,
+      orderNumber: `PO-${Date.now().toString().slice(-6)}-${String(currentUserId).padStart(3, '0')}`
+    };
+
+    createPartsOrderMutation.mutate(orderData);
+  };
+
+  const handleUpdatePartsStatus = (orderId: number, status: string) => {
+    updatePartsOrderMutation.mutate({ orderId, updates: { status } });
+    setShowPartsStatusDialog(false);
+  };
+
+  const addPartsField = () => {
+    setPartsOrderData(prev => ({ ...prev, parts: [...prev.parts, ''] }));
+  };
+
+  const removePartsField = (index: number) => {
+    setPartsOrderData(prev => ({ 
+      ...prev, 
+      parts: prev.parts.filter((_, i) => i !== index) 
+    }));
+  };
+
+  const updatePartsField = (index: number, value: string) => {
+    setPartsOrderData(prev => ({ 
+      ...prev, 
+      parts: prev.parts.map((part, i) => i === index ? value : part) 
+    }));
+  };
+
+  const getPartsOrderForIssue = (issueId: number) => {
+    return partsOrders.find((order: PartsOrder) => order.issueId === issueId && order.status !== 'cancelled');
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -364,50 +497,107 @@ export default function FieldTechnicianDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {workSessions.map((session: WorkSession) => (
-                      <div key={session.id} className="border rounded-lg p-4 bg-yellow-50 dark:bg-yellow-900/20">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              IN PROGRESS
-                            </Badge>
-                            <span className="text-sm text-gray-600">
-                              Started: {new Date(session.startTime).toLocaleTimeString()}
-                            </span>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              const notes = prompt('Enter completion notes:');
-                              if (notes) {
-                                handleCompleteWork(session.id, notes);
-                              }
-                            }}
-                            disabled={completeWorkMutation.isPending}
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                          >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Complete Work
-                          </Button>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <h3 className="font-medium text-gray-900 dark:text-white">
-                            {session.issueTitle || `Issue #${session.issueId}`}
-                          </h3>
-                          <div className="flex items-center gap-4 text-sm text-gray-500">
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              {session.issueLocation || 'Location not specified'}
+                    {workSessions.map((session: WorkSession) => {
+                      const partsOrder = getPartsOrderForIssue(session.issueId);
+                      const canComplete = !partsOrder || partsOrder.status === 'delivered';
+                      
+                      return (
+                        <div key={session.id} className="border rounded-lg p-4 bg-yellow-50 dark:bg-yellow-900/20">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                IN PROGRESS
+                              </Badge>
+                              <span className="text-sm text-gray-600">
+                                Started: {new Date(session.startTime).toLocaleTimeString()}
+                              </span>
+                              {partsOrder && (
+                                <Badge className={getPartsStatusColor(partsOrder.status)}>
+                                  Parts: {partsOrder.status}
+                                </Badge>
+                              )}
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              Duration: {calculateWorkDuration(new Date(session.startTime))}
+                            <div className="flex gap-2">
+                              {!partsOrder ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOrderParts(session)}
+                                  disabled={createPartsOrderMutation.isPending}
+                                  className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                                >
+                                  <Package className="w-4 h-4 mr-2" />
+                                  Order Parts
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedPartsOrder(partsOrder);
+                                    setShowPartsStatusDialog(true);
+                                  }}
+                                  className="border-orange-200 text-orange-700 hover:bg-orange-50"
+                                >
+                                  <Truck className="w-4 h-4 mr-2" />
+                                  Update Parts
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  const notes = prompt('Enter completion notes:');
+                                  if (notes) {
+                                    handleCompleteWork(session.id, notes);
+                                  }
+                                }}
+                                disabled={completeWorkMutation.isPending || !canComplete}
+                                className={`text-white ${canComplete 
+                                  ? 'bg-green-600 hover:bg-green-700' 
+                                  : 'bg-gray-400 cursor-not-allowed'}`}
+                                title={!canComplete ? 'Parts must be delivered before completing work' : 'Complete work'}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Complete Work
+                              </Button>
                             </div>
                           </div>
+                          
+                          <div className="space-y-2">
+                            <h3 className="font-medium text-gray-900 dark:text-white">
+                              {session.issueTitle || `Issue #${session.issueId}`}
+                            </h3>
+                            <div className="flex items-center gap-4 text-sm text-gray-500">
+                              <div className="flex items-center gap-1">
+                                <MapPin className="w-4 h-4" />
+                                {session.issueLocation || 'Location not specified'}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-4 h-4" />
+                                Duration: {calculateWorkDuration(new Date(session.startTime))}
+                              </div>
+                            </div>
+                            
+                            {partsOrder && (
+                              <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                                    Parts Order: {partsOrder.orderNumber}
+                                  </span>
+                                  <Badge className={getPartsStatusColor(partsOrder.status)}>
+                                    {partsOrder.status}
+                                  </Badge>
+                                </div>
+                                <div className="text-sm text-blue-800 dark:text-blue-200">
+                                  <div>Parts: {partsOrder.partsRequested.join(', ')}</div>
+                                  <div className="mt-1">Priority: {partsOrder.priority}</div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -568,6 +758,163 @@ export default function FieldTechnicianDashboard() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Parts Order Dialog */}
+        <Dialog open={showPartsOrderDialog} onOpenChange={setShowPartsOrderDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Order Parts</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Parts Required</Label>
+                <div className="space-y-2 mt-2">
+                  {partsOrderData.parts.map((part, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        placeholder="Enter part name/description"
+                        value={part}
+                        onChange={(e) => updatePartsField(index, e.target.value)}
+                        className="flex-1"
+                      />
+                      {partsOrderData.parts.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removePartsField(index)}
+                          className="px-2"
+                        >
+                          ×
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addPartsField}
+                    className="w-full"
+                  >
+                    + Add Another Part
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Priority</Label>
+                <div className="flex gap-2 mt-2">
+                  {(['normal', 'high', 'urgent'] as const).map((priority) => (
+                    <Button
+                      key={priority}
+                      type="button"
+                      variant={partsOrderData.priority === priority ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setPartsOrderData(prev => ({ ...prev, priority }))}
+                      className="capitalize"
+                    >
+                      {priority}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Justification</Label>
+                <Textarea
+                  placeholder="Explain why these parts are needed..."
+                  value={partsOrderData.justification}
+                  onChange={(e) => setPartsOrderData(prev => ({ 
+                    ...prev, 
+                    justification: e.target.value 
+                  }))}
+                  rows={3}
+                  className="mt-2"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowPartsOrderDialog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSubmitPartsOrder}
+                  disabled={createPartsOrderMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Submit Order
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Parts Status Update Dialog */}
+        <Dialog open={showPartsStatusDialog} onOpenChange={setShowPartsStatusDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Update Parts Status</DialogTitle>
+            </DialogHeader>
+            
+            {selectedPartsOrder && (
+              <div className="space-y-4">
+                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
+                  <div className="text-sm font-medium">Order: {selectedPartsOrder.orderNumber}</div>
+                  <div className="text-sm text-gray-600">Current Status: {selectedPartsOrder.status}</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Parts: {selectedPartsOrder.partsRequested.join(', ')}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Update Status</Label>
+                  <div className="space-y-2 mt-2">
+                    {selectedPartsOrder.status === 'pending' && (
+                      <div className="text-sm text-orange-600">
+                        ⏳ Waiting for management approval
+                      </div>
+                    )}
+                    {selectedPartsOrder.status === 'approved' && (
+                      <div className="text-sm text-blue-600">
+                        ✅ Approved - Parts are being ordered
+                      </div>
+                    )}
+                    {selectedPartsOrder.status === 'ordered' && (
+                      <Button
+                        onClick={() => handleUpdatePartsStatus(selectedPartsOrder.id, 'delivered')}
+                        disabled={updatePartsOrderMutation.isPending}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <Truck className="w-4 h-4 mr-2" />
+                        Mark as Delivered & Installed
+                      </Button>
+                    )}
+                    {selectedPartsOrder.status === 'delivered' && (
+                      <div className="text-sm text-green-600">
+                        ✅ Parts delivered and installed - You can now complete the work
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowPartsStatusDialog(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
@@ -686,4 +1033,15 @@ function calculateWorkDuration(startTime: Date) {
   const hours = Math.floor(diffMins / 60);
   const minutes = diffMins % 60;
   return `${hours}h ${minutes}m`;
+}
+
+function getPartsStatusColor(status: string) {
+  switch (status) {
+    case 'pending': return 'bg-orange-100 text-orange-800 border-orange-200';
+    case 'approved': return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'ordered': return 'bg-purple-100 text-purple-800 border-purple-200';
+    case 'delivered': return 'bg-green-100 text-green-800 border-green-200';
+    case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
+    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
 }
