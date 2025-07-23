@@ -369,6 +369,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- July 23, 2025: REMOVED JOB ORDER MANAGEMENT TAB FROM TECHNICAL MANAGER DASHBOARD
+  * DELETED job-orders TabsContent and all related job order UI components per user request
+  * REMOVED job-orders TabsTrigger from navigation - reduced from 6 tabs to 5 tabs total
+  * CLEANED UP unused icon imports (ClipboardList, Plus, BarChart3) no longer needed
+  * TECHNICAL MANAGER DASHBOARD NOW HAS 5 TABS: Issues, Technicians, Tracking, Analytics, Departments
+  * All TypeScript errors resolved - dashboard loads properly without job order functionality
+  * Job orders database table still exists but feature completely removed from UI interface
+  * Dashboard maintains all other core functionality: issue assignment, technician management, location tracking, performance analytics, and department overview
 - July 23, 2025: FIXED CRITICAL TECHNICIAN DASHBOARD BUTTON FUNCTIONALITY AND FILTERING
   * RESOLVED START WORK BUTTON ISSUES: Fixed technician issue assignment filtering to show only assigned issues
   * FIXED CLOSE ISSUE BUTTON FUNCTIONALITY: Corrected event handling to call completion mutation directly

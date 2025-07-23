@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Users, Wrench, MapPin, Clock, Star, AlertCircle, CheckCircle, Navigation, StickyNote, Eye, ClipboardList, Plus, BarChart3 } from "lucide-react";
+import { Users, Wrench, MapPin, Clock, Star, AlertCircle, CheckCircle, Navigation, StickyNote, Eye } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
@@ -282,10 +282,6 @@ export default function TechManagerDashboard() {
             <span className="hidden sm:inline">Performance Analytics</span>
             <span className="sm:hidden">Analytics</span>
           </TabsTrigger>
-          <TabsTrigger value="job-orders" className="text-xs sm:text-sm p-2 sm:p-3">
-            <span className="hidden sm:inline">Job Orders</span>
-            <span className="sm:hidden">Job Orders</span>
-          </TabsTrigger>
           <TabsTrigger value="departments" className="text-xs sm:text-sm p-2 sm:p-3">
             <span className="hidden sm:inline">Department Overview</span>
             <span className="sm:hidden">Departments</span>
@@ -532,91 +528,7 @@ export default function TechManagerDashboard() {
           </Card>
         </TabsContent>
 
-        {/* Job Orders Tab */}
-        <TabsContent value="job-orders" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-blue-600" />
-                Job Order Management
-              </CardTitle>
-              <CardDescription>Create and manage job orders for technician assignments</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Pending Job Orders */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Pending Job Orders</h3>
-                  <div className="space-y-3">
-                    <Card className="border-orange-200 bg-orange-50">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <span className="text-sm font-mono text-blue-600">JO-001-2025</span>
-                            <h4 className="font-medium">Street light not working</h4>
-                          </div>
-                          <Badge variant="secondary" className="bg-orange-100 text-orange-800">Pending</Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">Oak Avenue, Ward 5</p>
-                        <p className="text-xs text-gray-500">High Priority • Reported by David Brown</p>
-                        <Button size="sm" className="mt-3 w-full bg-yellow-500 hover:bg-yellow-600 text-black">
-                          Assign Technician
-                        </Button>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="border-blue-200 bg-blue-50">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <span className="text-sm font-mono text-blue-600">JO-002-2025</span>
-                            <h4 className="font-medium">Traffic light malfunction</h4>
-                          </div>
-                          <Badge variant="default" className="bg-blue-100 text-blue-800">Assigned</Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">Main Street & First Avenue</p>
-                        <p className="text-xs text-gray-500">Urgent • Assigned to Tom Technician</p>
-                        <Button size="sm" variant="outline" className="mt-3 w-full">
-                          View Details
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
 
-                {/* Quick Actions */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Quick Actions</h3>
-                  <div className="grid grid-cols-1 gap-3">
-                    <Button className="justify-start h-auto p-4 bg-yellow-500 hover:bg-yellow-600 text-black">
-                      <Plus className="w-4 h-4 mr-2" />
-                      <div className="text-left">
-                        <div className="font-medium">Create New Job Order</div>
-                        <div className="text-xs opacity-80">From existing issues</div>
-                      </div>
-                    </Button>
-                    
-                    <Button variant="outline" className="justify-start h-auto p-4">
-                      <Users className="w-4 h-4 mr-2" />
-                      <div className="text-left">
-                        <div className="font-medium">Manage Technicians</div>
-                        <div className="text-xs opacity-60">View availability</div>
-                      </div>
-                    </Button>
-
-                    <Button variant="outline" className="justify-start h-auto p-4">
-                      <BarChart3 className="w-4 h-4 mr-2" />
-                      <div className="text-left">
-                        <div className="font-medium">Job Order Reports</div>
-                        <div className="text-xs opacity-60">View analytics</div>
-                      </div>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="departments" className="space-y-4">
           <Card>
@@ -782,96 +694,7 @@ export default function TechManagerDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Job Orders Tab Content before end of tabs */}
     </div>
     </div>
   );
 }
-
-// Add Job Orders content for the tab
-const JobOrdersTab = () => (
-  <TabsContent value="job-orders" className="space-y-4">
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ClipboardList className="w-5 h-5 text-blue-600" />
-          Job Order Management
-        </CardTitle>
-        <CardDescription>Create and manage job orders for technician assignments</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pending Job Orders */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Pending Job Orders</h3>
-            <div className="space-y-3">
-              <Card className="border-orange-200 bg-orange-50">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <span className="text-sm font-mono text-blue-600">JO-001-2025</span>
-                      <h4 className="font-medium">Street light not working</h4>
-                    </div>
-                    <Badge variant="secondary" className="bg-orange-100 text-orange-800">Pending</Badge>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">Oak Avenue, Ward 5</p>
-                  <p className="text-xs text-gray-500">High Priority • Reported by David Brown</p>
-                  <Button size="sm" className="mt-3 w-full bg-yellow-500 hover:bg-yellow-600 text-black">
-                    Assign Technician
-                  </Button>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-blue-200 bg-blue-50">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <span className="text-sm font-mono text-blue-600">JO-002-2025</span>
-                      <h4 className="font-medium">Traffic light malfunction</h4>
-                    </div>
-                    <Badge variant="default" className="bg-blue-100 text-blue-800">Assigned</Badge>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">Main Street & First Avenue</p>
-                  <p className="text-xs text-gray-500">Urgent • Assigned to Tom Technician</p>
-                  <Button size="sm" variant="outline" className="mt-3 w-full">
-                    View Details
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Quick Actions</h3>
-            <div className="grid grid-cols-1 gap-3">
-              <Button className="justify-start h-auto p-4 bg-yellow-500 hover:bg-yellow-600 text-black">
-                <Plus className="w-4 h-4 mr-2" />
-                <div className="text-left">
-                  <div className="font-medium">Create New Job Order</div>
-                  <div className="text-xs opacity-80">From existing issues</div>
-                </div>
-              </Button>
-              
-              <Button variant="outline" className="justify-start h-auto p-4">
-                <Users className="w-4 h-4 mr-2" />
-                <div className="text-left">
-                  <div className="font-medium">Manage Technicians</div>
-                  <div className="text-xs opacity-60">View availability</div>
-                </div>
-              </Button>
-
-              <Button variant="outline" className="justify-start h-auto p-4">
-                <BarChart3 className="w-4 h-4 mr-2" />
-                <div className="text-left">
-                  <div className="font-medium">Job Order Reports</div>
-                  <div className="text-xs opacity-60">View analytics</div>
-                </div>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  </TabsContent>
-);
