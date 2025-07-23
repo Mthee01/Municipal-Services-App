@@ -450,7 +450,8 @@ export default function FieldTechnicianDashboard() {
         description: "You have successfully started working on this issue.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Start work error:", error);
       toast({
         title: "Error",
         description: "Failed to start work session.",
@@ -462,6 +463,7 @@ export default function FieldTechnicianDashboard() {
   // Complete work session mutation
   const completeWorkMutation = useMutation({
     mutationFn: async ({ issueId, notes }: { issueId: number; notes: string }) => {
+      console.log("Completing work for issue:", issueId, "with notes:", notes);
       return apiRequest("POST", "/api/work-sessions/complete", {
         issueId,
         technicianId: currentTechnicianId,
@@ -469,6 +471,7 @@ export default function FieldTechnicianDashboard() {
       });
     },
     onSuccess: (data, { issueId, notes }) => {
+      console.log("Work completion successful:", data);
       setActiveWorkSessions(prev => prev.filter(session => session.issueId !== issueId));
       queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
       queryClient.invalidateQueries({ queryKey: ['/api/work-sessions/active'] });
@@ -478,6 +481,7 @@ export default function FieldTechnicianDashboard() {
       });
     },
     onError: (error: any) => {
+      console.error("Complete work error:", error);
       toast({
         title: "Failed to Close Issue",
         description: error?.message || "Unable to complete work session. Please try again.",
@@ -758,7 +762,10 @@ export default function FieldTechnicianDashboard() {
                           key={session.issueId}
                           session={session}
                           issue={issue}
-                          onComplete={() => handleCompleteWork(issue)}
+                          onComplete={(notes: string) => {
+                            console.log("ActiveSessionCard onComplete called with notes:", notes);
+                            completeWorkMutation.mutate({ issueId: issue.id, notes });
+                          }}
                           isCompleting={completeWorkMutation.isPending}
                         />
                       ) : null;

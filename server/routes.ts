@@ -1495,6 +1495,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Work session completion endpoint
+  app.post("/api/work-sessions/complete", async (req, res) => {
+    try {
+      const { issueId, technicianId, completionNotes } = req.body;
+      
+      if (!issueId || !technicianId) {
+        return res.status(400).json({ error: "Missing issueId or technicianId" });
+      }
+
+      console.log(`Completing work session for issue ${issueId} by technician ${technicianId}`);
+      
+      // Update issue status to resolved
+      const updatedIssue = await storage.updateIssue(issueId, {
+        status: 'resolved',
+        resolvedAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      res.json({ 
+        message: "Work session completed successfully", 
+        issue: updatedIssue
+      });
+    } catch (error) {
+      console.error("Complete work session error:", error);
+      res.status(500).json({ error: "Failed to complete work session" });
+    }
+  });
+
   app.post("/api/completion-reports", async (req, res) => {
     try {
       const reportData = req.body;
