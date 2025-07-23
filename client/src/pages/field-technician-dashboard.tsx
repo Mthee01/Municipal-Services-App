@@ -124,27 +124,27 @@ export default function FieldTechnicianDashboard() {
   // API Queries
   const { data: issues = [], isLoading: issuesLoading } = useQuery({
     queryKey: ['/api/technicians/issues', currentUserId],
-    queryFn: () => apiRequest(`/api/technicians/issues?technicianId=${currentUserId}`),
+    queryFn: () => apiRequest(`/api/technicians/issues?technicianId=${currentUserId}`, 'GET'),
   });
 
   const { data: workSessions = [], isLoading: sessionsLoading } = useQuery({
     queryKey: ['/api/technicians/work-sessions', currentUserId],
-    queryFn: () => apiRequest(`/api/technicians/work-sessions?technicianId=${currentUserId}`),
+    queryFn: () => apiRequest(`/api/technicians/work-sessions?technicianId=${currentUserId}`, 'GET'),
   });
 
   const { data: completionReports = [] } = useQuery({
     queryKey: ['/api/technicians/completion-reports', currentUserId],
-    queryFn: () => apiRequest(`/api/technicians/completion-reports?technicianId=${currentUserId}`),
+    queryFn: () => apiRequest(`/api/technicians/completion-reports?technicianId=${currentUserId}`, 'GET'),
   });
 
   const { data: messages = [] } = useQuery({
     queryKey: ['/api/technicians/messages', currentUserId],
-    queryFn: () => apiRequest(`/api/technicians/messages?technicianId=${currentUserId}`),
+    queryFn: () => apiRequest(`/api/technicians/messages?technicianId=${currentUserId}`, 'GET'),
   });
 
   const { data: partsOrders = [] } = useQuery({
     queryKey: ['/api/parts-orders', currentUserId],
-    queryFn: () => apiRequest(`/api/parts-orders?technicianId=${currentUserId}`),
+    queryFn: () => apiRequest(`/api/parts-orders?technicianId=${currentUserId}`, 'GET'),
   });
 
   // Mutations
