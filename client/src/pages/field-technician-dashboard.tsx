@@ -188,6 +188,22 @@ export default function FieldTechnicianDashboard() {
   // Fetch assigned issues
   const { data: assignedIssues = [], isLoading: issuesLoading } = useQuery<Issue[]>({
     queryKey: ['/api/issues', { technicianId: currentTechnicianId }],
+    queryFn: async () => {
+      console.log("Fetching issues for technician:", currentTechnicianId);
+      const response = await fetch(`/api/issues?technicianId=${currentTechnicianId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch issues');
+      }
+      const data = await response.json();
+      console.log("Raw issues data:", data);
+      // Filter to only show issues actually assigned to this technician
+      const filteredIssues = data.filter((issue: Issue) => 
+        issue.assignedTo === currentTechnicianId.toString() || issue.assignedTo === currentTechnicianId
+      );
+      console.log("Filtered assigned issues:", filteredIssues.length, "out of", data.length);
+      return filteredIssues;
+    },
+    enabled: !!currentTechnicianId,
   });
 
   // Fetch field reports with explicit error handling
@@ -259,6 +275,17 @@ export default function FieldTechnicianDashboard() {
   // Fetch active work sessions
   const { data: fetchedActiveSessions = [] } = useQuery({
     queryKey: ['/api/work-sessions/active', { technicianId: currentTechnicianId }],
+    queryFn: async () => {
+      console.log("Fetching active work sessions for technician:", currentTechnicianId);
+      const response = await fetch(`/api/work-sessions/active?technicianId=${currentTechnicianId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch work sessions');
+      }
+      const data = await response.json();
+      console.log("Active work sessions:", data);
+      return data;
+    },
+    enabled: !!currentTechnicianId,
   });
 
   // Combine fetched sessions with local state
@@ -1210,7 +1237,10 @@ function ActiveSessionCard({
           </div>
           
           <Button 
-            onClick={() => onComplete(completionNotes)}
+            onClick={() => {
+              console.log("Close Issue button clicked with notes:", completionNotes);
+              onComplete(completionNotes);
+            }}
             disabled={isCompleting || !completionNotes.trim()}
             className="w-full min-h-[44px] text-sm bg-green-600 hover:bg-green-700 text-white"
           >

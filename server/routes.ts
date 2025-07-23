@@ -1559,12 +1559,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get active work sessions for current technician
   app.get("/api/work-sessions/active", async (req, res) => {
     try {
-      // For demo purposes, use technician ID 1 (field technician)
-      const technicianId = 1;
+      const technicianId = parseInt(req.query.technicianId as string) || 6; // Default to technician 6
+      console.log("Fetching active work sessions for technician:", technicianId);
       
       // Get issues assigned to this technician directly
       const technicianIssues = await storage.getIssuesByTechnician(technicianId);
       const inProgressIssues = technicianIssues.filter(issue => issue.status === 'in_progress');
+      
+      console.log("Found", inProgressIssues.length, "in-progress issues for technician", technicianId);
       
       // Convert to work session format
       const activeSessions = inProgressIssues.map(issue => ({
