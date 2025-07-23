@@ -148,6 +148,26 @@ export const jobCards = pgTable("job_cards", {
   assignedAt: timestamp("assigned_at").notNull().defaultNow(),
   startedAt: timestamp("started_at"),
   completedAt: timestamp("completed_at"),
+})
+
+export const jobOrders = pgTable("job_orders", {
+  id: serial("id").primaryKey(),
+  jobOrderNumber: text("job_order_number").notNull().unique(),
+  issueId: integer("issue_id").notNull(),
+  technicianId: integer("technician_id"),
+  assignedBy: integer("assigned_by").notNull(),
+  priority: text("priority").notNull().default("medium"),
+  status: text("status").notNull().default("pending"), // pending, assigned, in_progress, completed, cancelled
+  estimatedHours: integer("estimated_hours"),
+  actualHours: integer("actual_hours"),
+  specialInstructions: text("special_instructions"),
+  materialsRequired: text("materials_required").array(),
+  skillsRequired: text("skills_required").array(),
+  safetyNotes: text("safety_notes"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  assignedAt: timestamp("assigned_at"),
+  completedAt: timestamp("completed_at"),
 });
 
 export const vouchers = pgTable("vouchers", {
@@ -365,6 +385,13 @@ export type InsertIssueEscalation = z.infer<typeof insertIssueEscalationSchema>;
 const insertJobCardSchema = createInsertSchema(jobCards);
 export type JobCard = typeof jobCards.$inferSelect;
 export type InsertJobCard = z.infer<typeof insertJobCardSchema>;
+
+const insertJobOrderSchema = createInsertSchema(jobOrders).omit({
+  id: true,
+  createdAt: true,
+});
+export type JobOrder = typeof jobOrders.$inferSelect;
+export type InsertJobOrder = z.infer<typeof insertJobOrderSchema>;
 
 // Completion Reports Table
 export const completionReports = pgTable("completion_reports", {

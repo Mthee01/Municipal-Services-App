@@ -2,6 +2,7 @@ import {
   users, issues, payments, teams, technicians, wards, issueUpdates, vouchers,
   fieldReports, partsInventory, partsOrders, technicianMessages, technicianLocations,
   chatMessages, whatsappMessages, whatsappConversations, issueNotes, issueEscalations,
+  jobCards, jobOrders, completionReports,
   type User, type InsertUser, type Issue, type InsertIssue, 
   type Payment, type InsertPayment, type Team, type InsertTeam,
   type Technician, type InsertTechnician, type Ward, type InsertWard,
@@ -10,7 +11,8 @@ import {
   type PartsOrder, type InsertPartsOrder, type TechnicianMessage, type InsertTechnicianMessage,
   type TechnicianLocation, type InsertTechnicianLocation, type ChatMessage, type InsertChatMessage,
   type WhatsappMessage, type InsertWhatsappMessage, type WhatsappConversation, type InsertWhatsappConversation,
-  type IssueNote, type InsertIssueNote, type IssueEscalation, type InsertIssueEscalation
+  type IssueNote, type InsertIssueNote, type IssueEscalation, type InsertIssueEscalation,
+  type JobCard, type InsertJobCard, type JobOrder, type InsertJobOrder, type CompletionReport, type InsertCompletionReport
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, like, or, isNull } from "drizzle-orm";
@@ -840,5 +842,86 @@ export class DatabaseStorage implements IStorage {
 
   async updateJobCard(id: number, updates: Partial<JobCard>): Promise<JobCard | undefined> {
     return undefined;
+  }
+
+  // Job Order methods
+  async getAllJobOrders(): Promise<JobOrder[]> {
+    return db.select().from(jobOrders).orderBy(desc(jobOrders.createdAt));
+  }
+
+  async getJobOrderById(id: number): Promise<JobOrder | null> {
+    const [jobOrder] = await db.select().from(jobOrders).where(eq(jobOrders.id, id));
+    return jobOrder || null;
+  }
+
+  async createJobOrder(data: InsertJobOrder): Promise<JobOrder> {
+    const jobOrderNumber = `JO-${Date.now().toString().slice(-6)}-${String(data.issueId).padStart(3, '0')}`;
+    const [created] = await db.insert(jobOrders).values({
+      ...data,
+      jobOrderNumber
+    }).returning();
+    return created;
+  }
+
+  async updateJobOrder(id: number, data: Partial<JobOrder>): Promise<JobOrder> {
+    const [updated] = await db.update(jobOrders)
+      .set(data)
+      .where(eq(jobOrders.id, id))
+      .returning();
+    return updated;
+  }
+
+  async assignJobOrderTechnician(jobOrderId: number, technicianId: number, assignmentData: Partial<JobOrder>): Promise<JobOrder> {
+    const [updated] = await db.update(jobOrders)
+      .set({
+        technicianId,
+        assignedAt: new Date(),
+        status: 'assigned',
+        ...assignmentData
+      })
+      .where(eq(jobOrders.id, jobOrderId))
+      .returning();
+    return updated;
+  }
+
+  async getJobOrdersWithIssueDetails(): Promise<any[]> {
+    const result = await db.select({
+      id: jobOrders.id,
+      jobOrderNumber: jobOrders.jobOrderNumber,
+      issueId: jobOrders.issueId,
+      technicianId: jobOrders.technicianId,
+      assignedBy: jobOrders.assignedBy,
+      priority: jobOrders.priority,
+      status: jobOrders.status,
+      estimatedHours: jobOrders.estimatedHours,
+      actualHours: jobOrders.actualHours,
+      specialInstructions: jobOrders.specialInstructions,
+      materialsRequired: jobOrders.materialsRequired,
+      skillsRequired: jobOrders.skillsRequired,
+      safetyNotes: jobOrders.safetyNotes,
+      notes: jobOrders.notes,
+      createdAt: jobOrders.createdAt,
+      assignedAt: jobOrders.assignedAt,
+      completedAt: jobOrders.completedAt,
+      issue: {
+        id: issues.id,
+        title: issues.title,
+        description: issues.description,
+        category: issues.category,
+        priority: issues.priority,
+        status: issues.status,
+        location: issues.location,
+        ward: issues.ward,
+        reporterName: issues.reporterName,
+        reporterPhone: issues.reporterPhone,
+        referenceNumber: issues.referenceNumber,
+        createdAt: issues.createdAt
+      }
+    })
+    .from(jobOrders)
+    .leftJoin(issues, eq(jobOrders.issueId, issues.id))
+    .orderBy(desc(jobOrders.createdAt));
+
+    return result;
   }
 }
