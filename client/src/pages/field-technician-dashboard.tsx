@@ -140,19 +140,37 @@ export default function FieldTechnicianDashboard() {
   const [selectedCompletedWork, setSelectedCompletedWork] = useState<any>(null);
 
   // API Queries
-  const { data: issues = [], isLoading: issuesLoading } = useQuery({
+  const { data: issues = [], isLoading: issuesLoading, error: issuesError } = useQuery({
     queryKey: ['/api/issues', currentUserId],
-    queryFn: () => apiRequest(`/api/issues?technicianId=${currentUserId}`, 'GET'),
+    queryFn: () => apiRequest('GET', `/api/issues?technicianId=${currentUserId}`),
   });
 
-  const { data: workSessions = [], isLoading: sessionsLoading } = useQuery({
+  // Debug logging
+  console.log('Technician Dashboard Debug:', {
+    currentUserId,
+    issues,
+    issuesLength: issues.length,
+    issuesLoading,
+    issuesError,
+    activeIssues: issues.filter((issue: Issue) => ['assigned', 'open', 'in_progress'].includes(issue.status))
+  });
+
+  const { data: workSessions = [], isLoading: sessionsLoading, error: sessionsError } = useQuery({
     queryKey: ['/api/work-sessions/active', currentUserId],
-    queryFn: () => apiRequest(`/api/work-sessions/active?technicianId=${currentUserId}`, 'GET'),
+    queryFn: () => apiRequest('GET', `/api/work-sessions/active?technicianId=${currentUserId}`),
+  });
+
+  // Debug logging for sessions
+  console.log('Work Sessions Debug:', {
+    workSessions,
+    workSessionsLength: workSessions.length,
+    sessionsLoading,
+    sessionsError
   });
 
   const { data: completionReports = [] } = useQuery({
     queryKey: ['/api/completion-reports', currentUserId],
-    queryFn: () => apiRequest(`/api/completion-reports?technicianId=${currentUserId}`, 'GET'),
+    queryFn: () => apiRequest('GET', `/api/completion-reports?technicianId=${currentUserId}`),
   });
 
   const { data: messages = [] } = useQuery({
@@ -167,7 +185,7 @@ export default function FieldTechnicianDashboard() {
 
   const { data: fieldReports = [] } = useQuery({
     queryKey: ['/api/field-reports', currentUserId],
-    queryFn: () => apiRequest(`/api/field-reports?technicianId=${currentUserId}`, 'GET'),
+    queryFn: () => apiRequest('GET', `/api/field-reports?technicianId=${currentUserId}`),
   });
 
   // Mutations
