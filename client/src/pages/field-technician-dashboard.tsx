@@ -136,6 +136,8 @@ export default function FieldTechnicianDashboard() {
   });
   const [isCapturingPhoto, setIsCapturingPhoto] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const [showCompletedWorkDetails, setShowCompletedWorkDetails] = useState(false);
+  const [selectedCompletedWork, setSelectedCompletedWork] = useState<any>(null);
 
   // API Queries
   const { data: issues = [], isLoading: issuesLoading } = useQuery({
@@ -518,7 +520,7 @@ export default function FieldTechnicianDashboard() {
         </div>
 
         <Tabs defaultValue="work-orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="work-orders" className="flex items-center gap-2">
               <ClipboardList className="w-4 h-4" />
               Work Orders
@@ -526,6 +528,10 @@ export default function FieldTechnicianDashboard() {
             <TabsTrigger value="active-work" className="flex items-center gap-2">
               <Play className="w-4 h-4" />
               Active Work
+            </TabsTrigger>
+            <TabsTrigger value="completed-work" className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              Completed Work
             </TabsTrigger>
             <TabsTrigger value="messages" className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
@@ -736,6 +742,80 @@ export default function FieldTechnicianDashboard() {
                         </div>
                       );
                     })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="completed-work">
+            <Card>
+              <CardHeader>
+                <CardTitle>Completed Work History</CardTitle>
+                <CardDescription>
+                  View details of your completed jobs and reports
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {completionReports.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No completed work reports yet
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {completionReports.map((report: any) => (
+                      <div key={report.id} className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              {report.jobCardNumber}
+                            </Badge>
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                              Completed
+                            </Badge>
+                            <div className="flex items-center gap-1 text-sm text-yellow-600">
+                              {'★'.repeat(report.customerSatisfaction)}
+                              <span className="ml-1 text-gray-500">({report.customerSatisfaction}/5)</span>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedCompletedWork(report);
+                              setShowCompletedWorkDetails(true);
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <h3 className="font-medium text-gray-900 dark:text-white">
+                            {report.workCompleted.substring(0, 100)}{report.workCompleted.length > 100 ? '...' : ''}
+                          </h3>
+                          <div className="flex items-center gap-4 text-sm text-gray-500">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              {report.timeTaken} minutes
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Package className="w-4 h-4" />
+                              {report.materialsUsed.length} materials used
+                            </div>
+                            {report.photos && report.photos.length > 0 && (
+                              <div className="flex items-center gap-1">
+                                <Camera className="w-4 h-4" />
+                                {report.photos.length} photos
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            Completed: {new Date(report.createdAt).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </CardContent>
@@ -1273,6 +1353,133 @@ export default function FieldTechnicianDashboard() {
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Completed Work Details Dialog */}
+        <Dialog open={showCompletedWorkDetails} onOpenChange={setShowCompletedWorkDetails}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Completion Report Details</DialogTitle>
+              <DialogDescription>
+                Full details of completed work and documentation
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedCompletedWork && (
+              <div className="space-y-6">
+                {/* Header Information */}
+                <div className="grid grid-cols-2 gap-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div>
+                    <Label className="text-sm font-medium text-green-900 dark:text-green-100">Job Card Number</Label>
+                    <p className="text-lg font-mono text-green-800 dark:text-green-200">{selectedCompletedWork.jobCardNumber}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-green-900 dark:text-green-100">Customer Satisfaction</Label>
+                    <div className="flex items-center gap-2">
+                      <div className="text-yellow-500">
+                        {'★'.repeat(selectedCompletedWork.customerSatisfaction)}
+                        {'☆'.repeat(5 - selectedCompletedWork.customerSatisfaction)}
+                      </div>
+                      <span className="text-sm text-green-700 dark:text-green-300">
+                        ({selectedCompletedWork.customerSatisfaction}/5)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Work Details */}
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium">Work Completed</Label>
+                    <p className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded border text-sm">
+                      {selectedCompletedWork.workCompleted}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Time Taken</Label>
+                      <p className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded border text-sm">
+                        {selectedCompletedWork.timeTaken} minutes
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Materials Used</Label>
+                      <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded border">
+                        {selectedCompletedWork.materialsUsed.map((material: string, index: number) => (
+                          <div key={index} className="text-sm">• {material}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedCompletedWork.issuesFound && (
+                    <div>
+                      <Label className="text-sm font-medium">Issues Found</Label>
+                      <p className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded border text-sm">
+                        {selectedCompletedWork.issuesFound}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedCompletedWork.recommendations && (
+                    <div>
+                      <Label className="text-sm font-medium">Recommendations</Label>
+                      <p className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border text-sm">
+                        {selectedCompletedWork.recommendations}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedCompletedWork.additionalNotes && (
+                    <div>
+                      <Label className="text-sm font-medium">Additional Notes</Label>
+                      <p className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded border text-sm">
+                        {selectedCompletedWork.additionalNotes}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Photos Section */}
+                  {selectedCompletedWork.photos && selectedCompletedWork.photos.length > 0 && (
+                    <div>
+                      <Label className="text-sm font-medium">Work Documentation Photos</Label>
+                      <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {selectedCompletedWork.photos.map((photo: string, index: number) => (
+                          <div key={index} className="relative group">
+                            <img 
+                              src={photo} 
+                              alt={`Work documentation ${index + 1}`}
+                              className="w-full h-32 object-cover rounded border cursor-pointer hover:scale-105 transition-transform"
+                              onClick={() => window.open(photo, '_blank')}
+                            />
+                            <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                              Photo {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">Click photos to view full size</p>
+                    </div>
+                  )}
+
+                  {/* Completion Info */}
+                  <div className="pt-4 border-t">
+                    <div className="flex items-center justify-between text-sm text-gray-500">
+                      <span>Report submitted: {new Date(selectedCompletedWork.createdAt).toLocaleString()}</span>
+                      <span>Sent to Technical Manager</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button onClick={() => setShowCompletedWorkDetails(false)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
