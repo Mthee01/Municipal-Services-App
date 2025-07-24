@@ -145,28 +145,14 @@ export default function FieldTechnicianDashboard() {
     queryFn: () => apiRequest('GET', `/api/issues?technicianId=${currentUserId}`),
   });
 
-  // Debug logging
-  console.log('Technician Dashboard Debug:', {
-    currentUserId,
-    issues,
-    issuesLength: issues.length,
-    issuesLoading,
-    issuesError,
-    activeIssues: issues.filter((issue: Issue) => ['assigned', 'open', 'in_progress'].includes(issue.status))
-  });
+
 
   const { data: workSessions = [], isLoading: sessionsLoading, error: sessionsError } = useQuery({
     queryKey: ['/api/work-sessions/active', currentUserId],
     queryFn: () => apiRequest('GET', `/api/work-sessions/active?technicianId=${currentUserId}`),
   });
 
-  // Debug logging for sessions
-  console.log('Work Sessions Debug:', {
-    workSessions,
-    workSessionsLength: workSessions.length,
-    sessionsLoading,
-    sessionsError
-  });
+
 
   const { data: completionReports = [] } = useQuery({
     queryKey: ['/api/completion-reports', currentUserId],
@@ -543,32 +529,52 @@ export default function FieldTechnicianDashboard() {
         </div>
 
         <Tabs defaultValue="work-orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="work-orders" className="flex items-center gap-2">
-              <ClipboardList className="w-4 h-4" />
-              Work Orders
-            </TabsTrigger>
-            <TabsTrigger value="active-work" className="flex items-center gap-2">
-              <Play className="w-4 h-4" />
-              Active Work
-            </TabsTrigger>
-            <TabsTrigger value="completed-work" className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4" />
-              Completed Work
-            </TabsTrigger>
-            <TabsTrigger value="field-reports" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Field Reports
-            </TabsTrigger>
-            <TabsTrigger value="messages" className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Messages
-            </TabsTrigger>
-            <TabsTrigger value="location" className="flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
-              Location
-            </TabsTrigger>
-          </TabsList>
+          <div className="bg-white dark:bg-gray-800 rounded-lg border shadow-sm p-2">
+            <TabsList className="grid w-full grid-cols-6 bg-gray-50 dark:bg-gray-700 rounded-md h-auto p-1">
+              <TabsTrigger 
+                value="work-orders" 
+                className="flex flex-col items-center gap-1 px-3 py-3 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-sm hover:bg-white/50 transition-all duration-200"
+              >
+                <ClipboardList className="w-5 h-5" />
+                <span className="whitespace-nowrap">Work Orders</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="active-work" 
+                className="flex flex-col items-center gap-1 px-3 py-3 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm hover:bg-white/50 transition-all duration-200"
+              >
+                <Play className="w-5 h-5" />
+                <span className="whitespace-nowrap">Active Work</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="completed-work" 
+                className="flex flex-col items-center gap-1 px-3 py-3 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-sm hover:bg-white/50 transition-all duration-200"
+              >
+                <CheckCircle className="w-5 h-5" />
+                <span className="whitespace-nowrap">Completed</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="field-reports" 
+                className="flex flex-col items-center gap-1 px-3 py-3 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-orange-700 data-[state=active]:shadow-sm hover:bg-white/50 transition-all duration-200"
+              >
+                <FileText className="w-5 h-5" />
+                <span className="whitespace-nowrap">Reports</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="messages" 
+                className="flex flex-col items-center gap-1 px-3 py-3 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm hover:bg-white/50 transition-all duration-200"
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span className="whitespace-nowrap">Messages</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="location" 
+                className="flex flex-col items-center gap-1 px-3 py-3 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-red-700 data-[state=active]:shadow-sm hover:bg-white/50 transition-all duration-200"
+              >
+                <MapPin className="w-5 h-5" />
+                <span className="whitespace-nowrap">Location</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="work-orders">
             <Card>
@@ -585,12 +591,9 @@ export default function FieldTechnicianDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="text-xs text-gray-500 mb-4">
-                      Debug: {issues.length} total issues, {issues.filter((issue: Issue) => ['assigned', 'open', 'in_progress'].includes(issue.status)).length} active issues
-                    </div>
                     {issues.filter((issue: Issue) => ['assigned', 'open', 'in_progress'].includes(issue.status)).length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
-                        No active work orders (showing resolved: {issues.filter((issue: Issue) => issue.status === 'resolved').length})
+                        No active work orders assigned
                       </div>
                     ) : issues.filter((issue: Issue) => ['assigned', 'open', 'in_progress'].includes(issue.status)).map((issue: Issue) => (
                       <div key={issue.id} className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
@@ -672,9 +675,6 @@ export default function FieldTechnicianDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="text-xs text-gray-500 mb-4">
-                      Debug: {workSessions.length} active work sessions
-                    </div>
                     {workSessions.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
                         No active work sessions
