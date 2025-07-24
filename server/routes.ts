@@ -301,6 +301,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Issue assignment endpoint
+  app.post("/api/issues/:id/assign", async (req, res) => {
+    try {
+      const issueId = parseInt(req.params.id);
+      const { technicianId, notes } = req.body;
+      
+      if (!technicianId) {
+        return res.status(400).json({ message: "Technician ID is required" });
+      }
+      
+      console.log(`Assigning issue ${issueId} to technician ${technicianId}`);
+      
+      // Update issue with assignment
+      const updatedIssue = await storage.updateIssue(issueId, {
+        assignedTo: technicianId.toString(),
+        status: "assigned",
+        updatedAt: new Date()
+      });
+      
+      if (!updatedIssue) {
+        return res.status(404).json({ message: "Issue not found" });
+      }
+      
+      // Create job card for the assignment
+      await storage.createJobCard({
+        issueId: issueId,
+        technicianId: technicianId,
+        assignedBy: "Tech Manager",
+        assignedAt: new Date(),
+        notes: notes || "Issue assigned for resolution"
+      });
+      
+      console.log(`Issue ${issueId} successfully assigned to technician ${technicianId}`);
+      res.json({ success: true, message: "Issue assigned successfully", issue: updatedIssue });
+    } catch (error) {
+      console.error("Error assigning issue:", error);
+      res.status(500).json({ message: "Failed to assign issue" });
+    }
+  });
+
   // Issue escalation endpoints
   app.get("/api/issues/:id/escalations", async (req, res) => {
     try {
