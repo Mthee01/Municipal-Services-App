@@ -102,7 +102,7 @@ export default function FieldTechnicianDashboard() {
   const queryClient = useQueryClient();
   
   // Current user ID - would typically come from auth context
-  const currentUserId = 7; // Field technician user ID
+  const currentUserId = 6; // Field technician user ID (matching test data)
   
   // State for UI
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
