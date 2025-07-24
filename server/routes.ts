@@ -1645,6 +1645,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Approve completion report
+  app.post("/api/completion-reports/:id/approve", async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      const { reviewNotes, reviewedBy } = req.body;
+      
+      console.log(`Approving completion report ${reportId} by user ${reviewedBy}`);
+      
+      await storage.updateCompletionReportStatus(reportId, "approved", reviewedBy, reviewNotes);
+      
+      res.json({ success: true, message: "Completion report approved successfully" });
+    } catch (error) {
+      console.error("Completion report approval error:", error);
+      res.status(500).json({ error: "Failed to approve completion report" });
+    }
+  });
+
+  // Reject completion report
+  app.post("/api/completion-reports/:id/reject", async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      const { reviewNotes, reviewedBy } = req.body;
+      
+      console.log(`Rejecting completion report ${reportId} by user ${reviewedBy}`);
+      
+      // Update completion report status
+      await storage.updateCompletionReportStatus(reportId, "rejected", reviewedBy, reviewNotes);
+      
+      // Get the completion report to find the associated issue
+      const report = await storage.getCompletionReportById(reportId);
+      if (report) {
+        // Reopen the issue and change status back to "assigned"
+        await storage.reopenIssueFromRejectedReport(report.issueId, reviewNotes);
+        console.log(`Issue ${report.issueId} reopened due to rejected completion report`);
+      }
+      
+      res.json({ success: true, message: "Completion report rejected and issue reopened" });
+    } catch (error) {
+      console.error("Completion report rejection error:", error);
+      res.status(500).json({ error: "Failed to reject completion report" });
+    }
+  });
+
   // Technician-specific messages endpoint
   app.get("/api/technicians/messages", async (req, res) => {
     try {

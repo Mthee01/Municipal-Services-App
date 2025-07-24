@@ -28,6 +28,10 @@ export default function TechManagerDashboard() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showCompletionReportModal, setShowCompletionReportModal] = useState(false);
   const [selectedCompletionReport, setSelectedCompletionReport] = useState<any>(null);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [selectedReportForReview, setSelectedReportForReview] = useState<any>(null);
+  const [reviewNotes, setReviewNotes] = useState("");
   const { toast } = useToast();
 
   const { data: technicians = [], isLoading: techLoading } = useQuery({
@@ -353,6 +357,61 @@ export default function TechManagerDashboard() {
     toast({ title: `Preparing to print ${selectedIssues.length} issues` });
     setShowExportModal(false);
   };
+
+  // Completion report approval handlers
+  const handleApproveReport = (report: any) => {
+    setSelectedReportForReview(report);
+    setReviewNotes("");
+    setShowApprovalModal(true);
+  };
+
+  const handleRejectReport = (report: any) => {
+    setSelectedReportForReview(report);
+    setReviewNotes("");
+    setShowRejectionModal(true);
+  };
+
+  const approveReportMutation = useMutation({
+    mutationFn: ({ reportId, reviewNotes }: { reportId: number; reviewNotes: string }) =>
+      apiRequest("POST", `/api/completion-reports/${reportId}/approve`, { reviewNotes, reviewedBy: 5 }), // Tech manager ID
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/completion-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
+      toast({ 
+        title: "Report Approved", 
+        description: "Completion report has been approved successfully.",
+      });
+      setShowApprovalModal(false);
+    },
+    onError: () => {
+      toast({ 
+        title: "Approval Failed", 
+        description: "Failed to approve completion report. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const rejectReportMutation = useMutation({
+    mutationFn: ({ reportId, reviewNotes }: { reportId: number; reviewNotes: string }) =>
+      apiRequest("POST", `/api/completion-reports/${reportId}/reject`, { reviewNotes, reviewedBy: 5 }), // Tech manager ID
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/completion-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
+      toast({ 
+        title: "Report Rejected", 
+        description: "Completion report has been rejected and issue reopened.",
+      });
+      setShowRejectionModal(false);
+    },
+    onError: () => {
+      toast({ 
+        title: "Rejection Failed", 
+        description: "Failed to reject completion report. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative overflow-hidden">
@@ -726,8 +785,13 @@ export default function TechManagerDashboard() {
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                             {report.jobCardNumber}
                           </Badge>
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-                            Completed
+                          <Badge className={
+                            report.approvalStatus === "approved" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100" :
+                            report.approvalStatus === "rejected" ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100" :
+                            "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
+                          }>
+                            {report.approvalStatus === "approved" ? "Approved" : 
+                             report.approvalStatus === "rejected" ? "Rejected" : "Pending Review"}
                           </Badge>
                           <div className="flex items-center gap-1 text-sm text-yellow-600">
                             {'★'.repeat(report.customerSatisfaction)}
@@ -746,6 +810,27 @@ export default function TechManagerDashboard() {
                             <Eye className="w-4 h-4 mr-2" />
                             View Report
                           </Button>
+                          
+                          {report.approvalStatus === "pending" && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-green-600 border-green-200 hover:bg-green-50"
+                                onClick={() => handleApproveReport(report)}
+                              >
+                                ✓ Approve
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-600 border-red-200 hover:bg-red-50"
+                                onClick={() => handleRejectReport(report)}
+                              >
+                                ✗ Reject
+                              </Button>
+                            </>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
@@ -1476,6 +1561,103 @@ ${selectedCompletionReport.additionalNotes || 'None'}
             </Button>
             <Button variant="outline" onClick={() => setShowCompletionReportModal(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Approval Modal */}
+      <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Approve Completion Report</DialogTitle>
+            <DialogDescription>
+              Confirm approval of completion report {selectedReportForReview?.jobCardNumber}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Review Notes (Optional)</Label>
+              <Textarea
+                value={reviewNotes}
+                onChange={(e) => setReviewNotes(e.target.value)}
+                placeholder="Add any feedback or comments about the completed work..."
+                className="mt-2"
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowApprovalModal(false)}
+              disabled={approveReportMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => approveReportMutation.mutate({ 
+                reportId: selectedReportForReview?.id, 
+                reviewNotes 
+              })}
+              disabled={approveReportMutation.isPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {approveReportMutation.isPending ? "Approving..." : "Approve Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rejection Modal */}
+      <Dialog open={showRejectionModal} onOpenChange={setShowRejectionModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reject Completion Report</DialogTitle>
+            <DialogDescription>
+              Provide feedback for rejection of completion report {selectedReportForReview?.jobCardNumber}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Rejection Reason *</Label>
+              <Textarea
+                value={reviewNotes}
+                onChange={(e) => setReviewNotes(e.target.value)}
+                placeholder="Explain why the work is not satisfactory and what needs to be corrected..."
+                className="mt-2"
+                rows={4}
+                required
+              />
+            </div>
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>Note:</strong> Rejecting this report will reopen the issue and change its status back to "assigned". 
+                The technician will see your feedback and need to address the concerns.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowRejectionModal(false)}
+              disabled={rejectReportMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => rejectReportMutation.mutate({ 
+                reportId: selectedReportForReview?.id, 
+                reviewNotes 
+              })}
+              disabled={rejectReportMutation.isPending || !reviewNotes.trim()}
+              variant="destructive"
+            >
+              {rejectReportMutation.isPending ? "Rejecting..." : "Reject & Reopen Issue"}
             </Button>
           </DialogFooter>
         </DialogContent>

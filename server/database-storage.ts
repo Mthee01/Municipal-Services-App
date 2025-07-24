@@ -749,7 +749,12 @@ export class DatabaseStorage implements IStorage {
         recommendations: "Recommend inspection of similar connections in the area within 6 months.",
         customerSatisfaction: 5,
         additionalNotes: "Customer was very satisfied with quick resolution. Area cleaned up after work.",
+        approvalStatus: "pending",
+        reviewedBy: null,
+        reviewedAt: null,
+        reviewNotes: null,
         completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
       },
       {
         id: 2,
@@ -763,7 +768,12 @@ export class DatabaseStorage implements IStorage {
         recommendations: "Install weatherproof housing to prevent future water damage.",
         customerSatisfaction: 4,
         additionalNotes: "Coordinated with electricity department for power isolation during repairs.",
+        approvalStatus: "approved",
+        reviewedBy: 5, // Tech manager ID
+        reviewedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
+        reviewNotes: "Good work on the electrical repairs. Professional job.",
         completedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
       },
       {
         id: 3,
@@ -777,7 +787,12 @@ export class DatabaseStorage implements IStorage {
         recommendations: "Schedule regular drainage maintenance before rainy season.",
         customerSatisfaction: 5,
         additionalNotes: "Educated community members about proper waste disposal to prevent future blockages.",
+        approvalStatus: "pending",
+        reviewedBy: null,
+        reviewedAt: null,
+        reviewNotes: null,
         completedAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
+        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
       }
     ];
   }
@@ -801,9 +816,55 @@ export class DatabaseStorage implements IStorage {
     const newReport: CompletionReport = {
       ...report,
       id: Math.floor(Math.random() * 1000) + 100,
+      approvalStatus: "pending",
+      reviewedBy: null,
+      reviewedAt: null,
+      reviewNotes: null,
       completedAt: new Date(),
+      createdAt: new Date(),
     };
     return newReport;
+  }
+
+  async updateCompletionReportStatus(reportId: number, status: string, reviewedBy: number, reviewNotes?: string): Promise<void> {
+    console.log(`Updating completion report ${reportId} status to ${status}`);
+    // Note: This is using in-memory data for now. In production, this would update the database.
+    console.log(`Completion report ${reportId} status updated to ${status} by user ${reviewedBy}`);
+    if (reviewNotes) {
+      console.log(`Review notes: ${reviewNotes}`);
+    }
+  }
+
+  async getCompletionReportById(reportId: number): Promise<CompletionReport | null> {
+    const reports = await this.getCompletionReports();
+    return reports.find(r => r.id === reportId) || null;
+  }
+
+  async reopenIssueFromRejectedReport(issueId: number, rejectionNotes: string): Promise<void> {
+    console.log(`Reopening issue ${issueId} due to rejected completion report`);
+    
+    try {
+      // Update issue status back to "assigned"
+      await this.db.update(issues)
+        .set({
+          status: "assigned",
+          updatedAt: new Date(),
+        })
+        .where(eq(issues.id, issueId));
+      
+      // Add an issue note about the rejection
+      await this.db.insert(issueNotes).values({
+        issueId: issueId,
+        userId: 1, // System or tech manager ID
+        note: `Completion report was rejected by technical manager. Reason: ${rejectionNotes}. Issue has been reopened for additional work.`,
+        createdAt: new Date(),
+      });
+      
+      console.log(`Issue ${issueId} reopened with rejection notes`);
+    } catch (error) {
+      console.error(`Error reopening issue ${issueId}:`, error);
+      throw error;
+    }
   }
 
   // Job card operations

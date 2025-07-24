@@ -407,6 +407,11 @@ export const completionReports = pgTable("completion_reports", {
   photos: text("photos").array(),
   customerSatisfaction: integer("customer_satisfaction"),
   additionalNotes: text("additional_notes"),
+  // Approval fields
+  approvalStatus: text("approval_status").notNull().default("pending"), // pending, approved, rejected
+  reviewedBy: integer("reviewed_by"), // technical manager ID
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"), // notes from technical manager
   completedAt: timestamp("completed_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
