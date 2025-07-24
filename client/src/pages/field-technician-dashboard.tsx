@@ -25,7 +25,9 @@ import {
   Package,
   ShoppingCart,
   Truck,
-  CheckSquare
+  CheckSquare,
+  Camera,
+  X
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -129,8 +131,11 @@ export default function FieldTechnicianDashboard() {
     issuesFound: '',
     recommendations: '',
     customerSatisfaction: 5,
-    additionalNotes: ''
+    additionalNotes: '',
+    photos: [] as string[]
   });
+  const [isCapturingPhoto, setIsCapturingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   // API Queries
   const { data: issues = [], isLoading: issuesLoading } = useQuery({
@@ -236,7 +241,8 @@ export default function FieldTechnicianDashboard() {
         issuesFound: '',
         recommendations: '',
         customerSatisfaction: 5,
-        additionalNotes: ''
+        additionalNotes: '',
+        photos: []
       });
       toast({ title: 'Completion report submitted', description: 'Report has been sent to technical manager.' });
     },
@@ -387,7 +393,8 @@ export default function FieldTechnicianDashboard() {
       issuesFound: completionReportData.issuesFound,
       recommendations: completionReportData.recommendations,
       customerSatisfaction: completionReportData.customerSatisfaction,
-      additionalNotes: completionReportData.additionalNotes
+      additionalNotes: completionReportData.additionalNotes,
+      photos: completionReportData.photos
     };
 
     createCompletionReportMutation.mutate(reportData);
@@ -415,6 +422,66 @@ export default function FieldTechnicianDashboard() {
       ...prev, 
       materialsUsed: prev.materialsUsed.map((material, i) => i === index ? value : material) 
     }));
+  };
+
+  const handlePhotoCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsCapturingPhoto(true);
+    const newPhotos: string[] = [];
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type.startsWith('image/')) {
+          // Convert to base64 for storage
+          const reader = new FileReader();
+          const photoPromise = new Promise<string>((resolve) => {
+            reader.onload = (e) => {
+              resolve(e.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+          });
+          const photoData = await photoPromise;
+          newPhotos.push(photoData);
+        }
+      }
+
+      setCompletionReportData(prev => ({
+        ...prev,
+        photos: [...prev.photos, ...newPhotos]
+      }));
+
+      toast({ 
+        title: 'Photos added', 
+        description: `${newPhotos.length} photo(s) added to completion report` 
+      });
+    } catch (error) {
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to process photos', 
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsCapturingPhoto(false);
+      if (photoInputRef.current) {
+        photoInputRef.current.value = '';
+      }
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setCompletionReportData(prev => ({
+      ...prev,
+      photos: prev.photos.filter((_, i) => i !== index)
+    }));
+  };
+
+  const openCamera = () => {
+    if (photoInputRef.current) {
+      photoInputRef.current.click();
+    }
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -1133,6 +1200,60 @@ export default function FieldTechnicianDashboard() {
                   rows={2}
                   className="mt-2"
                 />
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Work Photos</Label>
+                <div className="mt-2 space-y-3">
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={openCamera}
+                      disabled={isCapturingPhoto}
+                      className="flex items-center gap-2"
+                    >
+                      <Camera className="w-4 h-4" />
+                      {isCapturingPhoto ? 'Processing...' : 'Take Photos'}
+                    </Button>
+                    <span className="text-sm text-gray-500 flex items-center">
+                      Document completed work, before/after conditions
+                    </span>
+                  </div>
+                  
+                  {completionReportData.photos.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                      {completionReportData.photos.map((photo, index) => (
+                        <div key={index} className="relative group">
+                          <img 
+                            src={photo} 
+                            alt={`Work photo ${index + 1}`}
+                            className="w-full h-20 object-cover rounded border"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => removePhoto(index)}
+                            className="absolute top-1 right-1 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    multiple
+                    onChange={handlePhotoCapture}
+                    className="hidden"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t">

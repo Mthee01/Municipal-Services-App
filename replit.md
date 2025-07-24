@@ -369,15 +369,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
-- July 23, 2025: IMPLEMENTED MANDATORY COMPLETION REPORTS FOR WORK CLOSURE
+- July 23, 2025: IMPLEMENTED MANDATORY COMPLETION REPORTS WITH PHOTO DOCUMENTATION
   * ADDED comprehensive completion report dialog that technicians must fill before closing work sessions
   * REQUIRES detailed work description, materials used, time taken, and customer satisfaction rating
   * INCLUDES optional fields for issues found, recommendations, and additional notes
-  * REPORTS automatically sent to technical manager upon submission with job card number
-  * ENHANCED work completion workflow: Parts validation → Completion report → Issue closure
+  * INTEGRATED photo capture functionality allowing technicians to document completed work with before/after photos
+  * PHOTO FEATURES: Camera access, multiple photo capture, image preview grid, and photo removal options
+  * REPORTS automatically sent to technical manager upon submission with job card number and visual documentation
+  * ENHANCED work completion workflow: Parts validation → Completion report with photos → Issue closure
   * PREVENTS work closure without proper documentation ensuring quality control and accountability
-  * COMPLETION reports include job card numbers, detailed work descriptions, and customer feedback
-  * TECHNICAL managers receive comprehensive reports for performance tracking and issue analysis
+  * COMPLETION reports include job card numbers, detailed work descriptions, customer feedback, and photographic evidence
+  * TECHNICAL managers receive comprehensive reports with visual documentation for performance tracking and issue analysis
 - July 23, 2025: REMOVED REPORTS AND PARTS TABS FROM TECHNICIAN DASHBOARD
   * DELETED "field-reports" and "parts-ordering" tabs from field technician dashboard per user request
   * REMOVED unused queries, mutations, and interfaces for field reports and parts ordering functionality
