@@ -1632,6 +1632,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all completion reports for tech manager review
+  app.get("/api/completion-reports", async (req, res) => {
+    try {
+      console.log("Fetching all completion reports for tech manager");
+      const reports = await storage.getCompletionReports();
+      console.log("Found completion reports:", reports.length);
+      res.json(reports);
+    } catch (error) {
+      console.error("Completion reports fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch completion reports" });
+    }
+  });
+
   // Technician-specific messages endpoint
   app.get("/api/technicians/messages", async (req, res) => {
     try {

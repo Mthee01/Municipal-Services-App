@@ -26,6 +26,8 @@ export default function TechManagerDashboard() {
   const [selectedIssueForDetails, setSelectedIssueForDetails] = useState<any>(null);
   const [selectedIssuesForExport, setSelectedIssuesForExport] = useState<Set<number>>(new Set());
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showCompletionReportModal, setShowCompletionReportModal] = useState(false);
+  const [selectedCompletionReport, setSelectedCompletionReport] = useState<any>(null);
   const { toast } = useToast();
 
   const { data: technicians = [], isLoading: techLoading } = useQuery({
@@ -49,6 +51,12 @@ export default function TechManagerDashboard() {
     queryFn: async () => {
       return await apiRequest("GET", `/api/analytics/departments${selectedDepartment !== 'all' ? `?department=${selectedDepartment}` : ''}`);
     },
+  });
+
+  // Fetch all completion reports for tech manager review
+  const { data: completionReports = [] } = useQuery({
+    queryKey: ["/api/completion-reports"],
+    queryFn: () => apiRequest("/api/completion-reports", 'GET'),
   });
 
   // Fetch issue notes for selected issue
@@ -440,10 +448,14 @@ export default function TechManagerDashboard() {
       </div>
 
       <Tabs defaultValue="assignments" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6 h-auto">
           <TabsTrigger value="assignments" className="text-xs sm:text-sm p-2 sm:p-3">
             <span className="hidden sm:inline">Issue Assignments</span>
             <span className="sm:hidden">Issues</span>
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="text-xs sm:text-sm p-2 sm:p-3">
+            <span className="hidden sm:inline">Completed Work</span>
+            <span className="sm:hidden">Completed</span>
           </TabsTrigger>
           <TabsTrigger value="technicians" className="text-xs sm:text-sm p-2 sm:p-3">
             <span className="hidden sm:inline">Technician Management</span>
@@ -689,6 +701,127 @@ export default function TechManagerDashboard() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="completed" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Completed Work Reports</CardTitle>
+              <CardDescription>
+                View and export completion reports submitted by technicians
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {completionReports.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <CheckCircle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p>No completed work reports yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {completionReports.map((report: any) => (
+                    <div key={report.id} className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            {report.jobCardNumber}
+                          </Badge>
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                            Completed
+                          </Badge>
+                          <div className="flex items-center gap-1 text-sm text-yellow-600">
+                            {'★'.repeat(report.customerSatisfaction)}
+                            <span className="ml-1 text-gray-500">({report.customerSatisfaction}/5)</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedCompletionReport(report);
+                              setShowCompletionReportModal(true);
+                            }}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Report
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const reportText = `
+COMPLETION REPORT
+================
+Job Order: ${report.jobCardNumber}
+Technician ID: ${report.technicianId}
+Issue ID: ${report.issueId}
+Completed: ${new Date(report.completedAt).toLocaleString()}
+
+Work Description:
+${report.workCompleted}
+
+Materials Used:
+${report.materialsUsed.join(', ')}
+
+Time Taken: ${report.timeTaken} minutes
+Customer Satisfaction: ${report.customerSatisfaction}/5 stars
+
+Issues Found:
+${report.issuesFound}
+
+Recommendations:
+${report.recommendations}
+
+Additional Notes:
+${report.additionalNotes}
+                              `.trim();
+                              
+                              const blob = new Blob([reportText], { type: 'text/plain' });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = `completion-report-${report.jobCardNumber}.txt`;
+                              a.click();
+                              URL.revokeObjectURL(url);
+                            }}
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Export
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <h3 className="font-medium text-gray-900 dark:text-white">
+                          {report.workCompleted.substring(0, 100)}{report.workCompleted.length > 100 ? '...' : ''}
+                        </h3>
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            {report.timeTaken} minutes
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Users className="w-4 h-4" />
+                            Technician {report.technicianId}
+                          </div>
+                          {report.materialsUsed && report.materialsUsed.length > 0 && (
+                            <div className="flex items-center gap-1">
+                              <Wrench className="w-4 h-4" />
+                              {report.materialsUsed.length} materials used
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          Completed: {new Date(report.completedAt).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="technicians" className="space-y-4">
@@ -1161,6 +1294,188 @@ export default function TechManagerDashboard() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowExportModal(false)}>
               Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Completion Report View Modal */}
+      <Dialog open={showCompletionReportModal} onOpenChange={setShowCompletionReportModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Completion Report Details</DialogTitle>
+            <DialogDescription>
+              Full completion report submitted by technician
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedCompletionReport && (
+            <div className="space-y-6">
+              {/* Header Information */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div>
+                  <Label className="text-sm font-medium">Job Order Number</Label>
+                  <p className="text-lg font-semibold text-blue-600">{selectedCompletionReport.jobCardNumber}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Technician ID</Label>
+                  <p className="text-lg">{selectedCompletionReport.technicianId}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Issue ID</Label>
+                  <p className="text-lg">{selectedCompletionReport.issueId}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Completed At</Label>
+                  <p className="text-lg">{new Date(selectedCompletionReport.completedAt).toLocaleString()}</p>
+                </div>
+              </div>
+
+              {/* Work Description */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Work Completed</Label>
+                <div className="mt-2 p-3 bg-white dark:bg-gray-900 border rounded-lg">
+                  <p className="text-gray-900 dark:text-gray-100">{selectedCompletionReport.workCompleted}</p>
+                </div>
+              </div>
+
+              {/* Materials Used */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Materials Used</Label>
+                <div className="mt-2 p-3 bg-white dark:bg-gray-900 border rounded-lg">
+                  <div className="flex flex-wrap gap-2">
+                    {selectedCompletionReport.materialsUsed?.map((material: string, index: number) => (
+                      <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        {material}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Time and Satisfaction */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Time Taken</Label>
+                  <div className="mt-2 p-3 bg-white dark:bg-gray-900 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-blue-600" />
+                      <span className="text-lg font-semibold">{selectedCompletionReport.timeTaken} minutes</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Customer Satisfaction</Label>
+                  <div className="mt-2 p-3 bg-white dark:bg-gray-900 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center text-yellow-500">
+                        {'★'.repeat(selectedCompletionReport.customerSatisfaction)}
+                        {'☆'.repeat(5 - selectedCompletionReport.customerSatisfaction)}
+                      </div>
+                      <span className="text-lg font-semibold">{selectedCompletionReport.customerSatisfaction}/5</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Issues Found */}
+              {selectedCompletionReport.issuesFound && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Issues Found</Label>
+                  <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <p className="text-gray-900 dark:text-gray-100">{selectedCompletionReport.issuesFound}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Recommendations */}
+              {selectedCompletionReport.recommendations && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Recommendations</Label>
+                  <div className="mt-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <p className="text-gray-900 dark:text-gray-100">{selectedCompletionReport.recommendations}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Additional Notes */}
+              {selectedCompletionReport.additionalNotes && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Additional Notes</Label>
+                  <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-gray-900 dark:text-gray-100">{selectedCompletionReport.additionalNotes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Photos Section */}
+              {selectedCompletionReport.photos && selectedCompletionReport.photos.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Work Photos</Label>
+                  <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {selectedCompletionReport.photos.map((photo: string, index: number) => (
+                      <div key={index} className="border rounded-lg overflow-hidden">
+                        <img 
+                          src={photo} 
+                          alt={`Work photo ${index + 1}`}
+                          className="w-full h-32 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => window.open(photo, '_blank')}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                if (selectedCompletionReport) {
+                  const reportText = `
+COMPLETION REPORT
+================
+Job Order: ${selectedCompletionReport.jobCardNumber}
+Technician ID: ${selectedCompletionReport.technicianId}
+Issue ID: ${selectedCompletionReport.issueId}
+Completed: ${new Date(selectedCompletionReport.completedAt).toLocaleString()}
+
+Work Description:
+${selectedCompletionReport.workCompleted}
+
+Materials Used:
+${selectedCompletionReport.materialsUsed?.join(', ') || 'None specified'}
+
+Time Taken: ${selectedCompletionReport.timeTaken} minutes
+Customer Satisfaction: ${selectedCompletionReport.customerSatisfaction}/5 stars
+
+Issues Found:
+${selectedCompletionReport.issuesFound || 'None reported'}
+
+Recommendations:
+${selectedCompletionReport.recommendations || 'None provided'}
+
+Additional Notes:
+${selectedCompletionReport.additionalNotes || 'None'}
+                  `.trim();
+                  
+                  const blob = new Blob([reportText], { type: 'text/plain' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `completion-report-${selectedCompletionReport.jobCardNumber}.txt`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export Report
+            </Button>
+            <Button variant="outline" onClick={() => setShowCompletionReportModal(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
