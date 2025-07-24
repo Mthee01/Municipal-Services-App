@@ -176,10 +176,10 @@ export default function FieldTechnicianDashboard() {
 
   // Mutations
   const startWorkMutation = useMutation({
-    mutationFn: (issueId: number) => apiRequest('/api/technicians/start-work', 'POST', { issueId, technicianId: currentUserId }),
+    mutationFn: (issueId: number) => apiRequest('/api/work-sessions/start', 'POST', { issueId, technicianId: currentUserId }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/technicians/work-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/technicians/issues'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-sessions/active'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
       toast({ title: 'Work session started', description: 'You can now track your progress on this issue.' });
     },
     onError: (error: any) => {
