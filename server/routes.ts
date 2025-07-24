@@ -1556,6 +1556,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Technician-specific completion reports endpoint
+  app.get("/api/technicians/completion-reports", async (req, res) => {
+    try {
+      const { technicianId } = req.query;
+      console.log("Fetching completion reports for technician:", technicianId);
+      
+      if (!technicianId) {
+        return res.status(400).json({ error: "technicianId is required" });
+      }
+      
+      const reports = await storage.getCompletionReportsByTechnician(parseInt(technicianId as string));
+      console.log("Found completion reports:", reports.length);
+      res.json(reports);
+    } catch (error) {
+      console.error("Technician completion reports fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch completion reports" });
+    }
+  });
+
+  // Technician-specific issues endpoint
+  app.get("/api/technicians/issues", async (req, res) => {
+    try {
+      const { technicianId } = req.query;
+      console.log("Fetching issues for technician:", technicianId);
+      
+      if (!technicianId) {
+        return res.status(400).json({ error: "technicianId is required" });
+      }
+      
+      const issues = await storage.getIssuesByTechnician(parseInt(technicianId as string));
+      // Filter for assigned and in-progress issues only
+      const activeIssues = issues.filter(issue => 
+        issue.status === 'assigned' || issue.status === 'in_progress'
+      );
+      console.log("Found active issues for technician:", activeIssues.length);
+      res.json(activeIssues);
+    } catch (error) {
+      console.error("Technician issues fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch technician issues" });
+    }
+  });
+
+  // Technician-specific work sessions endpoint
+  app.get("/api/technicians/work-sessions", async (req, res) => {
+    try {
+      const { technicianId } = req.query;
+      console.log("Fetching work sessions for technician:", technicianId);
+      
+      if (!technicianId) {
+        return res.status(400).json({ error: "technicianId is required" });
+      }
+      
+      const issues = await storage.getIssuesByTechnician(parseInt(technicianId as string));
+      // Convert in-progress issues to work session format
+      const workSessions = issues
+        .filter(issue => issue.status === 'in_progress')
+        .map(issue => ({
+          id: issue.id,
+          issueId: issue.id,
+          technicianId: parseInt(technicianId as string),
+          startTime: issue.updatedAt || new Date(),
+          status: 'active',
+          issueTitle: issue.title,
+          issueLocation: issue.location,
+          partsOrderId: null,
+          partsOrderStatus: 'none'
+        }));
+      
+      console.log("Found work sessions for technician:", workSessions.length);
+      res.json(workSessions);
+    } catch (error) {
+      console.error("Technician work sessions fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch work sessions" });
+    }
+  });
+
+  // Technician-specific messages endpoint
+  app.get("/api/technicians/messages", async (req, res) => {
+    try {
+      const { technicianId } = req.query;
+      console.log("Fetching messages for technician:", technicianId);
+      
+      if (!technicianId) {
+        return res.status(400).json({ error: "technicianId is required" });
+      }
+      
+      const messages = await storage.getTechnicianMessages();
+      // Filter messages for this technician
+      const techMessages = messages.filter(msg => 
+        msg.fromUserId === parseInt(technicianId as string) || 
+        msg.toUserId === parseInt(technicianId as string)
+      );
+      
+      console.log("Found messages for technician:", techMessages.length);
+      res.json(techMessages);
+    } catch (error) {
+      console.error("Technician messages fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch technician messages" });
+    }
+  });
+
   // Get active work sessions for current technician
   app.get("/api/work-sessions/active", async (req, res) => {
     try {
