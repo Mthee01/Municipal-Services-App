@@ -729,12 +729,19 @@ export class DatabaseStorage implements IStorage {
 
   // Completion reports operations
   async getCompletionReports(): Promise<CompletionReport[]> {
+    // Generate consistent job order numbers (JO-XXX-YYYY format)
+    const generateJobOrderNumber = (issueId: number) => {
+      const year = new Date().getFullYear();
+      const paddedId = String(issueId).padStart(3, '0');
+      return `JO-${paddedId}-${year}`;
+    };
+
     return [
       {
         id: 1,
         technicianId: 6,
         issueId: 12,
-        jobCardNumber: "JC-789456-006",
+        jobCardNumber: generateJobOrderNumber(12), // JO-012-2025
         workCompleted: "Repaired water pipe leak using new coupling and sealed connection points. Tested water pressure and flow.",
         materialsUsed: ["PVC Coupling", "Pipe Sealant", "Pipe Clamps"],
         timeTaken: 120,
@@ -748,7 +755,7 @@ export class DatabaseStorage implements IStorage {
         id: 2,
         technicianId: 6,
         issueId: 15,
-        jobCardNumber: "JC-123789-006",
+        jobCardNumber: generateJobOrderNumber(15), // JO-015-2025
         workCompleted: "Fixed streetlight wiring issue, replaced damaged cables and connection box.",
         materialsUsed: ["Electrical Cable", "Junction Box", "Wire Connectors"],
         timeTaken: 90,
@@ -762,7 +769,7 @@ export class DatabaseStorage implements IStorage {
         id: 3,
         technicianId: 6,
         issueId: 18,
-        jobCardNumber: "JC-456123-006",
+        jobCardNumber: generateJobOrderNumber(18), // JO-018-2025
         workCompleted: "Cleared blocked storm drain and removed debris. Verified proper water flow.",
         materialsUsed: ["Drain Rod", "High Pressure Hose"],
         timeTaken: 60,
