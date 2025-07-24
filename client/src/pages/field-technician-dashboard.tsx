@@ -565,13 +565,16 @@ export default function FieldTechnicianDashboard() {
                   <div className="flex justify-center py-8">
                     <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
                   </div>
-                ) : issues.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No work orders assigned
-                  </div>
                 ) : (
                   <div className="space-y-4">
-                    {issues.filter((issue: Issue) => ['assigned', 'open', 'in_progress'].includes(issue.status)).map((issue: Issue) => (
+                    <div className="text-xs text-gray-500 mb-4">
+                      Debug: {issues.length} total issues, {issues.filter((issue: Issue) => ['assigned', 'open', 'in_progress'].includes(issue.status)).length} active issues
+                    </div>
+                    {issues.filter((issue: Issue) => ['assigned', 'open', 'in_progress'].includes(issue.status)).length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No active work orders (showing resolved: {issues.filter((issue: Issue) => issue.status === 'resolved').length})
+                      </div>
+                    ) : issues.filter((issue: Issue) => ['assigned', 'open', 'in_progress'].includes(issue.status)).map((issue: Issue) => (
                       <div key={issue.id} className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
@@ -649,13 +652,17 @@ export default function FieldTechnicianDashboard() {
                   <div className="flex justify-center py-8">
                     <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
                   </div>
-                ) : workSessions.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No active work sessions
-                  </div>
                 ) : (
                   <div className="space-y-4">
-                    {workSessions.map((session: WorkSession) => {
+                    <div className="text-xs text-gray-500 mb-4">
+                      Debug: {workSessions.length} active work sessions
+                    </div>
+                    {workSessions.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No active work sessions
+                      </div>
+                    ) : (
+                      workSessions.map((session: WorkSession) => {
                       const partsOrder = getPartsOrderForIssue(session.issueId);
                       const canComplete = !partsOrder || partsOrder.status === 'delivered';
                       
@@ -750,7 +757,8 @@ export default function FieldTechnicianDashboard() {
                           </div>
                         </div>
                       );
-                    })}
+                      })
+                    )}
                   </div>
                 )}
               </CardContent>
