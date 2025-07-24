@@ -742,8 +742,13 @@ export default function FieldTechnicianDashboard() {
                           </div>
                           
                           <div className="space-y-2">
+                            <div className="flex items-center gap-3 mb-2">
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                {generateJobOrderNumber(session.issueId)}
+                              </Badge>
+                            </div>
                             <h3 className="font-medium text-gray-900 dark:text-white">
-                              {session.issueTitle || `Issue #${session.issueId}`}
+                              {session.issueTitle || `Work Session for ${generateJobOrderNumber(session.issueId)}`}
                             </h3>
                             <div className="flex items-center gap-4 text-sm text-gray-500">
                               <div className="flex items-center gap-1">
@@ -963,9 +968,9 @@ export default function FieldTechnicianDashboard() {
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                               {report.reportType.toUpperCase()}
                             </Badge>
-                            <div className="text-sm text-gray-500">
-                              Issue #{report.issueId}
-                            </div>
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              {generateJobOrderNumber(report.issueId)}
+                            </Badge>
                           </div>
                           <div className="text-sm text-gray-500">
                             {new Date(report.createdAt).toLocaleDateString()}
