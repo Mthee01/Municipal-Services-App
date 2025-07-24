@@ -383,6 +383,12 @@ Preferred communication style: Simple, everyday language.
   * IMPLEMENTED job card requirement: Backend properly validates job card authorization before allowing work start
   * VERIFIED workflow integrity: Issues with status "assigned" and valid job cards can now be started by technicians
   * START WORK FUNCTIONALITY: Technicians can now successfully start work on properly assigned issues with job card authorization
+- July 24, 2025: IMPROVED TAB FILTERING LOGIC FOR PROPER WORKFLOW SEPARATION
+  * WORK ORDERS TAB: Now only shows "assigned" and "open" status issues awaiting technician to start work
+  * ACTIVE WORK TAB: Reserved for "in_progress" issues where work has already been started
+  * ENHANCED UI DESCRIPTIONS: Updated tab descriptions to clearly explain what each tab contains
+  * FILTERED OUT RESOLVED: Resolved issues no longer appear in work tabs, keeping focus on active work
+  * PROPER WORKFLOW: Clear separation between awaiting work (3 issues) and work in progress (2 issues)
 - July 24, 2025: ACHIEVED 100% TECHNICIAN DASHBOARD SUCCESS RATE - ALL 6 TABS FULLY OPERATIONAL
   * FIXED critical data structure mismatch in completion reports (workDescription → workCompleted field)
   * CORRECTED API request parameter order in all React Query calls for proper data loading

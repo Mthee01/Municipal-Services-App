@@ -579,9 +579,9 @@ export default function FieldTechnicianDashboard() {
           <TabsContent value="work-orders">
             <Card>
               <CardHeader>
-                <CardTitle>Assigned Work Orders</CardTitle>
+                <CardTitle>Work Orders</CardTitle>
                 <CardDescription>
-                  Issues assigned to you that need attention
+                  Assigned issues awaiting work start - click "Start Work" to begin
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -591,11 +591,11 @@ export default function FieldTechnicianDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {issues.filter((issue: Issue) => ['assigned', 'open', 'in_progress'].includes(issue.status)).length === 0 ? (
+                    {issues.filter((issue: Issue) => ['assigned', 'open'].includes(issue.status)).length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
-                        No active work orders assigned
+                        No work orders awaiting start
                       </div>
-                    ) : issues.filter((issue: Issue) => ['assigned', 'open', 'in_progress'].includes(issue.status)).map((issue: Issue) => (
+                    ) : issues.filter((issue: Issue) => ['assigned', 'open'].includes(issue.status)).map((issue: Issue) => (
                       <div key={issue.id} className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
@@ -620,7 +620,7 @@ export default function FieldTechnicianDashboard() {
                             >
                               Details
                             </Button>
-                            {issue.status === 'assigned' && (
+                            {(issue.status === 'assigned' || issue.status === 'open') && (
                               <Button
                                 size="sm"
                                 onClick={() => handleStartWork(issue)}
@@ -665,7 +665,7 @@ export default function FieldTechnicianDashboard() {
               <CardHeader>
                 <CardTitle>Active Work Sessions</CardTitle>
                 <CardDescription>
-                  Track your ongoing work and complete tasks
+                  Work currently in progress - manage parts orders and complete tasks
                 </CardDescription>
               </CardHeader>
               <CardContent>
