@@ -141,28 +141,33 @@ export default function FieldTechnicianDashboard() {
 
   // API Queries
   const { data: issues = [], isLoading: issuesLoading } = useQuery({
-    queryKey: ['/api/technicians/issues', currentUserId],
-    queryFn: () => apiRequest(`/api/technicians/issues?technicianId=${currentUserId}`, 'GET'),
+    queryKey: ['/api/issues', currentUserId],
+    queryFn: () => apiRequest(`/api/issues?technicianId=${currentUserId}`, 'GET'),
   });
 
   const { data: workSessions = [], isLoading: sessionsLoading } = useQuery({
-    queryKey: ['/api/technicians/work-sessions', currentUserId],
-    queryFn: () => apiRequest(`/api/technicians/work-sessions?technicianId=${currentUserId}`, 'GET'),
+    queryKey: ['/api/work-sessions/active', currentUserId],
+    queryFn: () => apiRequest(`/api/work-sessions/active?technicianId=${currentUserId}`, 'GET'),
   });
 
   const { data: completionReports = [] } = useQuery({
-    queryKey: ['/api/technicians/completion-reports', currentUserId],
-    queryFn: () => apiRequest(`/api/technicians/completion-reports?technicianId=${currentUserId}`, 'GET'),
+    queryKey: ['/api/completion-reports', currentUserId],
+    queryFn: () => apiRequest(`/api/completion-reports?technicianId=${currentUserId}`, 'GET'),
   });
 
   const { data: messages = [] } = useQuery({
-    queryKey: ['/api/technicians/messages', currentUserId],
-    queryFn: () => apiRequest(`/api/technicians/messages?technicianId=${currentUserId}`, 'GET'),
+    queryKey: ['/api/messages', currentUserId],
+    queryFn: () => apiRequest(`/api/messages?userId=${currentUserId}`, 'GET'),
   });
 
   const { data: partsOrders = [] } = useQuery({
     queryKey: ['/api/parts-orders', currentUserId],
     queryFn: () => apiRequest(`/api/parts-orders?technicianId=${currentUserId}`, 'GET'),
+  });
+
+  const { data: fieldReports = [] } = useQuery({
+    queryKey: ['/api/field-reports', currentUserId],
+    queryFn: () => apiRequest(`/api/field-reports?technicianId=${currentUserId}`, 'GET'),
   });
 
   // Mutations
@@ -520,7 +525,7 @@ export default function FieldTechnicianDashboard() {
         </div>
 
         <Tabs defaultValue="work-orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="work-orders" className="flex items-center gap-2">
               <ClipboardList className="w-4 h-4" />
               Work Orders
@@ -532,6 +537,10 @@ export default function FieldTechnicianDashboard() {
             <TabsTrigger value="completed-work" className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
               Completed Work
+            </TabsTrigger>
+            <TabsTrigger value="field-reports" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Field Reports
             </TabsTrigger>
             <TabsTrigger value="messages" className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
@@ -562,7 +571,7 @@ export default function FieldTechnicianDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {issues.map((issue: Issue) => (
+                    {issues.filter((issue: Issue) => ['assigned', 'open', 'in_progress'].includes(issue.status)).map((issue: Issue) => (
                       <div key={issue.id} className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
@@ -902,6 +911,70 @@ export default function FieldTechnicianDashboard() {
                     </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="field-reports">
+            <Card>
+              <CardHeader>
+                <CardTitle>Field Reports</CardTitle>
+                <CardDescription>
+                  Your submitted field reports and documentation
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {fieldReports.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No field reports submitted yet
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {fieldReports.map((report: any) => (
+                      <div key={report.id} className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              {report.reportType.toUpperCase()}
+                            </Badge>
+                            <div className="text-sm text-gray-500">
+                              Issue #{report.issueId}
+                            </div>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {new Date(report.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <h3 className="font-medium text-gray-900 dark:text-white">
+                            {report.description}
+                          </h3>
+                          {report.findings && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              <span className="font-medium">Findings:</span> {report.findings}
+                            </p>
+                          )}
+                          {report.actionsTaken && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              <span className="font-medium">Actions:</span> {report.actionsTaken}
+                            </p>
+                          )}
+                          {report.materialsUsed && report.materialsUsed.length > 0 && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              <span className="font-medium">Materials:</span> {report.materialsUsed.join(', ')}
+                            </p>
+                          )}
+                          {report.nextSteps && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              <span className="font-medium">Next Steps:</span> {report.nextSteps}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
