@@ -569,6 +569,22 @@ export default function FieldTechnicianDashboard() {
     return `JO-${paddedId}-${year}`;
   };
 
+  const handleNavigateToLocation = (location: string) => {
+    // Encode the location for URL
+    const encodedLocation = encodeURIComponent(location);
+    
+    // Create Google Maps URL for navigation
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodedLocation}`;
+    
+    // Open in new tab/window
+    window.open(mapsUrl, '_blank');
+    
+    toast({
+      title: 'Opening Navigation',
+      description: `Getting directions to ${location}`,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="container mx-auto p-6">
@@ -695,15 +711,32 @@ export default function FieldTechnicianDashboard() {
                           <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
                             {issue.description}
                           </p>
-                          <div className="flex items-center gap-4 text-sm text-gray-500">
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              {issue.location}
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-4 text-gray-500">
+                              <div className="flex items-center gap-1">
+                                <MapPin className="w-4 h-4" />
+                                <span 
+                                  className="cursor-pointer hover:text-blue-600 hover:underline transition-colors"
+                                  onClick={() => handleNavigateToLocation(issue.location)}
+                                  title="Click to get directions"
+                                >
+                                  {issue.location}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-4 h-4" />
+                                {new Date(issue.createdAt).toLocaleDateString()}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              {new Date(issue.createdAt).toLocaleDateString()}
-                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleNavigateToLocation(issue.location)}
+                              className="flex items-center gap-1 text-xs px-2 py-1 h-7"
+                            >
+                              <Navigation className="w-3 h-3" />
+                              Navigate
+                            </Button>
                           </div>
                         </div>
                       </div>
