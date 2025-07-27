@@ -2267,6 +2267,54 @@ function generateBotResponse(userMessage: string) {
     type: "text",
     metadata: null
   };
+  // Achievement Badge System Endpoints
+  app.get("/api/technicians/:id/badges", async (req, res) => {
+    try {
+      const technicianId = parseInt(req.params.id);
+      const badges = await storage.getTechnicianBadges(technicianId);
+      res.json(badges);
+    } catch (error) {
+      console.error("Error fetching technician badges:", error);
+      res.status(500).json({ error: "Failed to fetch badges" });
+    }
+  });
+
+  app.get("/api/technicians/:id/stats", async (req, res) => {
+    try {
+      const technicianId = parseInt(req.params.id);
+      const stats = await storage.getTechnicianStats(technicianId);
+      if (!stats) {
+        return res.status(404).json({ error: "Technician stats not found" });
+      }
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching technician stats:", error);
+      res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  });
+
+  app.get("/api/achievement-badges", async (req, res) => {
+    try {
+      const badges = await storage.getAllAchievementBadges();
+      res.json(badges);
+    } catch (error) {
+      console.error("Error fetching achievement badges:", error);
+      res.status(500).json({ error: "Failed to fetch achievement badges" });
+    }
+  });
+
+  app.post("/api/technicians/:id/award-badge", async (req, res) => {
+    try {
+      const technicianId = parseInt(req.params.id);
+      const { badgeId, reason, relatedIssueId } = req.body;
+      
+      const awarded = await storage.awardBadge(technicianId, badgeId, reason, relatedIssueId);
+      res.json(awarded);
+    } catch (error) {
+      console.error("Error awarding badge:", error);
+      res.status(500).json({ error: "Failed to award badge" });
+    }
+  });
 }
 
 // Helper function to calculate distance between two coordinates

@@ -27,7 +27,10 @@ import {
   Truck,
   CheckSquare,
   Camera,
-  X
+  X,
+  Award,
+  Star,
+  Trophy
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -95,6 +98,40 @@ interface Message {
   createdAt: string;
   isRead: boolean;
   fromUserName?: string;
+}
+
+interface AchievementBadge {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  color: string;
+  isRare: boolean;
+  pointsRequired: number;
+}
+
+interface TechnicianBadge {
+  id: number;
+  technicianId: number;
+  earnedAt: string;
+  reason?: string;
+  badge: AchievementBadge;
+}
+
+interface TechnicianStats {
+  id: number;
+  technicianId: number;
+  totalIssuesCompleted: number;
+  averageRating: number;
+  fastCompletions: number;
+  perfectRatings: number;
+  streakDays: number;
+  longestStreak: number;
+  emergencyResponses: number;
+  totalHoursWorked: number;
+  badgesEarned: number;
+  lastUpdated: string;
 }
 
 export default function FieldTechnicianDashboard() {
@@ -172,6 +209,22 @@ export default function FieldTechnicianDashboard() {
   const { data: fieldReports = [] } = useQuery({
     queryKey: ['/api/field-reports', currentUserId],
     queryFn: () => apiRequest('GET', `/api/field-reports?technicianId=${currentUserId}`),
+  });
+
+  // Achievement Badge Queries
+  const { data: technicianBadges = [] } = useQuery({
+    queryKey: ['/api/technicians', currentUserId, 'badges'],
+    queryFn: () => apiRequest('GET', `/api/technicians/${currentUserId}/badges`),
+  });
+
+  const { data: technicianStats } = useQuery({
+    queryKey: ['/api/technicians', currentUserId, 'stats'],
+    queryFn: () => apiRequest('GET', `/api/technicians/${currentUserId}/stats`),
+  });
+
+  const { data: allBadges = [] } = useQuery({
+    queryKey: ['/api/achievement-badges'],
+    queryFn: () => apiRequest('GET', '/api/achievement-badges'),
   });
 
   // Mutations
@@ -530,7 +583,7 @@ export default function FieldTechnicianDashboard() {
 
         <Tabs defaultValue="work-orders" className="space-y-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg border shadow-sm p-2">
-            <TabsList className="grid w-full grid-cols-6 bg-gray-50 dark:bg-gray-700 rounded-md h-auto p-1">
+            <TabsList className="grid w-full grid-cols-7 bg-gray-50 dark:bg-gray-700 rounded-md h-auto p-1">
               <TabsTrigger 
                 value="work-orders" 
                 className="flex flex-col items-center gap-1 px-3 py-3 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-sm hover:bg-white/50 transition-all duration-200"
@@ -572,6 +625,13 @@ export default function FieldTechnicianDashboard() {
               >
                 <MapPin className="w-5 h-5" />
                 <span className="whitespace-nowrap">Location</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="achievements" 
+                className="flex flex-col items-center gap-1 px-3 py-3 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-yellow-700 data-[state=active]:shadow-sm hover:bg-white/50 transition-all duration-200"
+              >
+                <Award className="w-5 h-5" />
+                <span className="whitespace-nowrap">Badges</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -944,6 +1004,178 @@ export default function FieldTechnicianDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="achievements">
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Stats Overview */}
+              <div className="lg:col-span-1">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Trophy className="w-5 h-5 text-yellow-600" />
+                      Performance Stats
+                    </CardTitle>
+                    <CardDescription>Your performance metrics</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {technicianStats ? (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Completed Issues</span>
+                          <span className="font-semibold text-blue-600">{technicianStats.totalIssuesCompleted}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Average Rating</span>
+                          <div className="flex items-center gap-1">
+                            <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                            <span className="font-semibold text-yellow-600">{(technicianStats.averageRating / 100).toFixed(1)}</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Fast Completions</span>
+                          <span className="font-semibold text-green-600">{technicianStats.fastCompletions}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Perfect Ratings</span>
+                          <span className="font-semibold text-orange-600">{technicianStats.perfectRatings}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Current Streak</span>
+                          <span className="font-semibold text-purple-600">{technicianStats.streakDays} days</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Badges Earned</span>
+                          <span className="font-semibold text-yellow-600">{technicianStats.badgesEarned}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-gray-500">
+                        Loading stats...
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Earned Badges */}
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Award className="w-5 h-5 text-yellow-600" />
+                      Your Achievement Badges ({technicianBadges.length})
+                    </CardTitle>
+                    <CardDescription>
+                      Celebrate your accomplishments and track your progress
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {technicianBadges.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Award className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500 mb-2">No badges earned yet</p>
+                        <p className="text-sm text-gray-400">
+                          Complete work orders and provide excellent service to earn your first badge!
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {technicianBadges.map((techBadge: TechnicianBadge) => (
+                          <div 
+                            key={techBadge.id}
+                            className={`p-4 border-2 rounded-lg transition-all hover:shadow-md ${
+                              techBadge.badge.isRare 
+                                ? 'border-yellow-300 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20' 
+                                : 'border-gray-200 bg-white dark:bg-gray-800'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div 
+                                className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold text-white"
+                                style={{ backgroundColor: techBadge.badge.color }}
+                              >
+                                {techBadge.badge.icon}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-start justify-between">
+                                  <h3 className="font-semibold text-gray-900 dark:text-white">
+                                    {techBadge.badge.name}
+                                    {techBadge.badge.isRare && (
+                                      <span className="ml-2 text-xs bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full font-medium">
+                                        RARE
+                                      </span>
+                                    )}
+                                  </h3>
+                                  <span className="text-xs text-gray-500 flex-shrink-0">
+                                    {new Date(techBadge.earnedAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                  {techBadge.badge.description}
+                                </p>
+                                {techBadge.reason && (
+                                  <p className="text-xs text-gray-500 mt-2 italic">
+                                    {techBadge.reason}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Available Badges Preview */}
+                <Card className="mt-6">
+                  <CardHeader>
+                    <CardTitle>Available Badges</CardTitle>
+                    <CardDescription>
+                      Badges you can work towards earning
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {allBadges
+                        .filter((badge: AchievementBadge) => 
+                          !technicianBadges.some((tb: TechnicianBadge) => tb.badge.id === badge.id)
+                        )
+                        .slice(0, 6)
+                        .map((badge: AchievementBadge) => (
+                          <div 
+                            key={badge.id}
+                            className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800 opacity-60"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white"
+                                style={{ backgroundColor: badge.color }}
+                              >
+                                {badge.icon}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 truncate">
+                                  {badge.name}
+                                </h4>
+                                <p className="text-xs text-gray-500 truncate">
+                                  {badge.description}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                    {allBadges.length > 6 && (
+                      <p className="text-xs text-gray-500 text-center mt-3">
+                        And {allBadges.length - 6} more badges to discover...
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="field-reports">

@@ -2,7 +2,7 @@ import {
   users, issues, payments, teams, technicians, wards, issueUpdates, vouchers,
   fieldReports, partsInventory, partsOrders, technicianMessages, technicianLocations,
   chatMessages, whatsappMessages, whatsappConversations, issueNotes, issueEscalations,
-  jobCards, jobOrders, completionReports,
+  jobCards, jobOrders, completionReports, achievementBadges, technicianBadges, technicianStats,
   type User, type InsertUser, type Issue, type InsertIssue, 
   type Payment, type InsertPayment, type Team, type InsertTeam,
   type Technician, type InsertTechnician, type Ward, type InsertWard,
@@ -12,7 +12,9 @@ import {
   type TechnicianLocation, type InsertTechnicianLocation, type ChatMessage, type InsertChatMessage,
   type WhatsappMessage, type InsertWhatsappMessage, type WhatsappConversation, type InsertWhatsappConversation,
   type IssueNote, type InsertIssueNote, type IssueEscalation, type InsertIssueEscalation,
-  type JobCard, type InsertJobCard, type JobOrder, type InsertJobOrder, type CompletionReport, type InsertCompletionReport
+  type JobCard, type InsertJobCard, type JobOrder, type InsertJobOrder, type CompletionReport, type InsertCompletionReport,
+  type AchievementBadge, type InsertAchievementBadge, type TechnicianBadge, type InsertTechnicianBadge,
+  type TechnicianStats, type InsertTechnicianStats
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, like, or, isNull } from "drizzle-orm";
@@ -1150,5 +1152,131 @@ export class DatabaseStorage implements IStorage {
     .orderBy(desc(jobOrders.createdAt));
 
     return result;
+  }
+
+  // Achievement Badge System Methods
+  async getAllAchievementBadges(): Promise<AchievementBadge[]> {
+    return db.select().from(achievementBadges).orderBy(achievementBadges.category);
+  }
+
+  async getTechnicianBadges(technicianId: number): Promise<any[]> {
+    const result = await db.select({
+      id: technicianBadges.id,
+      technicianId: technicianBadges.technicianId,
+      earnedAt: technicianBadges.earnedAt,
+      reason: technicianBadges.reason,
+      relatedIssueId: technicianBadges.relatedIssueId,
+      badge: {
+        id: achievementBadges.id,
+        name: achievementBadges.name,
+        description: achievementBadges.description,
+        icon: achievementBadges.icon,
+        category: achievementBadges.category,
+        color: achievementBadges.color,
+        isRare: achievementBadges.isRare
+      }
+    })
+    .from(technicianBadges)
+    .leftJoin(achievementBadges, eq(technicianBadges.badgeId, achievementBadges.id))
+    .where(eq(technicianBadges.technicianId, technicianId))
+    .orderBy(desc(technicianBadges.earnedAt));
+
+    return result;
+  }
+
+  async getTechnicianStats(technicianId: number): Promise<TechnicianStats | null> {
+    const [stats] = await db.select().from(technicianStats).where(eq(technicianStats.technicianId, technicianId));
+    return stats || null;
+  }
+
+  async updateTechnicianStats(technicianId: number, updates: Partial<TechnicianStats>): Promise<TechnicianStats> {
+    const [updated] = await db.update(technicianStats)
+      .set({ ...updates, lastUpdated: new Date() })
+      .where(eq(technicianStats.technicianId, technicianId))
+      .returning();
+    return updated;
+  }
+
+  async awardBadge(technicianId: number, badgeId: number, reason?: string, relatedIssueId?: number): Promise<TechnicianBadge> {
+    // Check if technician already has this badge
+    const existing = await db.select()
+      .from(technicianBadges)
+      .where(and(
+        eq(technicianBadges.technicianId, technicianId),
+        eq(technicianBadges.badgeId, badgeId)
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      return existing[0]; // Already has badge, return existing
+    }
+
+    // Award new badge
+    const [awarded] = await db.insert(technicianBadges).values({
+      technicianId,
+      badgeId,
+      reason,
+      relatedIssueId
+    }).returning();
+
+    // Update badge count in stats
+    await this.updateTechnicianStats(technicianId, { 
+      badgesEarned: (await this.getTechnicianStats(technicianId))?.badgesEarned + 1 || 1
+    });
+
+    return awarded;
+  }
+
+  async checkAndAwardBadges(technicianId: number, eventType: string, eventData: any): Promise<TechnicianBadge[]> {
+    const newBadges: TechnicianBadge[] = [];
+    const stats = await this.getTechnicianStats(technicianId);
+    const badges = await this.getAllAchievementBadges();
+
+    if (!stats) return newBadges;
+
+    // Check each badge to see if technician qualifies
+    for (const badge of badges) {
+      const requirements = badge.requirements as any;
+      let qualifies = false;
+
+      switch (requirements?.type) {
+        case 'issues_completed':
+          qualifies = stats.totalIssuesCompleted >= requirements.count;
+          break;
+        case 'perfect_ratings':
+          qualifies = stats.perfectRatings >= requirements.count;
+          break;
+        case 'fast_completions':
+          qualifies = stats.fastCompletions >= requirements.count;
+          break;
+        case 'streak_days':
+          qualifies = stats.streakDays >= requirements.count;
+          break;
+        case 'emergency_responses':
+          qualifies = stats.emergencyResponses >= requirements.count;
+          break;
+        case 'perfect_rating':
+          if (eventType === 'rating_received' && eventData.rating === 5) {
+            qualifies = true;
+          }
+          break;
+        case 'fast_completion':
+          if (eventType === 'work_completed' && eventData.timeSpent <= requirements.time_limit) {
+            qualifies = true;
+          }
+          break;
+      }
+
+      if (qualifies) {
+        try {
+          const awarded = await this.awardBadge(technicianId, badge.id, `Earned by ${eventType}`, eventData.issueId);
+          newBadges.push(awarded);
+        } catch (error) {
+          // Badge already exists, continue
+        }
+      }
+    }
+
+    return newBadges;
   }
 }

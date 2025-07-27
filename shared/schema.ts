@@ -473,6 +473,69 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   timestamp: true,
 });
 
+// Achievement Badges System
+export const achievementBadges = pgTable("achievement_badges", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(), // emoji or icon name
+  category: text("category").notNull(), // productivity, quality, speed, milestone, special
+  color: text("color").notNull().default("#3B82F6"), // hex color for badge
+  pointsRequired: integer("points_required").default(0), // achievement criteria
+  isRare: boolean("is_rare").default(false), // special rare badges
+  requirements: json("requirements"), // flexible criteria storage
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Technician Badges (earned badges)
+export const technicianBadges = pgTable("technician_badges", {
+  id: serial("id").primaryKey(),
+  technicianId: integer("technician_id").notNull(),
+  badgeId: integer("badge_id").notNull(),
+  earnedAt: timestamp("earned_at").notNull().defaultNow(),
+  reason: text("reason"), // why they earned it
+  relatedIssueId: integer("related_issue_id"), // if earned from specific issue
+  metadata: json("metadata"), // additional context
+});
+
+// Technician Stats for badge calculations
+export const technicianStats = pgTable("technician_stats", {
+  id: serial("id").primaryKey(),
+  technicianId: integer("technician_id").notNull().unique(),
+  totalIssuesCompleted: integer("total_issues_completed").default(0),
+  averageRating: integer("average_rating").default(0), // out of 500 (5.00 * 100)
+  fastCompletions: integer("fast_completions").default(0), // under 2 hours
+  perfectRatings: integer("perfect_ratings").default(0), // 5-star ratings
+  streakDays: integer("streak_days").default(0), // consecutive work days
+  longestStreak: integer("longest_streak").default(0),
+  emergencyResponses: integer("emergency_responses").default(0),
+  totalHoursWorked: integer("total_hours_worked").default(0),
+  badgesEarned: integer("badges_earned").default(0),
+  lastUpdated: timestamp("last_updated").notNull().defaultNow(),
+});
+
+export const insertAchievementBadgeSchema = createInsertSchema(achievementBadges).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTechnicianBadgeSchema = createInsertSchema(technicianBadges).omit({
+  id: true,
+  earnedAt: true,
+});
+
+export const insertTechnicianStatsSchema = createInsertSchema(technicianStats).omit({
+  id: true,
+  lastUpdated: true,
+});
+
+export type AchievementBadge = typeof achievementBadges.$inferSelect;
+export type InsertAchievementBadge = z.infer<typeof insertAchievementBadgeSchema>;
+export type TechnicianBadge = typeof technicianBadges.$inferSelect;
+export type InsertTechnicianBadge = z.infer<typeof insertTechnicianBadgeSchema>;
+export type TechnicianStats = typeof technicianStats.$inferSelect;
+export type InsertTechnicianStats = z.infer<typeof insertTechnicianStatsSchema>;
+
 export const insertWhatsappMessageSchema = createInsertSchema(whatsappMessages).omit({
   id: true,
   timestamp: true,
