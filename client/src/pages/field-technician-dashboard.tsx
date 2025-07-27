@@ -30,7 +30,9 @@ import {
   X,
   Award,
   Star,
-  Trophy
+  Trophy,
+  Eye,
+  Printer
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -1010,7 +1012,7 @@ export default function FieldTechnicianDashboard() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleNavigateToLocation(session.issueLocation)}
+                                  onClick={() => handleNavigateToLocation(session.issueLocation!)}
                                   className="flex items-center gap-1 text-xs px-2 py-1 h-7"
                                 >
                                   <Navigation className="w-3 h-3" />
