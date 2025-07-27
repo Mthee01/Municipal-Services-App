@@ -779,7 +779,17 @@ export default function FieldTechnicianDashboard() {
                                 IN PROGRESS
                               </Badge>
                               <span className="text-sm text-gray-600">
-                                Started: {new Date(session.startTime).toLocaleDateString()} at {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                Started: {(() => {
+                                  try {
+                                    const startDate = new Date(session.startTime);
+                                    if (isNaN(startDate.getTime())) {
+                                      return 'Invalid date';
+                                    }
+                                    return `${startDate.toLocaleDateString()} at ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                                  } catch (error) {
+                                    return 'Invalid date';
+                                  }
+                                })()}
                               </span>
                               {partsOrder && (
                                 <Badge className={getPartsStatusColor(partsOrder.status)}>
@@ -842,9 +852,13 @@ export default function FieldTechnicianDashboard() {
                                 <div className="flex items-center gap-1">
                                   <MapPin className="w-4 h-4" />
                                   <span 
-                                    className="cursor-pointer hover:text-blue-600 hover:underline transition-colors"
-                                    onClick={() => handleNavigateToLocation(session.issueLocation || 'Location not specified')}
-                                    title="Click to get directions"
+                                    className={`${session.issueLocation && session.issueLocation !== 'Location not specified' ? 'cursor-pointer hover:text-blue-600 hover:underline transition-colors' : 'text-gray-400'}`}
+                                    onClick={() => {
+                                      if (session.issueLocation && session.issueLocation !== 'Location not specified') {
+                                        handleNavigateToLocation(session.issueLocation);
+                                      }
+                                    }}
+                                    title={session.issueLocation && session.issueLocation !== 'Location not specified' ? "Click to get directions" : "No location available"}
                                   >
                                     {session.issueLocation || 'Location not specified'}
                                   </span>
@@ -854,7 +868,7 @@ export default function FieldTechnicianDashboard() {
                                   Duration: {calculateWorkDuration(new Date(session.startTime))}
                                 </div>
                               </div>
-                              {session.issueLocation && (
+                              {session.issueLocation && session.issueLocation !== 'Location not specified' && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -1805,13 +1819,31 @@ function getStatusColor(status: string) {
   }
 }
 
-function calculateWorkDuration(startTime: Date) {
-  const now = new Date();
-  const diffMs = now.getTime() - startTime.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const hours = Math.floor(diffMins / 60);
-  const minutes = diffMins % 60;
-  return `${hours}h ${minutes}m`;
+function calculateWorkDuration(startTime: Date | string) {
+  try {
+    const start = typeof startTime === 'string' ? new Date(startTime) : startTime;
+    const now = new Date();
+    
+    // Check if the date is valid
+    if (isNaN(start.getTime())) {
+      return '0h 0m';
+    }
+    
+    const diffMs = now.getTime() - start.getTime();
+    
+    // Handle negative durations (future dates)
+    if (diffMs < 0) {
+      return '0h 0m';
+    }
+    
+    const diffMins = Math.floor(diffMs / 60000);
+    const hours = Math.floor(diffMins / 60);
+    const minutes = diffMins % 60;
+    return `${hours}h ${minutes}m`;
+  } catch (error) {
+    console.error('Error calculating work duration:', error);
+    return '0h 0m';
+  }
 }
 
 function getPartsStatusColor(status: string) {

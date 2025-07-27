@@ -1765,10 +1765,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Found", inProgressIssues.length, "in-progress issues for technician", technicianId);
       
-      // Convert to work session format
+      // Convert to work session format with complete data structure
       const activeSessions = inProgressIssues.map(issue => ({
+        id: issue.id,
         issueId: issue.id,
-        arrivalTime: issue.updatedAt,
+        technicianId: technicianId,
+        startTime: issue.updatedAt || new Date().toISOString(),
+        status: 'active',
+        issueTitle: issue.title,
+        issueLocation: issue.location,
+        arrivalTime: issue.updatedAt || new Date().toISOString(),
         isActive: true
       }));
       
