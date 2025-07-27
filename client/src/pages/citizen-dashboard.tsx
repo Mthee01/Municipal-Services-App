@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Plus, Filter, MapPin, X } from "lucide-react";
+import { Plus, Filter, MapPin, X, BarChart3, Users, Clock, CheckCircle, AlertTriangle, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,7 +20,7 @@ import { GISMapIntegration } from "@/components/gis-map-integration";
 import Chatbot from "@/components/chatbot";
 import WhatsAppIntegration from "@/components/whatsapp-integration";
 import CitizenWhatsAppCenter from "@/components/citizen-whatsapp-center";
-import type { Issue } from "@shared/schema";
+import type { Issue, Technician } from "@shared/schema";
 
 // Helper functions for status and priority colors
 function getStatusColor(status: string): string {
@@ -119,7 +119,7 @@ export default function CitizenDashboard() {
   });
 
   // Fetch technicians for name lookup
-  const { data: technicians = [] } = useQuery({
+  const { data: technicians = [] } = useQuery<Technician[]>({
     queryKey: ["/api/technicians"],
   });
 
@@ -320,9 +320,13 @@ export default function CitizenDashboard() {
       {/* Tabbed Dashboard */}
       <section className="relative z-10 py-12">
         <div className="max-w-6xl mx-auto px-4">
-          <Tabs defaultValue="my-issues" className="space-y-6">
+          <Tabs defaultValue="overview" className="space-y-6">
             <div className="w-full overflow-x-auto scrollbar-hide">
               <TabsList className="flex w-max min-w-full mobile-tabs p-1 bg-muted rounded-lg">
+                <TabsTrigger value="overview" className="flex-shrink-0 mobile-tab-trigger px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap min-h-[40px] sm:min-h-[44px] flex items-center justify-center">
+                  <BarChart3 className="w-3 h-3 mr-1" />
+                  Overview
+                </TabsTrigger>
                 <TabsTrigger value="my-issues" className="flex-shrink-0 mobile-tab-trigger px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap min-h-[40px] sm:min-h-[44px] flex items-center justify-center">
                   My Issues
                 </TabsTrigger>
@@ -347,6 +351,210 @@ export default function CitizenDashboard() {
                 </TabsTrigger>
               </TabsList>
             </div>
+
+            {/* Overview Tab Content */}
+            <TabsContent value="overview" className="space-y-6">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Your Service Dashboard</h3>
+                <p className="text-gray-600">Get insights into your municipal service interactions and community updates</p>
+              </div>
+
+              {/* Personal Statistics Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">My Total Issues</p>
+                      <p className="text-2xl font-bold text-gray-900">{userIssues.length}</p>
+                    </div>
+                    <div className="bg-blue-100 p-3 rounded-full">
+                      <AlertTriangle className="h-6 w-6 text-blue-600" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Resolved Issues</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {userIssues.filter(issue => issue.status === 'resolved' || issue.status === 'closed').length}
+                      </p>
+                    </div>
+                    <div className="bg-green-100 p-3 rounded-full">
+                      <CheckCircle className="h-6 w-6 text-green-600" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">In Progress</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {userIssues.filter(issue => issue.status === 'in_progress' || issue.status === 'assigned').length}
+                      </p>
+                    </div>
+                    <div className="bg-yellow-100 p-3 rounded-full">
+                      <Clock className="h-6 w-6 text-yellow-600" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Community Issues</p>
+                      <p className="text-2xl font-bold text-gray-900">{communityIssues.length}</p>
+                    </div>
+                    <div className="bg-purple-100 p-3 rounded-full">
+                      <Users className="h-6 w-6 text-purple-600" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Service Categories Overview */}
+              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <TrendingUp className="h-5 w-5 mr-2 text-blue-600" />
+                  Your Issues by Category
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {categories.slice(0, -1).map((category) => {
+                    const categoryCount = userIssues.filter(issue => issue.category === category.value).length;
+                    return (
+                      <div key={category.value} className="text-center p-4 bg-gray-50 rounded-lg">
+                        <div className="text-2xl mb-2">{category.icon}</div>
+                        <p className="text-sm font-medium text-gray-600">{category.label}</p>
+                        <p className="text-xl font-bold text-gray-900">{categoryCount}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* My Recent Issues */}
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Recent Issues</h4>
+                  {userIssues.slice(0, 3).length > 0 ? (
+                    <div className="space-y-3">
+                      {userIssues.slice(0, 3).map((issue) => (
+                        <div key={issue.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900 text-sm">{issue.title}</p>
+                            <p className="text-xs text-gray-600">{issue.location}</p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge className={`text-xs ${getStatusColor(issue.status)}`}>
+                              {issue.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full mt-3"
+                        onClick={() => {
+                          const tab = document.querySelector('[value="my-issues"]') as HTMLButtonElement;
+                          tab?.click();
+                        }}
+                      >
+                        View All My Issues
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-600">No issues reported yet</p>
+                      <Button 
+                        onClick={() => setShowIssueForm(true)}
+                        className="mt-3 bg-sa-gold hover:bg-yellow-500 text-black"
+                        size="sm"
+                      >
+                        Report Your First Issue
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Community Updates */}
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Community Updates</h4>
+                  {communityIssues.slice(0, 3).length > 0 ? (
+                    <div className="space-y-3">
+                      {communityIssues.slice(0, 3).map((issue) => (
+                        <div key={issue.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900 text-sm">{issue.title}</p>
+                            <p className="text-xs text-gray-600">{issue.location}</p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge className={`text-xs ${getPriorityColor(issue.priority)}`}>
+                              {issue.priority}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full mt-3"
+                        onClick={() => {
+                          const tab = document.querySelector('[value="community"]') as HTMLButtonElement;
+                          tab?.click();
+                        }}
+                      >
+                        View Community Issues
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-600">No community updates</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white">
+                <h4 className="text-lg font-semibold mb-4">Quick Actions</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button 
+                    onClick={() => setShowIssueForm(true)}
+                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                    variant="outline"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Report Issue
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      const tab = document.querySelector('[value="payments"]') as HTMLButtonElement;
+                      tab?.click();
+                    }}
+                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                    variant="outline"
+                  >
+                    Make Payment
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      const tab = document.querySelector('[value="whatsapp"]') as HTMLButtonElement;
+                      tab?.click();
+                    }}
+                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                    variant="outline"
+                  >
+                    Contact Support
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
 
             <TabsContent value="my-issues" className="space-y-4 sm:space-y-6">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8 space-y-4 sm:space-y-0">
