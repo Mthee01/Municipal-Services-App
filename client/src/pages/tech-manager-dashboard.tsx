@@ -82,6 +82,7 @@ export default function TechManagerDashboard() {
     setShowNotesModal(true);
   };
 
+  // Define ALL mutations at the top before any logic
   const assignTechnicianMutation = useMutation({
     mutationFn: ({ technicianId, issueId }: { technicianId: number; issueId: number }) =>
       apiRequest("POST", `/api/technicians/${technicianId}/assign/${issueId}`),
@@ -101,6 +102,50 @@ export default function TechManagerDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/technicians"] });
       toast({ title: "Technician updated successfully" });
     },
+  });
+
+  const approveReportMutation = useMutation({
+    mutationFn: async ({ reportId, reviewNotes }: { reportId: number; reviewNotes: string }) => {
+      return apiRequest("POST", `/api/completion-reports/${reportId}/approve`, { reviewNotes, reviewedBy: 5 });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/completion-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
+      toast({ 
+        title: "Report Approved", 
+        description: "Completion report has been approved successfully.",
+      });
+      setShowApprovalModal(false);
+    },
+    onError: () => {
+      toast({ 
+        title: "Approval Failed", 
+        description: "Failed to approve completion report. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const rejectReportMutation = useMutation({
+    mutationFn: async ({ reportId, reviewNotes }: { reportId: number; reviewNotes: string }) => {
+      return apiRequest("POST", `/api/completion-reports/${reportId}/reject`, { reviewNotes, reviewedBy: 5 });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/completion-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
+      toast({ 
+        title: "Report Rejected", 
+        description: "Completion report has been rejected and issue reopened.",
+      });
+      setShowRejectionModal(false);
+    },
+    onError: () => {
+      toast({ 
+        title: "Rejection Failed", 
+        description: "Failed to reject completion report. Please try again.",
+        variant: "destructive"
+      });
+    }
   });
 
   const findNearestTechnicians = async (issue: any) => {
@@ -370,47 +415,6 @@ export default function TechManagerDashboard() {
     setShowRejectionModal(true);
   };
 
-  const approveReportMutation = useMutation({
-    mutationFn: ({ reportId, reviewNotes }: { reportId: number; reviewNotes: string }) =>
-      apiRequest("POST", `/api/completion-reports/${reportId}/approve`, { reviewNotes, reviewedBy: 5 }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/completion-reports"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
-      toast({ 
-        title: "Report Approved", 
-        description: "Completion report has been approved successfully.",
-      });
-      setShowApprovalModal(false);
-    },
-    onError: () => {
-      toast({ 
-        title: "Approval Failed", 
-        description: "Failed to approve completion report. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
-
-  const rejectReportMutation = useMutation({
-    mutationFn: ({ reportId, reviewNotes }: { reportId: number; reviewNotes: string }) =>
-      apiRequest("POST", `/api/completion-reports/${reportId}/reject`, { reviewNotes, reviewedBy: 5 }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/completion-reports"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
-      toast({ 
-        title: "Report Rejected", 
-        description: "Completion report has been rejected and issue reopened.",
-      });
-      setShowRejectionModal(false);
-    },
-    onError: () => {
-      toast({ 
-        title: "Rejection Failed", 
-        description: "Failed to reject completion report. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative overflow-hidden">

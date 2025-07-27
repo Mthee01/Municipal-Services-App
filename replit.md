@@ -154,6 +154,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+✓ January 27, 2025: FIXED TECH MANAGER DASHBOARD REACT HOOKS ERROR AND CONSOLIDATED TECHNICIAN DASHBOARD
+- RESOLVED React hooks rule violation: "Rendered more hooks than during the previous render" error
+- Fixed duplicate useMutation hooks that were defined in two locations causing inconsistent hook calls
+- Moved all mutations to top of component before any conditional logic or early returns
+- Removed duplicate approveReportMutation and rejectReportMutation definitions
+- Zero TypeScript errors - tech manager dashboard now loads without React hooks violations
+
 ✓ January 27, 2025: CONSOLIDATED TECHNICIAN DASHBOARD - MERGED FIELD REPORTS INTO COMPLETED WORK TAB
 - Removed standalone Field Reports tab to streamline technician dashboard interface
 - Integrated professional print functionality into Completed Work tab with "Print Report" button
