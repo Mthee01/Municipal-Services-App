@@ -779,7 +779,7 @@ export default function FieldTechnicianDashboard() {
                                 IN PROGRESS
                               </Badge>
                               <span className="text-sm text-gray-600">
-                                Started: {new Date(session.startTime).toLocaleTimeString()}
+                                Started: {new Date(session.startTime).toLocaleDateString()} at {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                               {partsOrder && (
                                 <Badge className={getPartsStatusColor(partsOrder.status)}>
@@ -837,15 +837,34 @@ export default function FieldTechnicianDashboard() {
                             <h3 className="font-medium text-gray-900 dark:text-white">
                               {session.issueTitle || `Work Session for ${generateJobOrderNumber(session.issueId)}`}
                             </h3>
-                            <div className="flex items-center gap-4 text-sm text-gray-500">
-                              <div className="flex items-center gap-1">
-                                <MapPin className="w-4 h-4" />
-                                {session.issueLocation || 'Location not specified'}
+                            <div className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-4 text-gray-500">
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="w-4 h-4" />
+                                  <span 
+                                    className="cursor-pointer hover:text-blue-600 hover:underline transition-colors"
+                                    onClick={() => handleNavigateToLocation(session.issueLocation || 'Location not specified')}
+                                    title="Click to get directions"
+                                  >
+                                    {session.issueLocation || 'Location not specified'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-4 h-4" />
+                                  Duration: {calculateWorkDuration(new Date(session.startTime))}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-4 h-4" />
-                                Duration: {calculateWorkDuration(new Date(session.startTime))}
-                              </div>
+                              {session.issueLocation && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleNavigateToLocation(session.issueLocation)}
+                                  className="flex items-center gap-1 text-xs px-2 py-1 h-7"
+                                >
+                                  <Navigation className="w-3 h-3" />
+                                  Navigate
+                                </Button>
+                              )}
                             </div>
                             
                             {partsOrder && (
