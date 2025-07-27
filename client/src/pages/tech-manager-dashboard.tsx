@@ -58,9 +58,8 @@ export default function TechManagerDashboard() {
   });
 
   // Fetch all completion reports for tech manager review
-  const { data: completionReports = [] } = useQuery({
+  const { data: completionReports = [] } = useQuery<any[]>({
     queryKey: ["/api/completion-reports"],
-    queryFn: () => apiRequest("/api/completion-reports", 'GET'),
   });
 
   // Fetch issue notes for selected issue
@@ -373,7 +372,7 @@ export default function TechManagerDashboard() {
 
   const approveReportMutation = useMutation({
     mutationFn: ({ reportId, reviewNotes }: { reportId: number; reviewNotes: string }) =>
-      apiRequest("POST", `/api/completion-reports/${reportId}/approve`, { reviewNotes, reviewedBy: 5 }), // Tech manager ID
+      apiRequest("POST", `/api/completion-reports/${reportId}/approve`, { reviewNotes, reviewedBy: 5 }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/completion-reports"] });
       queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
@@ -394,7 +393,7 @@ export default function TechManagerDashboard() {
 
   const rejectReportMutation = useMutation({
     mutationFn: ({ reportId, reviewNotes }: { reportId: number; reviewNotes: string }) =>
-      apiRequest("POST", `/api/completion-reports/${reportId}/reject`, { reviewNotes, reviewedBy: 5 }), // Tech manager ID
+      apiRequest("POST", `/api/completion-reports/${reportId}/reject`, { reviewNotes, reviewedBy: 5 }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/completion-reports"] });
       queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
