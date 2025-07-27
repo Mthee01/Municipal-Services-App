@@ -144,6 +144,8 @@ export default function FieldTechnicianDashboard() {
   // State for UI
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [showIssueDetails, setShowIssueDetails] = useState(false);
+  const [showReportDetails, setShowReportDetails] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
   const [messageData, setMessageData] = useState({ subject: '', content: '' });
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
@@ -582,6 +584,142 @@ export default function FieldTechnicianDashboard() {
     toast({
       title: 'Opening Navigation',
       description: `Getting directions to ${location}`,
+    });
+  };
+
+  const handleViewFullReport = (report: any) => {
+    setSelectedReport(report);
+    setShowReportDetails(true);
+  };
+
+  const handlePrintReport = (report: any) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Field Report - ${generateJobOrderNumber(report.issueId)}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; }
+            .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+            .company-name { font-size: 24px; font-weight: bold; color: #1e40af; margin-bottom: 5px; }
+            .report-title { font-size: 18px; color: #666; }
+            .section { margin-bottom: 20px; }
+            .section-title { font-size: 16px; font-weight: bold; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+            .info-item { margin-bottom: 10px; }
+            .label { font-weight: bold; color: #555; }
+            .value { margin-left: 10px; }
+            .materials-list { list-style-type: disc; padding-left: 20px; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
+            @media print { body { margin: 0; padding: 15px; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="company-name">Smart Munic</div>
+            <div class="report-title">Field Report - ${generateJobOrderNumber(report.issueId)}</div>
+          </div>
+          
+          <div class="info-grid">
+            <div>
+              <div class="info-item">
+                <span class="label">Report Type:</span>
+                <span class="value">${report.reportType.toUpperCase()}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Job Order:</span>
+                <span class="value">${generateJobOrderNumber(report.issueId)}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Date:</span>
+                <span class="value">${new Date(report.createdAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+            <div>
+              <div class="info-item">
+                <span class="label">Technician ID:</span>
+                <span class="value">${report.technicianId}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Location:</span>
+                <span class="value">${report.location || 'Not specified'}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Status:</span>
+                <span class="value">${report.status || 'Completed'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Description</div>
+            <p>${report.description}</p>
+          </div>
+
+          ${report.findings ? `
+            <div class="section">
+              <div class="section-title">Findings</div>
+              <p>${report.findings}</p>
+            </div>
+          ` : ''}
+
+          ${report.actionsTaken || report.workPerformed ? `
+            <div class="section">
+              <div class="section-title">Actions Taken</div>
+              <p>${report.actionsTaken || report.workPerformed}</p>
+            </div>
+          ` : ''}
+
+          ${report.materialsUsed && report.materialsUsed.length > 0 ? `
+            <div class="section">
+              <div class="section-title">Materials Used</div>
+              <ul class="materials-list">
+                ${report.materialsUsed.map((material: string) => `<li>${material}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+
+          ${report.recommendations ? `
+            <div class="section">
+              <div class="section-title">Recommendations</div>
+              <p>${report.recommendations}</p>
+            </div>
+          ` : ''}
+
+          ${report.nextSteps ? `
+            <div class="section">
+              <div class="section-title">Next Steps</div>
+              <p>${report.nextSteps}</p>
+            </div>
+          ` : ''}
+
+          ${report.timeSpent ? `
+            <div class="section">
+              <div class="section-title">Time Spent</div>
+              <p>${report.timeSpent} minutes</p>
+            </div>
+          ` : ''}
+
+          <div class="footer">
+            <p>Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+            <p>Smart Munic - Municipal Services Management System</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+
+    toast({
+      title: 'Report Printed',
+      description: `Field report ${generateJobOrderNumber(report.issueId)} sent to printer`,
     });
   };
 
@@ -1094,8 +1232,28 @@ export default function FieldTechnicianDashboard() {
                               {generateJobOrderNumber(report.issueId)}
                             </Badge>
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {new Date(report.createdAt).toLocaleDateString()}
+                          <div className="flex items-center gap-2">
+                            <div className="text-sm text-gray-500">
+                              {new Date(report.createdAt).toLocaleDateString()}
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewFullReport(report)}
+                              className="text-xs px-2 py-1 h-7"
+                            >
+                              <Eye className="w-3 h-3 mr-1" />
+                              View Full
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePrintReport(report)}
+                              className="text-xs px-2 py-1 h-7"
+                            >
+                              <Printer className="w-3 h-3 mr-1" />
+                              Print
+                            </Button>
                           </div>
                         </div>
                         
@@ -1701,6 +1859,167 @@ export default function FieldTechnicianDashboard() {
 
                 <div className="flex justify-end">
                   <Button onClick={() => setShowCompletedWorkDetails(false)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Field Report Details Dialog */}
+        <Dialog open={showReportDetails} onOpenChange={setShowReportDetails}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Field Report Details</DialogTitle>
+              <DialogDescription>
+                Complete field report documentation and findings
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedReport && (
+              <div className="space-y-6">
+                {/* Header Information */}
+                <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div>
+                    <Label className="text-sm font-medium text-blue-900 dark:text-blue-100">Report Type</Label>
+                    <p className="text-lg font-semibold text-blue-800 dark:text-blue-200">{selectedReport.reportType.toUpperCase()}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-blue-900 dark:text-blue-100">Job Order Number</Label>
+                    <p className="text-lg font-mono text-blue-800 dark:text-blue-200">{generateJobOrderNumber(selectedReport.issueId)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-blue-900 dark:text-blue-100">Date Created</Label>
+                    <p className="text-blue-800 dark:text-blue-200">{new Date(selectedReport.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-blue-900 dark:text-blue-100">Status</Label>
+                    <p className="text-blue-800 dark:text-blue-200">{selectedReport.status || 'Completed'}</p>
+                  </div>
+                </div>
+
+                {/* Report Content */}
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</Label>
+                    <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <p className="text-sm">{selectedReport.description}</p>
+                    </div>
+                  </div>
+
+                  {selectedReport.location && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Location</Label>
+                      <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg flex items-center justify-between">
+                        <p className="text-sm">{selectedReport.location}</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleNavigateToLocation(selectedReport.location)}
+                          className="text-xs"
+                        >
+                          <Navigation className="w-3 h-3 mr-1" />
+                          Navigate
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedReport.findings && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Findings</Label>
+                      <div className="mt-2 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                        <p className="text-sm">{selectedReport.findings}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {(selectedReport.actionsTaken || selectedReport.workPerformed) && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Actions Taken</Label>
+                      <div className="mt-2 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <p className="text-sm">{selectedReport.actionsTaken || selectedReport.workPerformed}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedReport.materialsUsed && selectedReport.materialsUsed.length > 0 && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Materials Used</Label>
+                      <div className="mt-2 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                        <ul className="text-sm space-y-1">
+                          {selectedReport.materialsUsed.map((material: string, index: number) => (
+                            <li key={index} className="flex items-center">
+                              <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                              {material}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedReport.recommendations && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Recommendations</Label>
+                      <div className="mt-2 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                        <p className="text-sm">{selectedReport.recommendations}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedReport.nextSteps && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Next Steps</Label>
+                      <div className="mt-2 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                        <p className="text-sm">{selectedReport.nextSteps}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedReport.timeSpent && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Time Spent</Label>
+                      <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p className="text-sm font-mono">{selectedReport.timeSpent} minutes</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedReport.photos && selectedReport.photos.length > 0 && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Documentation Photos</Label>
+                      <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {selectedReport.photos.map((photo: string, index: number) => (
+                          <div key={index} className="relative group">
+                            <img 
+                              src={photo} 
+                              alt={`Documentation ${index + 1}`}
+                              className="w-full h-32 object-cover rounded border cursor-pointer hover:scale-105 transition-transform"
+                              onClick={() => window.open(photo, '_blank')}
+                            />
+                            <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                              Photo {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">Click photos to view full size</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-between pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => handlePrintReport(selectedReport)}
+                    className="flex items-center gap-2"
+                  >
+                    <Printer className="w-4 h-4" />
+                    Print Report
+                  </Button>
+                  <Button onClick={() => setShowReportDetails(false)}>
                     Close
                   </Button>
                 </div>
