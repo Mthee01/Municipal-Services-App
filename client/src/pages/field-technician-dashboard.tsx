@@ -1837,9 +1837,26 @@ function calculateWorkDuration(startTime: Date | string) {
     }
     
     const diffMins = Math.floor(diffMs / 60000);
-    const hours = Math.floor(diffMins / 60);
+    const totalHours = Math.floor(diffMins / 60);
     const minutes = diffMins % 60;
-    return `${hours}h ${minutes}m`;
+    
+    // Convert to days if more than 24 hours
+    if (totalHours >= 24) {
+      const days = Math.floor(totalHours / 24);
+      const remainingHours = totalHours % 24;
+      
+      if (remainingHours === 0 && minutes === 0) {
+        return `${days}d`;
+      } else if (remainingHours === 0) {
+        return `${days}d ${minutes}m`;
+      } else if (minutes === 0) {
+        return `${days}d ${remainingHours}h`;
+      } else {
+        return `${days}d ${remainingHours}h ${minutes}m`;
+      }
+    }
+    
+    return `${totalHours}h ${minutes}m`;
   } catch (error) {
     console.error('Error calculating work duration:', error);
     return '0h 0m';
