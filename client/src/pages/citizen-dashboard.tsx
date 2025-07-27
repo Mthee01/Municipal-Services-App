@@ -74,6 +74,7 @@ export default function CitizenDashboard() {
   const [issueToRate, setIssueToRate] = useState<Issue | null>(null);
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
+  const [activeTab, setActiveTab] = useState("overview");
   const [location] = useLocation();
   
   const { toast } = useToast();
@@ -320,7 +321,7 @@ export default function CitizenDashboard() {
       {/* Tabbed Dashboard */}
       <section className="relative z-10 py-12">
         <div className="max-w-6xl mx-auto px-4">
-          <Tabs defaultValue="overview" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <div className="w-full overflow-x-auto scrollbar-hide">
               <TabsList className="flex w-max min-w-full mobile-tabs p-1 bg-muted rounded-lg">
                 <TabsTrigger value="overview" className="flex-shrink-0 mobile-tab-trigger px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap min-h-[40px] sm:min-h-[44px] flex items-center justify-center">
@@ -458,10 +459,7 @@ export default function CitizenDashboard() {
                         variant="outline" 
                         size="sm" 
                         className="w-full mt-3"
-                        onClick={() => {
-                          const tab = document.querySelector('[value="my-issues"]') as HTMLButtonElement;
-                          tab?.click();
-                        }}
+                        onClick={() => setActiveTab("my-issues")}
                       >
                         View All My Issues
                       </Button>
@@ -503,10 +501,7 @@ export default function CitizenDashboard() {
                         variant="outline" 
                         size="sm" 
                         className="w-full mt-3"
-                        onClick={() => {
-                          const tab = document.querySelector('[value="community"]') as HTMLButtonElement;
-                          tab?.click();
-                        }}
+                        onClick={() => setActiveTab("community")}
                       >
                         View Community Issues
                       </Button>
@@ -533,20 +528,14 @@ export default function CitizenDashboard() {
                     Report Issue
                   </Button>
                   <Button 
-                    onClick={() => {
-                      const tab = document.querySelector('[value="payments"]') as HTMLButtonElement;
-                      tab?.click();
-                    }}
+                    onClick={() => setActiveTab("payments")}
                     className="bg-white/20 hover:bg-white/30 text-white border-white/30"
                     variant="outline"
                   >
                     Make Payment
                   </Button>
                   <Button 
-                    onClick={() => {
-                      const tab = document.querySelector('[value="whatsapp"]') as HTMLButtonElement;
-                      tab?.click();
-                    }}
+                    onClick={() => setActiveTab("whatsapp")}
                     className="bg-white/20 hover:bg-white/30 text-white border-white/30"
                     variant="outline"
                   >
