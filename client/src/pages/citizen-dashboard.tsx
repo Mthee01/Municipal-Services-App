@@ -515,7 +515,34 @@ export default function CitizenDashboard() {
                 </div>
               </div>
 
-
+              {/* Quick Actions */}
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white">
+                <h4 className="text-lg font-semibold mb-4">Quick Actions</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button 
+                    onClick={() => setShowIssueForm(true)}
+                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                    variant="outline"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Report Issue
+                  </Button>
+                  <Button 
+                    onClick={() => setActiveTab("payments")}
+                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                    variant="outline"
+                  >
+                    Make Payment
+                  </Button>
+                  <Button 
+                    onClick={() => setActiveTab("whatsapp")}
+                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                    variant="outline"
+                  >
+                    Contact Support
+                  </Button>
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="my-issues" className="space-y-4 sm:space-y-6">
