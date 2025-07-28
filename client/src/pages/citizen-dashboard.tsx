@@ -518,7 +518,7 @@ export default function CitizenDashboard() {
               {/* Quick Actions */}
               <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white">
                 <h4 className="text-lg font-semibold mb-4">Quick Actions</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <Button 
                     onClick={() => setShowIssueForm(true)}
                     className="bg-white/20 hover:bg-white/30 text-white border-white/30"
@@ -533,6 +533,13 @@ export default function CitizenDashboard() {
                     variant="outline"
                   >
                     Make Payment
+                  </Button>
+                  <Button 
+                    onClick={() => setActiveTab("vouchers")}
+                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                    variant="outline"
+                  >
+                    Pay Utilities
                   </Button>
                   <Button 
                     onClick={() => setActiveTab("whatsapp")}
@@ -644,6 +651,18 @@ export default function CitizenDashboard() {
             </TabsContent>
 
             <TabsContent value="vouchers" className="space-y-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Pay Utilities</h2>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setActiveTab("overview")}
+                  className="flex items-center gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Close
+                </Button>
+              </div>
               <VoucherSection />
             </TabsContent>
 

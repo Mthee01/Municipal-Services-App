@@ -154,11 +154,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-✓ January 28, 2025: ENHANCED CITIZEN DASHBOARD WITH QUICK ACTIONS AND CLOSE FUNCTIONALITY
+✓ January 28, 2025: ENHANCED CITIZEN DASHBOARD WITH EXPANDED QUICK ACTIONS AND CLOSE FUNCTIONALITY
 - Removed "Quick Links" section from footer across all user roles (Report Issue, Pay Bills, Track Progress, Community Forum)
 - Removed "Support" section from footer across all user roles (Help Center, Contact Us, Privacy Policy, Accessibility)  
-- REINSTATED "Quick Actions" section in citizen dashboard overview tab with Report Issue, Make Payment, and Contact Support buttons
-- ADDED close functionality to "Make Payment" and "Contact Support" tabs with X button to return to overview
+- REINSTATED "Quick Actions" section in citizen dashboard overview tab with Report Issue, Make Payment, Pay Utilities, and Contact Support buttons
+- ADDED "Pay Utilities" button linking to vouchers/utilities payment section for prepaid services
+- ADDED close functionality to "Make Payment", "Pay Utilities", and "Contact Support" tabs with X button to return to overview
+- Updated grid layout to accommodate 4 buttons (grid-cols-1 md:grid-cols-2 lg:grid-cols-4)
 - Close buttons positioned in top-right corner with proper styling and hover effects
 - Enhanced user experience allows easy navigation back to dashboard overview from Quick Actions
 - All users see clean simplified footer with only MTN branding and company information
