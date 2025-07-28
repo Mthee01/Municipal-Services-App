@@ -347,9 +347,9 @@ function App() {
           {/* Footer */}
           <footer className="text-white py-12" style={{ background: 'hsl(196, 100%, 25%)' }}>
             <div className="max-w-6xl mx-auto px-4">
-              <div className={`grid gap-8 ${currentRole === "citizen" ? "grid-cols-1 md:grid-cols-4" : "grid-cols-1 md:grid-cols-1"}`}>
-                <div className={currentRole === "citizen" ? "col-span-1 md:col-span-2" : "col-span-1"}>
-                  <div className="flex items-center space-x-3 mb-4">
+              <div className="grid grid-cols-1 gap-8">
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-3 mb-4">
                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-white p-1">
                       <img 
                         src="/attached_assets/mtn-logo_1753216420020.jpg" 
@@ -362,107 +362,11 @@ function App() {
                   <p className="text-gray-300 mb-4">
                     Connecting citizens with their local government for better service delivery and community engagement.
                   </p>
-                  <div className="flex space-x-4">
+                  <div className="flex justify-center space-x-4">
                     <span className="text-yellow-400">🇿🇦</span>
                     <span className="text-gray-300">Proudly South African</span>
                   </div>
                 </div>
-                
-                {/* Quick Links - Only visible for citizens */}
-                {currentRole === "citizen" && (
-                  <div>
-                    <h4 className="font-semibold mb-4">Quick Links</h4>
-                    <ul className="space-y-2 text-gray-300">
-                      <li>
-                        <button 
-                          onClick={() => setLocation("/?report=true")}
-                          style={{ color: 'hsl(51, 100%, 75%)' }}
-                          className="hover:opacity-80 transition-colors text-left"
-                        >
-                          Report Issue
-                        </button>
-                      </li>
-                      <li>
-                        <button 
-                          onClick={() => setLocation("/?tab=payments")}
-                          style={{ color: 'hsl(51, 100%, 75%)' }}
-                          className="hover:opacity-80 transition-colors text-left"
-                        >
-                          Pay Bills
-                        </button>
-                      </li>
-                      <li>
-                        <button 
-                          onClick={() => setLocation("/?tab=my-issues")}
-                          style={{ color: 'hsl(51, 100%, 75%)' }}
-                          className="hover:opacity-80 transition-colors text-left"
-                        >
-                          Track Progress
-                        </button>
-                      </li>
-                      <li>
-                        <button 
-                          onClick={() => setLocation("/?tab=community")}
-                          style={{ color: 'hsl(51, 100%, 75%)' }}
-                          className="hover:opacity-80 transition-colors text-left"
-                        >
-                          Community Forum
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                )}
-                
-                {/* Support Section - Only visible for citizens */}
-                {currentRole === "citizen" && (
-                  <div>
-                    <h4 className="font-semibold mb-4">Support</h4>
-                    <ul className="space-y-2 text-gray-300">
-                      <li>
-                        <button 
-                          onClick={() => setLocation("/?tab=communication")}
-                          style={{ color: 'hsl(51, 100%, 75%)' }}
-                          className="hover:opacity-80 transition-colors text-left"
-                        >
-                          Help Center
-                        </button>
-                      </li>
-                      <li>
-                        <button 
-                          onClick={() => setShowContactForm(true)}
-                          style={{ color: 'hsl(51, 100%, 75%)' }}
-                          className="hover:opacity-80 transition-colors text-left"
-                        >
-                          Contact Us
-                        </button>
-                      </li>
-                      <li>
-                        <button 
-                          onClick={() => {
-                            // Open privacy policy in a modal or redirect to external policy page
-                            alert("Privacy Policy: Smart Munic respects your privacy. All user data is securely stored and never shared without consent. Contact MTN for detailed privacy information.");
-                          }}
-                          style={{ color: 'hsl(51, 100%, 75%)' }}
-                          className="hover:opacity-80 transition-colors text-left"
-                        >
-                          Privacy Policy
-                        </button>
-                      </li>
-                      <li>
-                        <button 
-                          onClick={() => {
-                            // Show accessibility information
-                            alert("Accessibility: Smart Munic is designed to be accessible to all users. We support screen readers, keyboard navigation, and high contrast modes. For assistance, contact our support team.");
-                          }}
-                          style={{ color: 'hsl(51, 100%, 75%)' }}
-                          className="hover:opacity-80 transition-colors text-left"
-                        >
-                          Accessibility
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                )}
               </div>
               
               <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
