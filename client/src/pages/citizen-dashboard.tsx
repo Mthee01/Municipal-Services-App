@@ -628,6 +628,18 @@ export default function CitizenDashboard() {
             </TabsContent>
 
             <TabsContent value="payments" className="space-y-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Make Payment</h2>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setActiveTab("overview")}
+                  className="flex items-center gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Close
+                </Button>
+              </div>
               <PaymentSection />
             </TabsContent>
 
@@ -678,9 +690,20 @@ export default function CitizenDashboard() {
 
             {/* WhatsApp Center Tab */}
             <TabsContent value="whatsapp" className="space-y-6">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">WhatsApp Communication Center</h2>
-                <p className="text-gray-600">Get immediate assistance from our call center agents via WhatsApp</p>
+              <div className="flex justify-between items-start mb-8">
+                <div className="text-center flex-1">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">WhatsApp Communication Center</h2>
+                  <p className="text-gray-600">Get immediate assistance from our call center agents via WhatsApp</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setActiveTab("overview")}
+                  className="flex items-center gap-2 ml-4"
+                >
+                  <X className="h-4 w-4" />
+                  Close
+                </Button>
               </div>
               <CitizenWhatsAppCenter userId={1} />
             </TabsContent>
