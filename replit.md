@@ -154,17 +154,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-✓ January 28, 2025: ENHANCED CITIZEN DASHBOARD WITH EXPANDED QUICK ACTIONS AND CLOSE FUNCTIONALITY
-- Removed "Quick Links" section from footer across all user roles (Report Issue, Pay Bills, Track Progress, Community Forum)
-- Removed "Support" section from footer across all user roles (Help Center, Contact Us, Privacy Policy, Accessibility)  
-- REINSTATED "Quick Actions" section in citizen dashboard overview tab with Report Issue, Make Payment, Pay Utilities, and Contact Support buttons
-- ADDED "Pay Utilities" button linking to vouchers/utilities payment section for prepaid services
-- ADDED close functionality to "Make Payment", "Pay Utilities", and "Contact Support" tabs with X button to return to overview
-- Updated grid layout to accommodate 4 buttons (grid-cols-1 md:grid-cols-2 lg:grid-cols-4)
-- Close buttons positioned in top-right corner with proper styling and hover effects
-- Enhanced user experience allows easy navigation back to dashboard overview from Quick Actions
-- All users see clean simplified footer with only MTN branding and company information
-- Footer uses centered single-column layout for professional appearance across all roles
+✓ January 28, 2025: ADDED AGENT CITIZEN REPORTING CAPABILITY FOR PHONE SUPPORT
+- IMPLEMENTED comprehensive citizen issue reporting section in agent dashboard
+- ADDED "Report Issue for Citizen" section with prominent call-to-action button
+- CREATED detailed reporting modal capturing caller information and issue details
+- INCLUDED caller details: name, phone, email (optional) for citizen contact information
+- ADDED complete issue form: title, description, category, location, priority level, urgent flag
+- ENHANCED agent workflow to support citizens who prefer phone communication or can't use digital platform
+- INTEGRATED form validation ensuring all required fields are completed before submission
+- ADDED clear visual indicators for phone support, accessibility assistance, and immediate action benefits
+- IMPLEMENTED proper data structure storing agent-reported issues with caller information in database
+- CREATED seamless workflow for agents to capture and submit issues on behalf of citizens during phone calls
 
 ✓ January 27, 2025: IMPLEMENTED COMPREHENSIVE CITIZEN OVERVIEW DASHBOARD
 - CREATED comprehensive Overview/Summary tab as first tab in citizen dashboard with detailed statistics and insights

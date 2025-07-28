@@ -109,6 +109,20 @@ export default function OfficialDashboard() {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [newNote, setNewNote] = useState("");
   const [escalationReason, setEscalationReason] = useState("");
+  
+  // Citizen issue reporting states
+  const [showCitizenReportForm, setShowCitizenReportForm] = useState(false);
+  const [citizenReportData, setCitizenReportData] = useState({
+    callerName: "",
+    callerPhone: "",
+    callerEmail: "",
+    title: "",
+    description: "",
+    category: "",
+    location: "",
+    priority: "medium",
+    urgent: false
+  });
 
   // Queries - Real-time issue fetching for call center agents
   const { data: issues = [], isLoading: issuesLoading } = useQuery<Issue[]>({
@@ -214,6 +228,54 @@ export default function OfficialDashboard() {
         variant: "destructive",
       });
     }
+  });
+
+  // Citizen issue reporting mutation
+  const submitCitizenReportMutation = useMutation({
+    mutationFn: async (reportData: typeof citizenReportData) => {
+      return apiRequest("POST", "/api/issues", {
+        title: reportData.title,
+        description: `REPORTED BY AGENT ON BEHALF OF CITIZEN:\n\nCaller: ${reportData.callerName}\nPhone: ${reportData.callerPhone}\nEmail: ${reportData.callerEmail || 'Not provided'}\n\nIssue Description:\n${reportData.description}`,
+        category: reportData.category,
+        location: reportData.location,
+        priority: reportData.urgent ? "high" : reportData.priority,
+        citizenId: null, // Agent reported on behalf
+        status: "open",
+        reportedBy: `Agent: ${user?.username || 'Unknown Agent'}`,
+        callerInfo: {
+          name: reportData.callerName,
+          phone: reportData.callerPhone,
+          email: reportData.callerEmail
+        }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
+      setShowCitizenReportForm(false);
+      setCitizenReportData({
+        callerName: "",
+        callerPhone: "",
+        callerEmail: "",
+        title: "",
+        description: "",
+        category: "",
+        location: "",
+        priority: "medium",
+        urgent: false
+      });
+      toast({
+        title: "Success",
+        description: "Issue reported successfully on behalf of citizen",
+      });
+    },
+    onError: (error) => {
+      console.error("Failed to submit citizen report:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit citizen report",
+        variant: "destructive",
+      });
+    },
   });
 
   // Filtered issues with priority for new citizen reports, excluding resolved issues
@@ -580,6 +642,59 @@ export default function OfficialDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Citizen Issue Reporting Section */}
+      <section className="py-6 bg-blue-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Report Issue for Citizen</h3>
+              <p className="text-gray-600">Capture and report issues on behalf of citizens who call or can't use the app</p>
+            </div>
+            <Button
+              onClick={() => setShowCitizenReportForm(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Citizen Report
+            </Button>
+          </div>
+          
+          <div className="bg-white rounded-lg p-6 border border-blue-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <Plus className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-green-800">Phone Support</p>
+                  <p className="text-sm text-green-600">Help citizens report issues over the phone</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-blue-800">Accessibility</p>
+                  <p className="text-sm text-blue-600">Assist citizens who can't use digital platforms</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3 p-4 bg-yellow-50 rounded-lg">
+                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <Clock className="h-6 w-6 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-yellow-800">Immediate Action</p>
+                  <p className="text-sm text-yellow-600">Issues enter system immediately for processing</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1349,6 +1464,188 @@ export default function OfficialDashboard() {
             </Button>
             <Button onClick={handleExportSubmit}>
               {exportMethod === "email" ? "Send Report" : "Download Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Citizen Issue Reporting Modal */}
+      <Dialog open={showCitizenReportForm} onOpenChange={setShowCitizenReportForm}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Report Issue for Citizen</DialogTitle>
+            <DialogDescription>
+              Capture issue details on behalf of a citizen who called or cannot use the app
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Caller Information */}
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-semibold text-blue-900 mb-3">Caller Information</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="caller-name">Caller Name *</Label>
+                  <Input
+                    id="caller-name"
+                    placeholder="Full name of caller"
+                    value={citizenReportData.callerName}
+                    onChange={(e) => setCitizenReportData(prev => ({ ...prev, callerName: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="caller-phone">Phone Number *</Label>
+                  <Input
+                    id="caller-phone"
+                    placeholder="Contact phone number"
+                    value={citizenReportData.callerPhone}
+                    onChange={(e) => setCitizenReportData(prev => ({ ...prev, callerPhone: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="caller-email">Email (Optional)</Label>
+                  <Input
+                    id="caller-email"
+                    type="email"
+                    placeholder="Email address (if provided)"
+                    value={citizenReportData.callerEmail}
+                    onChange={(e) => setCitizenReportData(prev => ({ ...prev, callerEmail: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Issue Details */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-gray-900">Issue Details</h4>
+              
+              <div className="space-y-2">
+                <Label htmlFor="issue-title">Issue Title *</Label>
+                <Input
+                  id="issue-title"
+                  placeholder="Brief description of the issue"
+                  value={citizenReportData.title}
+                  onChange={(e) => setCitizenReportData(prev => ({ ...prev, title: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="issue-description">Detailed Description *</Label>
+                <Textarea
+                  id="issue-description"
+                  placeholder="Provide detailed information about the issue as described by the caller"
+                  value={citizenReportData.description}
+                  onChange={(e) => setCitizenReportData(prev => ({ ...prev, description: e.target.value }))}
+                  rows={4}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="issue-category">Category *</Label>
+                  <Select
+                    value={citizenReportData.category}
+                    onValueChange={(value) => setCitizenReportData(prev => ({ ...prev, category: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="water_sanitation">Water & Sanitation</SelectItem>
+                      <SelectItem value="electricity">Electricity</SelectItem>
+                      <SelectItem value="roads_transport">Roads & Transport</SelectItem>
+                      <SelectItem value="waste_management">Waste Management</SelectItem>
+                      <SelectItem value="housing">Housing</SelectItem>
+                      <SelectItem value="safety_security">Safety & Security</SelectItem>
+                      <SelectItem value="parks_recreation">Parks & Recreation</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="issue-priority">Priority Level</Label>
+                  <Select
+                    value={citizenReportData.priority}
+                    onValueChange={(value) => setCitizenReportData(prev => ({ ...prev, priority: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Set priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="issue-location">Location *</Label>
+                <Input
+                  id="issue-location"
+                  placeholder="Street address or location description"
+                  value={citizenReportData.location}
+                  onChange={(e) => setCitizenReportData(prev => ({ ...prev, location: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="urgent-issue"
+                  checked={citizenReportData.urgent}
+                  onCheckedChange={(checked) => setCitizenReportData(prev => ({ ...prev, urgent: !!checked }))}
+                />
+                <Label htmlFor="urgent-issue" className="text-sm">
+                  Mark as urgent (requires immediate attention)
+                </Label>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowCitizenReportForm(false);
+                setCitizenReportData({
+                  callerName: "",
+                  callerPhone: "",
+                  callerEmail: "",
+                  title: "",
+                  description: "",
+                  category: "",
+                  location: "",
+                  priority: "medium",
+                  urgent: false
+                });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (!citizenReportData.callerName || !citizenReportData.callerPhone || !citizenReportData.title || 
+                    !citizenReportData.description || !citizenReportData.category || !citizenReportData.location) {
+                  toast({
+                    title: "Missing Information",
+                    description: "Please fill in all required fields",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                submitCitizenReportMutation.mutate(citizenReportData);
+              }}
+              disabled={submitCitizenReportMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {submitCitizenReportMutation.isPending ? "Submitting..." : "Submit Report"}
             </Button>
           </DialogFooter>
         </DialogContent>
