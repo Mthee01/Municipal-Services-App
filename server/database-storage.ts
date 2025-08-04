@@ -890,72 +890,7 @@ export class DatabaseStorage implements IStorage {
 
   // Completion reports operations
   async getCompletionReports(): Promise<CompletionReport[]> {
-    // Generate consistent job order numbers (JO-XXX-YYYY format)
-    const generateJobOrderNumber = (issueId: number) => {
-      const year = new Date().getFullYear();
-      const paddedId = String(issueId).padStart(3, '0');
-      return `JO-${paddedId}-${year}`;
-    };
-
-    return [
-      {
-        id: 1,
-        technicianId: 6,
-        issueId: 12,
-        jobCardNumber: generateJobOrderNumber(12), // JO-012-2025
-        workCompleted: "Repaired water pipe leak using new coupling and sealed connection points. Tested water pressure and flow.",
-        materialsUsed: ["PVC Coupling", "Pipe Sealant", "Pipe Clamps"],
-        timeTaken: 120,
-        issuesFound: "Old pipe coupling was cracked due to age and weather exposure.",
-        recommendations: "Recommend inspection of similar connections in the area within 6 months.",
-        customerSatisfaction: 5,
-        additionalNotes: "Customer was very satisfied with quick resolution. Area cleaned up after work.",
-        approvalStatus: "pending",
-        reviewedBy: null,
-        reviewedAt: null,
-        reviewNotes: null,
-        completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      },
-      {
-        id: 2,
-        technicianId: 6,
-        issueId: 15,
-        jobCardNumber: generateJobOrderNumber(15), // JO-015-2025
-        workCompleted: "Fixed streetlight wiring issue, replaced damaged cables and connection box.",
-        materialsUsed: ["Electrical Cable", "Junction Box", "Wire Connectors"],
-        timeTaken: 90,
-        issuesFound: "Water damage to electrical connections caused intermittent power loss.",
-        recommendations: "Install weatherproof housing to prevent future water damage.",
-        customerSatisfaction: 4,
-        additionalNotes: "Coordinated with electricity department for power isolation during repairs.",
-        approvalStatus: "approved",
-        reviewedBy: 5, // Tech manager ID
-        reviewedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
-        reviewNotes: "Good work on the electrical repairs. Professional job.",
-        completedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      },
-      {
-        id: 3,
-        technicianId: 6,
-        issueId: 18,
-        jobCardNumber: generateJobOrderNumber(18), // JO-018-2025
-        workCompleted: "Cleared blocked storm drain and removed debris. Verified proper water flow.",
-        materialsUsed: ["Drain Rod", "High Pressure Hose"],
-        timeTaken: 60,
-        issuesFound: "Heavy leaf accumulation and small debris blocking drainage system.",
-        recommendations: "Schedule regular drainage maintenance before rainy season.",
-        customerSatisfaction: 5,
-        additionalNotes: "Educated community members about proper waste disposal to prevent future blockages.",
-        approvalStatus: "pending",
-        reviewedBy: null,
-        reviewedAt: null,
-        reviewNotes: null,
-        completedAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
-        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
-      }
-    ];
+    return await db.select().from(completionReports).orderBy(desc(completionReports.createdAt));
   }
 
   async getCompletionReport(id: number): Promise<CompletionReport | undefined> {
@@ -964,8 +899,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCompletionReportsByTechnician(technicianId: number): Promise<CompletionReport[]> {
-    const reports = await this.getCompletionReports();
-    return reports.filter(r => r.technicianId === technicianId);
+    return await db.select().from(completionReports)
+      .where(eq(completionReports.technicianId, technicianId))
+      .orderBy(desc(completionReports.createdAt));
   }
 
   async getCompletionReportByIssue(issueId: number): Promise<CompletionReport | undefined> {
@@ -974,17 +910,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCompletionReport(report: InsertCompletionReport): Promise<CompletionReport> {
-    const newReport: CompletionReport = {
-      ...report,
-      id: Math.floor(Math.random() * 1000) + 100,
-      approvalStatus: "pending",
-      reviewedBy: null,
-      reviewedAt: null,
-      reviewNotes: null,
-      completedAt: new Date(),
-      createdAt: new Date(),
-    };
-    return newReport;
+    const [createdReport] = await db
+      .insert(completionReports)
+      .values({
+        ...report,
+        approvalStatus: "pending",
+        reviewedBy: null,
+        reviewedAt: null,
+        reviewNotes: null,
+        completedAt: new Date(),
+        createdAt: new Date(),
+      })
+      .returning();
+    return createdReport;
   }
 
   async updateCompletionReportStatus(reportId: number, status: string, reviewedBy: number, reviewNotes?: string): Promise<void> {
