@@ -202,6 +202,12 @@ export default function TechManagerDashboard() {
 
   const departments = ["Water & Sanitation", "Electricity", "Roads & Transport", "Waste Management"];
   const techniciansList = Array.isArray(technicians) ? technicians : [];
+  
+  // Helper function to get technician name by ID
+  const getTechnicianName = (technicianId: number | string) => {
+    const technician = techniciansList.find((tech: any) => tech.id === Number(technicianId));
+    return technician ? technician.name : `Technician #${technicianId}`;
+  };
   const issuesList = Array.isArray(issues) ? issues : [];
 
   const filteredTechnicians = selectedDepartment === "all" 
@@ -747,7 +753,7 @@ export default function TechManagerDashboard() {
                         </div>
                       </div>
                       <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">
-                        Assigned to: {issue.assignedTo}
+                        <span className="font-medium">Assigned to:</span> {getTechnicianName(issue.assignedTo)}
                       </p>
                       <p className="text-xs text-gray-500">
                         {issue.location} • {formatRelativeTime(issue.updatedAt)}
