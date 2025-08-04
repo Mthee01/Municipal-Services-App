@@ -127,24 +127,28 @@ export default function AdminDashboard() {
   // Create user mutation
   const createUserMutation = useMutation({
     mutationFn: async (data: CreateUserData) => {
-      const response = await apiRequest("POST", "/api/admin/users", data);
-      if (!response.ok) throw new Error("Failed to create user");
-      return response.json();
+      console.log("Creating user with data:", data);
+      // apiRequest already handles response parsing and throws errors appropriately
+      const result = await apiRequest("POST", "/api/admin/users", data);
+      console.log("Create user success:", result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Create user mutation success:", data);
       toast({
         title: "User Created",
-        description: "New user has been successfully created.",
+        description: data.message || "New user has been successfully created.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
       setShowCreateUser(false);
       createForm.reset();
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error("Create user mutation error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to create user",
         variant: "destructive",
       });
     },
