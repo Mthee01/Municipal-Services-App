@@ -178,34 +178,24 @@ export default function AdminDashboard() {
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (id: number) => {
-      console.log(`Attempting to delete user with ID: ${id}`);
-      const response = await apiRequest("DELETE", `/api/admin/users/${id}`);
-      
-      console.log(`Delete response status: ${response.status}, ok: ${response.ok}`);
-      
-      // If successful, parse and return the response
-      if (response.ok) {
-        const result = await response.json();
+      try {
+        console.log(`Attempting to delete user with ID: ${id}`);
+        // Use apiRequest which handles the response and throws errors appropriately
+        const result = await apiRequest("DELETE", `/api/admin/users/${id}`);
         console.log("Delete user successful:", result);
         return result;
+      } catch (error: any) {
+        console.log("Delete user error caught:", error.message);
+        
+        // Check if the error is about user not found (404)
+        if (error.message && error.message.includes("404")) {
+          console.log("User not found (404), treating as successful deletion");
+          return { success: true, message: "User has been deleted" };
+        }
+        
+        // Re-throw other errors
+        throw error;
       }
-      
-      // Handle 404 as success (user already deleted)
-      if (response.status === 404) {
-        console.log("User not found (404), treating as successful deletion");
-        return { success: true, message: "User has been deleted" };
-      }
-      
-      // For other errors, try to get error message
-      let errorMessage = "Failed to delete user";
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-      } catch {
-        errorMessage = `Delete request failed (status: ${response.status})`;
-      }
-      
-      throw new Error(errorMessage);
     },
     onSuccess: (data) => {
       console.log("Delete user mutation success:", data);
