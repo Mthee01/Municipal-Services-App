@@ -324,9 +324,16 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
 
   // Reverse geocoding function to convert GPS coordinates to address
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+    // Validate that coordinates are within South Africa bounds
+    // South Africa approximate bounds: Lat: -35 to -22, Lng: 16 to 33
+    if (lat < -35 || lat > -22 || lng < 16 || lng > 33) {
+      console.warn(`Coordinates (${lat}, ${lng}) appear to be outside South Africa`);
+      throw new Error('Location appears to be outside South Africa. Please enter your address manually.');
+    }
+    
     // Using OpenStreetMap Nominatim API (free, no API key required)
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1&countrycodes=za`,
       {
         headers: {
           'User-Agent': 'Municipal Services App'
@@ -344,6 +351,13 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       throw new Error(data.error);
     }
     
+    // Validate that the result is in South Africa
+    const country = data.address?.country || '';
+    if (country.toLowerCase() !== 'south africa' && !country.toLowerCase().includes('south africa')) {
+      console.warn('Geocoding returned non-South African address:', data);
+      throw new Error('Location service returned address outside South Africa. Please enter your address manually.');
+    }
+    
     // Extract meaningful address components
     const address = data.address || {};
     const components = [
@@ -351,10 +365,20 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       address.road || address.street,
       address.suburb || address.neighbourhood || address.residential,
       address.city || address.town || address.municipality,
+      address.state_district || address.state,
       address.postcode
     ].filter(Boolean);
     
-    return components.length > 0 ? components.join(', ') : data.display_name || 'Address not found';
+    const formattedAddress = components.length > 0 ? components.join(', ') : data.display_name || 'Address not found';
+    
+    // Final check - if address contains European locations, reject it
+    const europeanKeywords = ['utrecht', 'netherlands', 'nederland', 'germany', 'belgium', 'france'];
+    if (europeanKeywords.some(keyword => formattedAddress.toLowerCase().includes(keyword))) {
+      console.warn('Detected European location in address:', formattedAddress);
+      throw new Error('Location service error - detected non-South African location. Please enter your address manually.');
+    }
+    
+    return formattedAddress;
   };
 
   const selectLocation = (location: string) => {
@@ -426,8 +450,8 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
           },
           {
             enableHighAccuracy: true, // Better accuracy for address lookup
-            timeout: 10000,
-            maximumAge: 60000 // Shorter cache for more current location
+            timeout: 15000, // Increased timeout for better GPS lock
+            maximumAge: 0 // Always get fresh location to avoid cached wrong positions
           }
         );
       });
