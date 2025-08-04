@@ -63,7 +63,7 @@
         <h2>Test Known South African Coordinates</h2>
         <button onclick="testKnownCoordinates()">Test Cape Town CBD</button>
         <button onclick="testJohannesburg()">Test Johannesburg CBD</button>
-        <button onclick="testDurban()">Test Durban CBD</button>
+        <button onclick="testDurban()">Test Maroeladal Area</button>
         <div id="knownResult" class="result"></div>
     </div>
 
@@ -268,19 +268,32 @@
 
         async function testDurban() {
             const result = document.getElementById('knownResult');
-            result.textContent = 'Testing Durban CBD coordinates...';
+            result.textContent = 'Testing Maroeladal area coordinates...';
             result.className = 'result';
             
             try {
-                // Durban CBD coordinates
-                const lat = -29.8587;
-                const lng = 31.0218;
+                // Maroeladal, Roodepoort coordinates (approximately where 6 Agena Avenue should be)
+                const lat = -26.1625;
+                const lng = 27.8739;
                 
                 const address = await reverseGeocode(lat, lng);
-                result.textContent = `Durban CBD (${lat}, ${lng}):\n${address}`;
+                result.textContent = `Maroeladal area (${lat}, ${lng}):\n${address}`;
                 result.className = 'result success';
+                
+                // Also test the problem coordinates that were showing KZN
+                setTimeout(async () => {
+                    try {
+                        const problemLat = -27.6562;
+                        const problemLng = 30.3215;
+                        const problemAddress = await reverseGeocode(problemLat, problemLng);
+                        result.textContent += `\n\nProblem coordinates (${problemLat}, ${problemLng}):\n${problemAddress}`;
+                    } catch (error) {
+                        result.textContent += `\n\nProblem coordinates failed: ${error.message}`;
+                    }
+                }, 2000);
+                
             } catch (error) {
-                result.textContent = `Durban test failed: ${error.message}`;
+                result.textContent = `Maroeladal test failed: ${error.message}`;
                 result.className = 'result error';
             }
         }

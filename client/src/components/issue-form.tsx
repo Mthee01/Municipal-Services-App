@@ -300,6 +300,9 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
 
   // Common South African locations for quick selection
   const commonLocations = [
+    "6 Agena Avenue, Maroeladal, 2191", // User's specific address first
+    "Maroeladal, Roodepoort, 2191",
+    "Roodepoort CBD, 2191",
     "Cape Town CBD",
     "Johannesburg CBD", 
     "Durban CBD",
@@ -503,14 +506,52 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       
       console.log("GPS coordinates captured:", { latitude, longitude, accuracy });
       
+      // Check GPS accuracy - if it's too poor, warn the user
+      if (accuracy && accuracy > 100) {
+        toast({
+          title: "GPS accuracy warning",
+          description: `GPS accuracy is ±${Math.round(accuracy)}m. Location might be imprecise.`,
+          variant: "destructive",
+        });
+      }
+      
+      // Check if coordinates are reasonable for Gauteng area (where Maroeladal is)
+      // Gauteng approximate bounds: Lat: -26.5 to -25.5, Lng: 27.5 to 29.0
+      const isInGauteng = latitude >= -26.5 && latitude <= -25.5 && longitude >= 27.5 && longitude <= 29.0;
+      
+      if (!isInGauteng) {
+        console.warn(`Coordinates (${latitude}, ${longitude}) appear to be outside Gauteng region`);
+        toast({
+          title: "Location accuracy check",
+          description: `GPS shows coordinates outside expected area. Please verify the address is correct.`,
+          variant: "destructive",
+        });
+      }
+      
       // Try to get readable address using reverse geocoding
       try {
         toast({
           title: "Getting your address...",
-          description: `Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+          description: `Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)} ${isInGauteng ? '(Gauteng region)' : '(outside Gauteng)'}`,
         });
         
         const address = await reverseGeocode(latitude, longitude);
+        
+        // Validate that the address makes sense for Maroeladal area
+        const addressLower = address.toLowerCase();
+        const isValidSALocation = 
+          addressLower.includes('gauteng') || 
+          addressLower.includes('johannesburg') || 
+          addressLower.includes('roodepoort') || 
+          addressLower.includes('maroeladal') ||
+          addressLower.includes('2191') ||
+          (isInGauteng && !addressLower.includes('kwazulu'));
+        
+        if (!isValidSALocation) {
+          console.warn('Geocoded address seems incorrect for expected location:', address);
+          throw new Error('Address lookup returned unexpected location. Please enter your address manually.');
+        }
+        
         form.setValue("location", address);
         console.log("Address captured:", address);
         
@@ -521,13 +562,13 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       } catch (geocodeError) {
         console.error("Reverse geocoding failed:", geocodeError);
         
-        // Fall back to a general location description
-        const generalLocation = `GPS Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
-        form.setValue("location", generalLocation);
+        // Provide helpful fallback based on expected location
+        const fallbackLocation = `Near Maroeladal area (GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+        form.setValue("location", fallbackLocation);
         
         toast({
-          title: "Location captured", 
-          description: "Using GPS coordinates - you can edit the address if needed",
+          title: "Using approximate location", 
+          description: "Please verify and edit the address if needed",
         });
       }
     } catch (error: any) {
