@@ -201,12 +201,12 @@ export default function FieldTechnicianDashboard() {
 
   const { data: messages = [] } = useQuery({
     queryKey: ['/api/messages', currentUserId],
-    queryFn: () => apiRequest(`/api/messages?userId=${currentUserId}`, 'GET'),
+    queryFn: () => apiRequest('GET', `/api/messages?userId=${currentUserId}`),
   });
 
   const { data: partsOrders = [] } = useQuery({
     queryKey: ['/api/parts-orders', currentUserId],
-    queryFn: () => apiRequest(`/api/parts-orders?technicianId=${currentUserId}`, 'GET'),
+    queryFn: () => apiRequest('GET', `/api/parts-orders?technicianId=${currentUserId}`),
   });
 
 
@@ -229,7 +229,7 @@ export default function FieldTechnicianDashboard() {
 
   // Mutations
   const startWorkMutation = useMutation({
-    mutationFn: (issueId: number) => apiRequest('/api/work-sessions/start', 'POST', { issueId, technicianId: currentUserId }),
+    mutationFn: (issueId: number) => apiRequest('POST', '/api/work-sessions/start', { issueId, technicianId: currentUserId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/work-sessions/active'] });
       queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
@@ -242,7 +242,7 @@ export default function FieldTechnicianDashboard() {
 
   const completeWorkMutation = useMutation({
     mutationFn: (data: { sessionId: number; notes: string }) => 
-      apiRequest('/api/technicians/complete-work', 'POST', data),
+      apiRequest('POST', '/api/technicians/complete-work', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/technicians/work-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/technicians/issues'] });
@@ -254,7 +254,7 @@ export default function FieldTechnicianDashboard() {
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: (messageData: any) => apiRequest('/api/technicians/messages', 'POST', messageData),
+    mutationFn: (messageData: any) => apiRequest('POST', '/api/technicians/messages', messageData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/technicians/messages'] });
       setMessageData({ subject: '', content: '' });
@@ -266,7 +266,7 @@ export default function FieldTechnicianDashboard() {
   });
 
   const createPartsOrderMutation = useMutation({
-    mutationFn: (orderData: any) => apiRequest('/api/parts-orders', 'POST', orderData),
+    mutationFn: (orderData: any) => apiRequest('POST', '/api/parts-orders', orderData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/parts-orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/technicians/work-sessions'] });
@@ -281,7 +281,7 @@ export default function FieldTechnicianDashboard() {
 
   const updatePartsOrderMutation = useMutation({
     mutationFn: ({ orderId, updates }: { orderId: number; updates: any }) => 
-      apiRequest(`/api/parts-orders/${orderId}`, 'PATCH', updates),
+      apiRequest('PATCH', `/api/parts-orders/${orderId}`, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/parts-orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/technicians/work-sessions'] });
@@ -293,7 +293,7 @@ export default function FieldTechnicianDashboard() {
   });
 
   const createCompletionReportMutation = useMutation({
-    mutationFn: (reportData: any) => apiRequest('/api/technicians/completion-reports', 'POST', reportData),
+    mutationFn: (reportData: any) => apiRequest('POST', '/api/technicians/completion-reports', reportData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/technicians/completion-reports'] });
       queryClient.invalidateQueries({ queryKey: ['/api/technicians/work-sessions'] });
@@ -337,7 +337,7 @@ export default function FieldTechnicianDashboard() {
         setLocationAccuracy(accuracy);
         
         // Send location update to server
-        apiRequest('/api/technicians/location', 'POST', {
+        apiRequest('POST', '/api/technicians/location', {
           technicianId: currentUserId,
           latitude,
           longitude,
