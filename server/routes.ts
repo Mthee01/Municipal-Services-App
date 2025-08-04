@@ -1505,11 +1505,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Fetching reports for technician:", technicianId);
         const reports = await storage.getCompletionReportsByTechnician(parseInt(technicianId as string));
         console.log("Found reports:", reports.length);
+        console.log("Report IDs:", reports.map(r => r.id));
         res.json(reports);
       } else {
         console.log("Fetching all completion reports");
         const reports = await storage.getCompletionReports();
         console.log("Found all reports:", reports.length);
+        console.log("All report IDs:", reports.map(r => r.id));
         res.json(reports);
       }
     } catch (error) {
@@ -1589,6 +1591,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log("Completion report created successfully:", report.id);
+      
+      // Immediately verify the report can be retrieved
+      setTimeout(async () => {
+        try {
+          const allReports = await storage.getCompletionReports();
+          const techReports = await storage.getCompletionReportsByTechnician(reportData.technicianId);
+          console.log("Verification - All reports count:", allReports.length);
+          console.log("Verification - Tech reports count:", techReports.length);
+          console.log("Verification - Tech reports IDs:", techReports.map(r => r.id));
+          console.log("Verification - New report exists in all:", allReports.some(r => r.id === report.id));
+          console.log("Verification - New report exists in tech:", techReports.some(r => r.id === report.id));
+        } catch (e) {
+          console.error("Verification error:", e);
+        }
+      }, 1000);
+      
       res.status(201).json(report);
     } catch (error) {
       console.error("Completion report creation error:", error);
