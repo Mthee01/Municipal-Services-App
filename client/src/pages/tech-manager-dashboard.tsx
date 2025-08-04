@@ -1264,7 +1264,9 @@ ${report.additionalNotes}
                   <CardContent className="space-y-3">
                     <div>
                       <Label className="text-sm font-medium text-gray-600">Assigned To</Label>
-                      <p className="text-sm mt-1">{selectedIssueForDetails.assignedTo || 'Unassigned'}</p>
+                      <p className="text-sm mt-1">
+                        {selectedIssueForDetails.assignedTo ? getTechnicianName(selectedIssueForDetails.assignedTo) : 'Unassigned'}
+                      </p>
                     </div>
                     <div>
                       <Label className="text-sm font-medium text-gray-600">Reported By</Label>
