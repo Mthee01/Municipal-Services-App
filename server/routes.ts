@@ -486,19 +486,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Technicians endpoints
   app.get("/api/technicians", async (req, res) => {
     try {
-      const { department, status } = req.query;
-      let technicians;
-
-      if (department) {
-        technicians = await storage.getTechniciansByDepartment(department as string);
-      } else if (status) {
-        technicians = await storage.getTechniciansByStatus(status as string);
-      } else {
-        technicians = await storage.getTechnicians();
-      }
+      // Get technicians from users table with role 'field_technician'
+      const users = await storage.getAllUsers();
+      const technicians = users
+        .filter(user => user.role === 'field_technician')
+        .map(user => ({
+          id: user.id,
+          name: user.name,
+          phone: user.phone || 'N/A',
+          email: user.email || 'N/A',
+          department: 'General', // Default department, can be enhanced later
+          skills: [],
+          status: user.status === 'active' ? 'available' : 'offline',
+          currentLocation: null,
+          latitude: null,
+          longitude: null,
+          teamId: null,
+          performanceRating: 5,
+          completedIssues: 0,
+          avgResolutionTime: 0,
+          lastUpdate: user.updatedAt || user.createdAt
+        }));
 
       res.json(technicians);
     } catch (error) {
+      console.error("Error fetching technicians:", error);
       res.status(500).json({ message: "Failed to fetch technicians" });
     }
   });
@@ -537,8 +549,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Finding nearest technicians for department:", department);
       
-      // Get all technicians
-      const allTechnicians = await storage.getTechnicians();
+      // Get technicians from users table with role 'field_technician'
+      const users = await storage.getAllUsers();
+      const allTechnicians = users
+        .filter(user => user.role === 'field_technician')
+        .map(user => ({
+          id: user.id,
+          name: user.name,
+          phone: user.phone || 'N/A',
+          email: user.email || 'N/A',
+          department: 'General',
+          skills: [],
+          status: user.status === 'active' ? 'available' : 'offline',
+          currentLocation: null,
+          latitude: null,
+          longitude: null,
+          teamId: null,
+          performanceRating: 5,
+          completedIssues: 0,
+          avgResolutionTime: 0,
+          lastUpdate: user.updatedAt || user.createdAt
+        }));
+      
       console.log("Total technicians:", allTechnicians.length);
       
       // Filter technicians that can be assigned (available or on_job)
@@ -586,13 +618,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get issue and technician details
       const issue = await storage.getIssue(issueId);
-      const technician = await storage.getTechnician(technicianId);
+      const technician = await storage.getUser(technicianId);
 
       if (!issue) {
         return res.status(404).json({ message: "Issue not found" });
       }
       
-      if (!technician) {
+      if (!technician || technician.role !== 'field_technician') {
         return res.status(404).json({ message: "Technician not found" });
       }
       
@@ -636,14 +668,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const updates = req.body;
       
-      const technician = await storage.updateTechnician(id, updates);
-      
-      if (!technician) {
+      // Get the user first to ensure they are a technician
+      const user = await storage.getUser(id);
+      if (!user || user.role !== 'field_technician') {
         return res.status(404).json({ message: "Technician not found" });
       }
       
-      res.json(technician);
+      // Update user details (convert technician updates to user updates)
+      const userUpdates = {
+        name: updates.name,
+        phone: updates.phone,
+        email: updates.email,
+        status: updates.status === 'available' ? 'active' : updates.status === 'offline' ? 'inactive' : 'active'
+      };
+      
+      const updatedUser = await storage.updateUser(id, userUpdates);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Failed to update technician" });
+      }
+      
+      // Return in technician format
+      const technicianResponse = {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        phone: updatedUser.phone || 'N/A',
+        email: updatedUser.email || 'N/A',
+        department: 'General',
+        skills: [],
+        status: updatedUser.status === 'active' ? 'available' : 'offline',
+        currentLocation: null,
+        latitude: null,
+        longitude: null,
+        teamId: null,
+        performanceRating: 5,
+        completedIssues: 0,
+        avgResolutionTime: 0,
+        lastUpdate: updatedUser.updatedAt || updatedUser.createdAt
+      };
+      
+      res.json(technicianResponse);
     } catch (error) {
+      console.error("Error updating technician:", error);
       res.status(500).json({ message: "Failed to update technician" });
     }
   });
@@ -703,9 +769,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/analytics/technicians", async (req, res) => {
     try {
-      const performance = await storage.getTechnicianPerformance();
+      // Get technician performance from users table with role 'field_technician'
+      const users = await storage.getAllUsers();
+      const performance = users
+        .filter(user => user.role === 'field_technician')
+        .map(user => ({
+          id: user.id,
+          name: user.name,
+          department: 'General',
+          completedIssues: 0,
+          performanceRating: 5,
+          avgResolutionTime: 0,
+          status: user.status === 'active' ? 'available' : 'offline',
+          currentLocation: null
+        }));
+      
       res.json(performance);
     } catch (error) {
+      console.error("Error fetching technician performance:", error);
       res.status(500).json({ message: "Failed to fetch technician performance" });
     }
   });
@@ -1417,7 +1498,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all technicians with their latest location data for call center tracking
   app.get("/api/technicians-with-locations", async (req, res) => {
     try {
-      const techniciansWithLocations = await storage.getTechniciansWithLocations();
+      // Get technicians from users table with role 'field_technician'
+      const users = await storage.getAllUsers();
+      const techniciansWithLocations = users
+        .filter(user => user.role === 'field_technician')
+        .map(user => ({
+          id: user.id,
+          name: user.name,
+          phone: user.phone || 'N/A',
+          email: user.email || 'N/A',
+          department: 'General',
+          skills: [],
+          status: user.status === 'active' ? 'available' : 'offline',
+          currentLocation: null,
+          latitude: null,
+          longitude: null,
+          teamId: null,
+          performanceRating: 5,
+          completedIssues: 0,
+          avgResolutionTime: 0,
+          lastUpdate: user.updatedAt || user.createdAt
+        }));
+      
       res.json(techniciansWithLocations);
     } catch (error) {
       console.error("Error fetching technicians with locations:", error);
