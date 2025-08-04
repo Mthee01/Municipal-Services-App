@@ -178,52 +178,34 @@ export default function AdminDashboard() {
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (id: number) => {
-      try {
-        console.log(`Attempting to delete user with ID: ${id}`);
-        const response = await apiRequest("DELETE", `/api/admin/users/${id}`);
-        
-        console.log(`Delete response status: ${response.status}, ok: ${response.ok}`);
-        
-        if (!response.ok) {
-          let errorMessage = "Failed to delete user";
-          let errorData: any = null;
-          
-          // Handle specific case where user was already deleted
-          if (response.status === 404) {
-            try {
-              errorData = await response.json();
-              if (errorData.message && errorData.message.includes("User not found")) {
-                // User was already deleted, treat as success
-                console.log("User already deleted, treating as successful operation");
-                return { success: true, message: "User has been deleted" };
-              }
-              errorMessage = errorData.message || errorMessage;
-            } catch {
-              errorMessage = "User not found";
-              // Still treat 404 as success since user is effectively deleted
-              console.log("User not found (404), treating as successful operation");
-              return { success: true, message: "User has been deleted" };
-            }
-          } else {
-            // For other error status codes, try to get error message
-            try {
-              errorData = await response.json();
-              errorMessage = errorData.message || errorMessage;
-            } catch {
-              errorMessage = `Request failed with status ${response.status}`;
-            }
-          }
-          
-          throw new Error(errorMessage);
-        }
-        
+      console.log(`Attempting to delete user with ID: ${id}`);
+      const response = await apiRequest("DELETE", `/api/admin/users/${id}`);
+      
+      console.log(`Delete response status: ${response.status}, ok: ${response.ok}`);
+      
+      // If successful, parse and return the response
+      if (response.ok) {
         const result = await response.json();
-        console.log("Delete user result:", result);
+        console.log("Delete user successful:", result);
         return result;
-      } catch (error) {
-        console.error("Delete user error:", error);
-        throw error;
       }
+      
+      // Handle 404 as success (user already deleted)
+      if (response.status === 404) {
+        console.log("User not found (404), treating as successful deletion");
+        return { success: true, message: "User has been deleted" };
+      }
+      
+      // For other errors, try to get error message
+      let errorMessage = "Failed to delete user";
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        errorMessage = `Delete request failed (status: ${response.status})`;
+      }
+      
+      throw new Error(errorMessage);
     },
     onSuccess: (data) => {
       console.log("Delete user mutation success:", data);
