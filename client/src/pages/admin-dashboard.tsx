@@ -520,12 +520,15 @@ export default function AdminDashboard() {
                       <span>Add User</span>
                     </Button>
                   </DialogTrigger>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Create New User</DialogTitle>
+                    <DialogDescription>
+                      Fill in the details to create a new user account
+                    </DialogDescription>
                   </DialogHeader>
                   <Form {...createForm}>
-                    <form onSubmit={createForm.handleSubmit(handleCreateUser)} className="space-y-4">
+                    <form onSubmit={createForm.handleSubmit(handleCreateUser)} className="space-y-3">
                       <FormField
                         control={createForm.control}
                         name="username"
@@ -631,7 +634,7 @@ export default function AdminDashboard() {
                           </FormItem>
                         )}
                       />
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-2 pt-2 sticky bottom-0 bg-white dark:bg-gray-900 border-t mt-4 -mx-6 px-6 py-4">
                         <Button 
                           type="submit" 
                           disabled={createUserMutation.isPending}
