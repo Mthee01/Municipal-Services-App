@@ -241,11 +241,11 @@ export default function FieldTechnicianDashboard() {
   });
 
   const completeWorkMutation = useMutation({
-    mutationFn: (data: { sessionId: number; notes: string }) => 
-      apiRequest('POST', '/api/technicians/complete-work', data),
+    mutationFn: (data: { issueId: number; technicianId: number; completionNotes: string }) => 
+      apiRequest('POST', '/api/work-sessions/complete', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/technicians/work-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/technicians/issues'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-sessions/active'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
       toast({ title: 'Work completed', description: 'Issue has been resolved successfully.' });
     },
     onError: (error: any) => {
@@ -269,7 +269,7 @@ export default function FieldTechnicianDashboard() {
     mutationFn: (orderData: any) => apiRequest('POST', '/api/parts-orders', orderData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/parts-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/technicians/work-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-sessions/active'] });
       setShowPartsOrderDialog(false);
       setPartsOrderData({ parts: [''], justification: '', priority: 'normal' });
       toast({ title: 'Parts order created', description: 'Your parts order has been submitted for approval.' });
@@ -284,7 +284,7 @@ export default function FieldTechnicianDashboard() {
       apiRequest('PATCH', `/api/parts-orders/${orderId}`, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/parts-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/technicians/work-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-sessions/active'] });
       toast({ title: 'Parts status updated', description: 'Parts order status has been updated.' });
     },
     onError: (error: any) => {
@@ -293,10 +293,10 @@ export default function FieldTechnicianDashboard() {
   });
 
   const createCompletionReportMutation = useMutation({
-    mutationFn: (reportData: any) => apiRequest('POST', '/api/technicians/completion-reports', reportData),
+    mutationFn: (reportData: any) => apiRequest('POST', '/api/completion-reports', reportData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/technicians/completion-reports'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/technicians/work-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/completion-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-sessions/active'] });
       setShowCompletionReportDialog(false);
       setCompletionReportData({
         workCompleted: '',
@@ -465,8 +465,9 @@ export default function FieldTechnicianDashboard() {
     
     // After successful report submission, complete the work session
     completeWorkMutation.mutate({ 
-      sessionId: selectedSessionForCompletion.id, 
-      notes: `Work completed with report: ${completionReportData.workCompleted}` 
+      issueId: selectedSessionForCompletion.issueId, 
+      technicianId: currentUserId,
+      completionNotes: `Work completed with report: ${completionReportData.workCompleted}` 
     });
   };
 
