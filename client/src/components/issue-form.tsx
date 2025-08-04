@@ -358,18 +358,33 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       throw new Error('Location service returned address outside South Africa. Please enter your address manually.');
     }
     
-    // Extract meaningful address components
+    // Extract meaningful address components with preference for street-level detail
     const address = data.address || {};
+    
+    // Build a proper street address
+    const streetNumber = address.house_number || '';
+    const streetName = address.road || address.street || address.pedestrian;
+    const suburb = address.suburb || address.neighbourhood || address.residential || address.quarter;
+    const city = address.city || address.town || address.municipality || address.village;
+    const province = address.state || address.province;
+    const postcode = address.postcode;
+    
+    // If we don't have at least a street name or suburb, throw an error
+    if (!streetName && !suburb) {
+      console.warn('Insufficient address detail from geocoding:', address);
+      throw new Error('Unable to determine specific street address. Please enter your address manually.');
+    }
+    
+    // Build address in South African format: [Number] Street Name, Suburb, City, Province [Postcode]
     const components = [
-      address.house_number,
-      address.road || address.street,
-      address.suburb || address.neighbourhood || address.residential,
-      address.city || address.town || address.municipality,
-      address.state_district || address.state,
-      address.postcode
+      streetNumber && streetName ? `${streetNumber} ${streetName}` : (streetName || ''),
+      suburb,
+      city,
+      province,
+      postcode
     ].filter(Boolean);
     
-    const formattedAddress = components.length > 0 ? components.join(', ') : data.display_name || 'Address not found';
+    const formattedAddress = components.length > 0 ? components.join(', ') : data.display_name;
     
     // Final check - if address contains European locations, reject it
     const europeanKeywords = ['utrecht', 'netherlands', 'nederland', 'germany', 'belgium', 'france'];
@@ -471,15 +486,21 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
           description: `Address: ${address.length > 50 ? address.substring(0, 50) + '...' : address}`,
         });
       } catch (geocodeError) {
-        console.warn("Reverse geocoding failed, using coordinates:", geocodeError);
-        // Fallback to coordinates if geocoding fails
-        const locationString = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
-        form.setValue("location", locationString);
+        console.warn("Reverse geocoding failed:", geocodeError);
         
+        // Instead of falling back to coordinates, ask user to enter address manually
         toast({
-          title: "Location captured", 
-          description: `GPS coordinates captured ${accuracy ? `(±${Math.round(accuracy)}m)` : ''}`,
+          title: "Address lookup failed", 
+          description: geocodeError.message || "Unable to determine street address. Please enter your address manually.",
+          variant: "destructive",
         });
+        
+        // Focus on the location input field so user can enter manually
+        const locationInput = document.querySelector('input[name="location"]') as HTMLInputElement;
+        if (locationInput) {
+          locationInput.focus();
+          locationInput.placeholder = "Please enter your street address manually";
+        }
       }
     } catch (error: any) {
       console.error("Location error:", error);
