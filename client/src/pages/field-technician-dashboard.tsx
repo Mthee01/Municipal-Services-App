@@ -294,9 +294,18 @@ export default function FieldTechnicianDashboard() {
 
   const createCompletionReportMutation = useMutation({
     mutationFn: (reportData: any) => apiRequest('POST', '/api/completion-reports', reportData),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // Invalidate completion reports cache first
       queryClient.invalidateQueries({ queryKey: ['/api/completion-reports'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/work-sessions/active'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/completion-reports', currentUserId] });
+      
+      // Then complete the work session
+      completeWorkMutation.mutate({ 
+        issueId: variables.issueId, 
+        technicianId: currentUserId,
+        completionNotes: `Work completed with report: ${variables.workCompleted}` 
+      });
+      
       setShowCompletionReportDialog(false);
       setCompletionReportData({
         workCompleted: '',
@@ -308,7 +317,7 @@ export default function FieldTechnicianDashboard() {
         additionalNotes: '',
         photos: []
       });
-      toast({ title: 'Completion report submitted', description: 'Report has been sent to technical manager.' });
+      toast({ title: 'Completion report submitted', description: 'Work completed successfully and report sent to technical manager.' });
     },
     onError: (error: any) => {
       toast({ title: 'Error', description: error.message || 'Failed to submit completion report', variant: 'destructive' });
@@ -461,14 +470,8 @@ export default function FieldTechnicianDashboard() {
       photos: completionReportData.photos
     };
 
+    // Submit completion report, which will trigger work session completion on success
     createCompletionReportMutation.mutate(reportData);
-    
-    // After successful report submission, complete the work session
-    completeWorkMutation.mutate({ 
-      issueId: selectedSessionForCompletion.issueId, 
-      technicianId: currentUserId,
-      completionNotes: `Work completed with report: ${completionReportData.workCompleted}` 
-    });
   };
 
   const addMaterialField = () => {
