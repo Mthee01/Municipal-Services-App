@@ -632,7 +632,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                                   </FormControl>
                                   <SelectContent>
                                     <SelectItem value="citizen">Citizen</SelectItem>
-                                    <SelectItem value="official">Call Centre Agent</SelectItem>
+                                    <SelectItem value="call_centre_agent">Call Centre Agent</SelectItem>
                                     <SelectItem value="ward_councillor">Ward Councillor</SelectItem>
                                     <SelectItem value="mayor">Mayor</SelectItem>
                                     <SelectItem value="tech_manager">Technical Manager</SelectItem>
