@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Location Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a8b;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .error {
+            background: #ffe6e6;
+            color: #d00;
+        }
+        .success {
+            background: #e6ffe6;
+            color: #080;
+        }
+    </style>
+</head>
+<body>
+    <h1>GPS Location Testing</h1>
+    
+    <div class="test-section">
+        <h2>Test GPS Location Capture</h2>
+        <button onclick="testGPSLocation()" id="gpsBtn">Get GPS Location</button>
+        <div id="gpsResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Known South African Coordinates</h2>
+        <button onclick="testKnownCoordinates()">Test Cape Town CBD</button>
+        <button onclick="testJohannesburg()">Test Johannesburg CBD</button>
+        <button onclick="testDurban()">Test Durban CBD</button>
+        <div id="knownResult" class="result"></div>
+    </div>
+
+    <script>
+        // Reverse geocoding function (copied from the main app)
+        async function reverseGeocode(lat, lng) {
+            console.log(`Attempting to geocode coordinates: ${lat}, ${lng}`);
+            
+            // Multiple geocoding services to try
+            const geocodingServices = [
+                // Service 1: Nominatim with South Africa country code
+                async () => {
+                    const response = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1&countrycodes=za&accept-language=en`,
+                        {
+                            headers: {
+                                'User-Agent': 'Municipal Services App'
+                            }
+                        }
+                    );
+                    
+                    if (!response.ok) throw new Error('Nominatim service unavailable');
+                    return await response.json();
+                },
+                
+                // Service 2: Nominatim without country restriction (as fallback)
+                async () => {
+                    const response = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1&accept-language=en`,
+                        {
+                            headers: {
+                                'User-Agent': 'Municipal Services App'
+                            }
+                        }
+                    );
+                    
+                    if (!response.ok) throw new Error('Nominatim service unavailable');
+                    return await response.json();
+                }
+            ];
+            
+            let data = null;
+            let lastError = null;
+            
+            // Try each geocoding service
+            for (const service of geocodingServices) {
+                try {
+                    data = await service();
+                    if (data && !data.error) {
+                        console.log('Geocoding successful with service:', data);
+                        break;
+                    }
+                } catch (error) {
+                    console.warn('Geocoding service failed:', error);
+                    lastError = error;
+                    continue;
+                }
+            }
+            
+            if (!data || data.error) {
+                throw new Error(lastError?.message || 'All geocoding services failed');
+            }
+            
+            // Extract address components
+            const address = data.address || {};
+            console.log('Raw address data:', address);
+            
+            // Build a comprehensive address
+            const streetNumber = address.house_number || '';
+            const streetName = address.road || address.street || address.pedestrian || address.path;
+            const suburb = address.suburb || address.neighbourhood || address.residential || address.quarter || address.city_district;
+            const city = address.city || address.town || address.municipality || address.village || address.county;
+            const province = address.state || address.province || address.region;
+            const postcode = address.postcode;
+            const country = address.country || '';
+            
+            // Build the address string
+            const addressParts = [];
+            
+            // Add street address
+            if (streetNumber && streetName) {
+                addressParts.push(`${streetNumber} ${streetName}`);
+            } else if (streetName) {
+                addressParts.push(streetName);
+            }
+            
+            // Add locality info
+            if (suburb) addressParts.push(suburb);
+            if (city && city !== suburb) addressParts.push(city);
+            if (province) addressParts.push(province);
+            if (postcode) addressParts.push(postcode);
+            
+            let formattedAddress = addressParts.length > 0 ? addressParts.join(', ') : data.display_name;
+            
+            // If we still don't have a good address, use display_name as fallback
+            if (!formattedAddress || formattedAddress.length < 10) {
+                formattedAddress = data.display_name || `Location near ${city || suburb || 'coordinates'}`;
+            }
+            
+            // Clean up the address
+            formattedAddress = formattedAddress.replace(/,\s*,/g, ',').replace(/^,\s*/, '').replace(/,\s*$/, '');
+            
+            console.log('Final formatted address:', formattedAddress);
+            return formattedAddress;
+        }
+
+        async function testGPSLocation() {
+            const btn = document.getElementById('gpsBtn');
+            const result = document.getElementById('gpsResult');
+            
+            btn.disabled = true;
+            btn.textContent = 'Getting location...';
+            result.textContent = 'Requesting GPS location...';
+            result.className = 'result';
+            
+            try {
+                if (!navigator.geolocation) {
+                    throw new Error('Geolocation not supported');
+                }
+                
+                const position = await new Promise((resolve, reject) => {
+                    const timeoutId = setTimeout(() => {
+                        reject(new Error('Location request timed out'));
+                    }, 15000);
+                    
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            clearTimeout(timeoutId);
+                            resolve(pos);
+                        },
+                        (err) => {
+                            clearTimeout(timeoutId);
+                            reject(err);
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 15000,
+                            maximumAge: 0
+                        }
+                    );
+                });
+                
+                const { latitude, longitude, accuracy } = position.coords;
+                
+                result.textContent = `GPS Coordinates: ${latitude}, ${longitude}\nAccuracy: ±${Math.round(accuracy)}m\n\nLooking up address...`;
+                
+                try {
+                    const address = await reverseGeocode(latitude, longitude);
+                    result.textContent = `GPS Coordinates: ${latitude}, ${longitude}\nAccuracy: ±${Math.round(accuracy)}m\n\nAddress: ${address}`;
+                    result.className = 'result success';
+                } catch (geocodeError) {
+                    result.textContent = `GPS Coordinates: ${latitude}, ${longitude}\nAccuracy: ±${Math.round(accuracy)}m\n\nGeocode Error: ${geocodeError.message}`;
+                    result.className = 'result error';
+                }
+                
+            } catch (error) {
+                result.textContent = `GPS Error: ${error.message}`;
+                result.className = 'result error';
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Get GPS Location';
+        }
+
+        async function testKnownCoordinates() {
+            const result = document.getElementById('knownResult');
+            result.textContent = 'Testing Cape Town CBD coordinates...';
+            result.className = 'result';
+            
+            try {
+                // Cape Town CBD coordinates
+                const lat = -33.9249;
+                const lng = 18.4241;
+                
+                const address = await reverseGeocode(lat, lng);
+                result.textContent = `Cape Town CBD (${lat}, ${lng}):\n${address}`;
+                result.className = 'result success';
+            } catch (error) {
+                result.textContent = `Cape Town test failed: ${error.message}`;
+                result.className = 'result error';
+            }
+        }
+
+        async function testJohannesburg() {
+            const result = document.getElementById('knownResult');
+            result.textContent = 'Testing Johannesburg CBD coordinates...';
+            result.className = 'result';
+            
+            try {
+                // Johannesburg CBD coordinates
+                const lat = -26.2041;
+                const lng = 28.0473;
+                
+                const address = await reverseGeocode(lat, lng);
+                result.textContent = `Johannesburg CBD (${lat}, ${lng}):\n${address}`;
+                result.className = 'result success';
+            } catch (error) {
+                result.textContent = `Johannesburg test failed: ${error.message}`;
+                result.className = 'result error';
+            }
+        }
+
+        async function testDurban() {
+            const result = document.getElementById('knownResult');
+            result.textContent = 'Testing Durban CBD coordinates...';
+            result.className = 'result';
+            
+            try {
+                // Durban CBD coordinates
+                const lat = -29.8587;
+                const lng = 31.0218;
+                
+                const address = await reverseGeocode(lat, lng);
+                result.textContent = `Durban CBD (${lat}, ${lng}):\n${address}`;
+                result.className = 'result success';
+            } catch (error) {
+                result.textContent = `Durban test failed: ${error.message}`;
+                result.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html>

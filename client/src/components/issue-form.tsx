@@ -326,84 +326,101 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
     console.log(`Attempting to geocode coordinates: ${lat}, ${lng}`);
     
-    // Log coordinates for debugging but don't reject based on bounds initially
-    // South Africa approximate bounds: Lat: -35 to -22, Lng: 16 to 33
-    if (lat < -35 || lat > -22 || lng < 16 || lng > 33) {
-      console.warn(`Coordinates (${lat}, ${lng}) appear to be outside South Africa bounds`);
-    }
-    
-    // Using OpenStreetMap Nominatim API (free, no API key required)
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1&countrycodes=za`,
-      {
-        headers: {
-          'User-Agent': 'Municipal Services App'
-        }
+    // Multiple geocoding services to try
+    const geocodingServices = [
+      // Service 1: Nominatim with South Africa country code
+      async () => {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1&countrycodes=za&accept-language=en`,
+          {
+            headers: {
+              'User-Agent': 'Municipal Services App'
+            }
+          }
+        );
+        
+        if (!response.ok) throw new Error('Nominatim service unavailable');
+        return await response.json();
+      },
+      
+      // Service 2: Nominatim without country restriction (as fallback)
+      async () => {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1&accept-language=en`,
+          {
+            headers: {
+              'User-Agent': 'Municipal Services App'
+            }
+          }
+        );
+        
+        if (!response.ok) throw new Error('Nominatim service unavailable');
+        return await response.json();
       }
-    );
+    ];
     
-    if (!response.ok) {
-      throw new Error('Geocoding service unavailable');
+    let data = null;
+    let lastError = null;
+    
+    // Try each geocoding service
+    for (const service of geocodingServices) {
+      try {
+        data = await service();
+        if (data && !data.error) {
+          console.log('Geocoding successful with service:', data);
+          break;
+        }
+      } catch (error: any) {
+        console.warn('Geocoding service failed:', error);
+        lastError = error;
+        continue;
+      }
     }
     
-    const data = await response.json();
-    
-    if (data.error) {
-      throw new Error(data.error);
+    if (!data || data.error) {
+      throw new Error(lastError?.message || 'All geocoding services failed');
     }
     
-    // Validate that the result is in South Africa
-    const country = data.address?.country || '';
-    const countryCode = data.address?.country_code || '';
-    
-    console.log('Geocoding result country:', country, 'country_code:', countryCode);
-    
-    // Check for South Africa using multiple indicators
-    const isSouthAfrica = 
-      country.toLowerCase().includes('south africa') ||
-      countryCode?.toLowerCase() === 'za' ||
-      countryCode?.toLowerCase() === 'zaf';
-    
-    if (!isSouthAfrica) {
-      console.warn('Geocoding returned non-South African address:', { country, countryCode, data });
-      throw new Error('GPS detected location outside South Africa. Please enter your address manually.');
-    }
-    
-    // Extract meaningful address components with preference for street-level detail
+    // Extract address components
     const address = data.address || {};
+    console.log('Raw address data:', address);
     
-    // Build a proper street address
+    // Build a comprehensive address
     const streetNumber = address.house_number || '';
-    const streetName = address.road || address.street || address.pedestrian;
-    const suburb = address.suburb || address.neighbourhood || address.residential || address.quarter;
-    const city = address.city || address.town || address.municipality || address.village;
-    const province = address.state || address.province;
+    const streetName = address.road || address.street || address.pedestrian || address.path;
+    const suburb = address.suburb || address.neighbourhood || address.residential || address.quarter || address.city_district;
+    const city = address.city || address.town || address.municipality || address.village || address.county;
+    const province = address.state || address.province || address.region;
     const postcode = address.postcode;
+    const country = address.country || '';
     
-    // If we don't have at least a street name or suburb, throw an error
-    if (!streetName && !suburb) {
-      console.warn('Insufficient address detail from geocoding:', address);
-      throw new Error('Unable to determine specific street address. Please enter your address manually.');
+    // Build the address string
+    const addressParts = [];
+    
+    // Add street address
+    if (streetNumber && streetName) {
+      addressParts.push(`${streetNumber} ${streetName}`);
+    } else if (streetName) {
+      addressParts.push(streetName);
     }
     
-    // Build address in South African format: [Number] Street Name, Suburb, City, Province [Postcode]
-    const components = [
-      streetNumber && streetName ? `${streetNumber} ${streetName}` : (streetName || ''),
-      suburb,
-      city,
-      province,
-      postcode
-    ].filter(Boolean);
+    // Add locality info
+    if (suburb) addressParts.push(suburb);
+    if (city && city !== suburb) addressParts.push(city);
+    if (province) addressParts.push(province);
+    if (postcode) addressParts.push(postcode);
     
-    const formattedAddress = components.length > 0 ? components.join(', ') : data.display_name;
+    let formattedAddress = addressParts.length > 0 ? addressParts.join(', ') : data.display_name;
     
-    // Final check - if address contains European locations, reject it
-    const europeanKeywords = ['utrecht', 'netherlands', 'nederland', 'germany', 'belgium', 'france'];
-    if (europeanKeywords.some(keyword => formattedAddress.toLowerCase().includes(keyword))) {
-      console.warn('Detected European location in address:', formattedAddress);
-      throw new Error('Location service error - detected non-South African location. Please enter your address manually.');
+    // If we still don't have a good address, use display_name as fallback
+    if (!formattedAddress || formattedAddress.length < 10) {
+      formattedAddress = data.display_name || `Location near ${city || suburb || 'coordinates'}`;
     }
     
+    // Clean up the address
+    formattedAddress = formattedAddress.replace(/,\s*,/g, ',').replace(/^,\s*/, '').replace(/,\s*$/, '');
+    
+    console.log('Final formatted address:', formattedAddress);
     return formattedAddress;
   };
 
@@ -486,38 +503,32 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       
       console.log("GPS coordinates captured:", { latitude, longitude, accuracy });
       
-      // Show coordinates for debugging
-      toast({
-        title: "GPS coordinates detected",
-        description: `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`,
-      });
-      
       // Try to get readable address using reverse geocoding
       try {
+        toast({
+          title: "Getting your address...",
+          description: `Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+        });
+        
         const address = await reverseGeocode(latitude, longitude);
         form.setValue("location", address);
         console.log("Address captured:", address);
         
         toast({
           title: "Location captured successfully", 
-          description: `Address: ${address.length > 50 ? address.substring(0, 50) + '...' : address}`,
+          description: `${address.length > 50 ? address.substring(0, 50) + '...' : address}`,
         });
       } catch (geocodeError) {
         console.error("Reverse geocoding failed:", geocodeError);
         
-        // Show the actual error and coordinates for debugging
-        toast({
-          title: "Address lookup failed", 
-          description: `${geocodeError.message || "Unable to determine street address"} (Coords: ${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
-          variant: "destructive",
-        });
+        // Fall back to a general location description
+        const generalLocation = `GPS Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+        form.setValue("location", generalLocation);
         
-        // Focus on the location input field so user can enter manually
-        const locationInput = document.querySelector('input[name="location"]') as HTMLInputElement;
-        if (locationInput) {
-          locationInput.focus();
-          locationInput.placeholder = "Please enter your street address manually";
-        }
+        toast({
+          title: "Location captured", 
+          description: "Using GPS coordinates - you can edit the address if needed",
+        });
       }
     } catch (error: any) {
       console.error("Location error:", error);
