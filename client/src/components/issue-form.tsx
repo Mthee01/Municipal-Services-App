@@ -324,11 +324,12 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
 
   // Reverse geocoding function to convert GPS coordinates to address
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
-    // Validate that coordinates are within South Africa bounds
+    console.log(`Attempting to geocode coordinates: ${lat}, ${lng}`);
+    
+    // Log coordinates for debugging but don't reject based on bounds initially
     // South Africa approximate bounds: Lat: -35 to -22, Lng: 16 to 33
     if (lat < -35 || lat > -22 || lng < 16 || lng > 33) {
-      console.warn(`Coordinates (${lat}, ${lng}) appear to be outside South Africa`);
-      throw new Error('Location appears to be outside South Africa. Please enter your address manually.');
+      console.warn(`Coordinates (${lat}, ${lng}) appear to be outside South Africa bounds`);
     }
     
     // Using OpenStreetMap Nominatim API (free, no API key required)
@@ -353,9 +354,19 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
     
     // Validate that the result is in South Africa
     const country = data.address?.country || '';
-    if (country.toLowerCase() !== 'south africa' && !country.toLowerCase().includes('south africa')) {
-      console.warn('Geocoding returned non-South African address:', data);
-      throw new Error('Location service returned address outside South Africa. Please enter your address manually.');
+    const countryCode = data.address?.country_code || '';
+    
+    console.log('Geocoding result country:', country, 'country_code:', countryCode);
+    
+    // Check for South Africa using multiple indicators
+    const isSouthAfrica = 
+      country.toLowerCase().includes('south africa') ||
+      countryCode?.toLowerCase() === 'za' ||
+      countryCode?.toLowerCase() === 'zaf';
+    
+    if (!isSouthAfrica) {
+      console.warn('Geocoding returned non-South African address:', { country, countryCode, data });
+      throw new Error('GPS detected location outside South Africa. Please enter your address manually.');
     }
     
     // Extract meaningful address components with preference for street-level detail
@@ -475,6 +486,12 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       
       console.log("GPS coordinates captured:", { latitude, longitude, accuracy });
       
+      // Show coordinates for debugging
+      toast({
+        title: "GPS coordinates detected",
+        description: `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`,
+      });
+      
       // Try to get readable address using reverse geocoding
       try {
         const address = await reverseGeocode(latitude, longitude);
@@ -486,12 +503,12 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
           description: `Address: ${address.length > 50 ? address.substring(0, 50) + '...' : address}`,
         });
       } catch (geocodeError) {
-        console.warn("Reverse geocoding failed:", geocodeError);
+        console.error("Reverse geocoding failed:", geocodeError);
         
-        // Instead of falling back to coordinates, ask user to enter address manually
+        // Show the actual error and coordinates for debugging
         toast({
           title: "Address lookup failed", 
-          description: geocodeError.message || "Unable to determine street address. Please enter your address manually.",
+          description: `${geocodeError.message || "Unable to determine street address"} (Coords: ${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
           variant: "destructive",
         });
         
