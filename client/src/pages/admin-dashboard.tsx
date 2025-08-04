@@ -186,19 +186,34 @@ export default function AdminDashboard() {
         
         if (!response.ok) {
           let errorMessage = "Failed to delete user";
-          try {
-            const errorData = await response.json();
-            errorMessage = errorData.message || errorMessage;
-            
-            // Handle specific case where user was already deleted
-            if (response.status === 404 && errorMessage.includes("User not found")) {
-              // User was already deleted, treat as success
-              console.log("User already deleted, treating as successful operation");
+          let errorData: any = null;
+          
+          // Handle specific case where user was already deleted
+          if (response.status === 404) {
+            try {
+              errorData = await response.json();
+              if (errorData.message && errorData.message.includes("User not found")) {
+                // User was already deleted, treat as success
+                console.log("User already deleted, treating as successful operation");
+                return { success: true, message: "User has been deleted" };
+              }
+              errorMessage = errorData.message || errorMessage;
+            } catch {
+              errorMessage = "User not found";
+              // Still treat 404 as success since user is effectively deleted
+              console.log("User not found (404), treating as successful operation");
               return { success: true, message: "User has been deleted" };
             }
-          } catch {
-            errorMessage = await response.text() || errorMessage;
+          } else {
+            // For other error status codes, try to get error message
+            try {
+              errorData = await response.json();
+              errorMessage = errorData.message || errorMessage;
+            } catch {
+              errorMessage = `Request failed with status ${response.status}`;
+            }
           }
+          
           throw new Error(errorMessage);
         }
         
