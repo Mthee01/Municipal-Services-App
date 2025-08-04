@@ -189,6 +189,13 @@ export default function AdminDashboard() {
           try {
             const errorData = await response.json();
             errorMessage = errorData.message || errorMessage;
+            
+            // Handle specific case where user was already deleted
+            if (response.status === 404 && errorMessage.includes("User not found")) {
+              // User was already deleted, treat as success
+              console.log("User already deleted, treating as successful operation");
+              return { success: true, message: "User has been deleted" };
+            }
           } catch {
             errorMessage = await response.text() || errorMessage;
           }
@@ -269,6 +276,10 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteUser = (user: User) => {
+    if (deleteUserMutation.isPending) {
+      console.log("Delete already in progress, ignoring duplicate request");
+      return;
+    }
     deleteUserMutation.mutate(user.id);
   };
 
@@ -763,9 +774,10 @@ export default function AdminDashboard() {
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                                     <AlertDialogAction 
                                       onClick={() => handleDeleteUser(user)}
-                                      className="bg-red-600 hover:bg-red-700"
+                                      disabled={deleteUserMutation.isPending}
+                                      className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400"
                                     >
-                                      Delete
+                                      {deleteUserMutation.isPending ? "Deleting..." : "Delete"}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
