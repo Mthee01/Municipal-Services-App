@@ -616,16 +616,18 @@ export default function TechManagerDashboard() {
                         )}
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className={`font-semibold text-sm truncate ${
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <h4 className={`font-semibold text-sm ${
                                 isEscalated ? 'text-red-900 dark:text-red-100' : ''
                               }`}>{issue.title}</h4>
-                              {isNewIssue && <Badge variant="default" className="bg-blue-500 text-white text-xs">NEW</Badge>}
-                              {isEscalated && (
-                                <Badge variant="destructive" className="bg-red-600 text-white text-xs animate-pulse">
-                                  ESCALATED
-                                </Badge>
-                              )}
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                {isNewIssue && <Badge variant="default" className="bg-blue-500 text-white text-xs whitespace-nowrap">NEW</Badge>}
+                                {isEscalated && (
+                                  <Badge variant="destructive" className="bg-red-600 text-white text-xs animate-pulse whitespace-nowrap">
+                                    ESCALATED
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                             <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">{issue.category.replace('_', ' ')}</p>
                             <p className="text-xs text-gray-500 mb-2">{issue.location} • {issue.ward}</p>
