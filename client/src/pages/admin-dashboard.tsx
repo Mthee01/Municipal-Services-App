@@ -419,18 +419,7 @@ export default function AdminDashboard() {
                 <p className="text-sm text-gray-500">Full System Access & User Management</p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={handleLogout} 
-              className="flex items-center space-x-2"
-              style={{ 
-                borderColor: 'hsl(196, 100%, 31%)',
-                color: 'hsl(196, 100%, 31%)'
-              }}
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Logout</span>
-            </Button>
+
           </div>
         </div>
       </header>
