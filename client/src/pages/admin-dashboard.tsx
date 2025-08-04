@@ -178,22 +178,45 @@ export default function AdminDashboard() {
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest("DELETE", `/api/admin/users/${id}`);
-      if (!response.ok) throw new Error("Failed to delete user");
-      return response.json();
+      try {
+        console.log(`Attempting to delete user with ID: ${id}`);
+        const response = await apiRequest("DELETE", `/api/admin/users/${id}`);
+        
+        console.log(`Delete response status: ${response.status}, ok: ${response.ok}`);
+        
+        if (!response.ok) {
+          let errorMessage = "Failed to delete user";
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+          } catch {
+            errorMessage = await response.text() || errorMessage;
+          }
+          throw new Error(errorMessage);
+        }
+        
+        const result = await response.json();
+        console.log("Delete user result:", result);
+        return result;
+      } catch (error) {
+        console.error("Delete user error:", error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Delete user mutation success:", data);
       toast({
         title: "User Deleted",
-        description: "User has been successfully deleted.",
+        description: data.message || "User has been successfully deleted.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error("Delete user mutation error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to delete user",
         variant: "destructive",
       });
     },
