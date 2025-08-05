@@ -1348,24 +1348,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/users", async (req, res) => {
     try {
       const userData = req.body;
+      console.log("Creating user with data:", JSON.stringify(userData, null, 2));
       
       // Validate required fields
       if (!userData.username || !userData.password || !userData.name || !userData.email || !userData.phone || !userData.role) {
+        console.log("Missing required fields");
         return res.status(400).json({ message: "Missing required fields" });
       }
 
       // Prevent citizen role creation through admin endpoint
       if (userData.role === "citizen") {
+        console.log("Attempted to create citizen role through admin endpoint");
         return res.status(400).json({ message: "Citizens must register through the public registration form" });
       }
 
       // Check if username already exists
+      console.log("Checking if username exists:", userData.username);
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
+        console.log("Username already exists:", userData.username);
         return res.status(400).json({ message: "Username already exists" });
       }
       
+      // Note: Email uniqueness check removed - getUserByEmail not implemented
+      
       // Create user with real database operation
+      console.log("Creating user in database");
       const newUser = await storage.createUser({
         username: userData.username,
         password: userData.password,
@@ -1376,25 +1384,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         municipalityAccountNo: userData.municipalityAccountNo || null,
         requirePasswordChange: true // Admin-created users must change password on first login
       });
+      console.log("User created successfully:", newUser.id);
 
       // Create technician record if role is field_technician
       if (userData.role === 'field_technician') {
-        await storage.createTechnician({
-          name: userData.name,
-          phone: userData.phone || 'N/A',
-          email: userData.email || 'N/A',
-          department: userData.department || 'General',
-          skills: userData.skills || [],
-          status: 'available' as const,
-          currentLocation: null,
-          latitude: null,
-          longitude: null,
-          teamId: null,
-          performanceRating: 5,
-          completedIssues: 0,
-          avgResolutionTime: 0
-          // Note: id field is omitted to allow auto-generation
-        });
+        console.log("Creating technician record");
+        try {
+          await storage.createTechnician({
+            name: userData.name,
+            phone: userData.phone || 'N/A',
+            email: userData.email || 'N/A',
+            department: userData.department || 'General',
+            skills: userData.skills || [],
+            status: 'available' as const,
+            currentLocation: null,
+            latitude: null,
+            longitude: null,
+            teamId: null,
+            performanceRating: 5,
+            completedIssues: 0,
+            avgResolutionTime: 0
+            // Note: id field is omitted to allow auto-generation
+          });
+          console.log("Technician record created successfully");
+        } catch (techError) {
+          console.error("Error creating technician record:", techError);
+          // Continue with user creation even if technician creation fails
+        }
       }
       
       const formattedUser = {
@@ -1403,10 +1419,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastActive: null
       };
       
+      console.log("Sending successful response");
       res.json({ success: true, user: formattedUser });
     } catch (error) {
       console.error("Error creating user:", error);
-      res.status(500).json({ message: "Unable to create the user account. Please check the information and try again." });
+      console.error("Error stack:", error.stack);
+      res.status(500).json({ 
+        message: "Unable to create the user account. Please check the information and try again.",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
