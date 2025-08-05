@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Plus, Filter, MapPin, X, BarChart3, Users, Clock, CheckCircle, AlertTriangle, TrendingUp } from "lucide-react";
+import { Plus, Filter, MapPin, X, BarChart3, Users, Clock, CheckCircle, AlertTriangle, TrendingUp, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -269,7 +269,11 @@ export default function CitizenDashboard() {
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4" style={{ color: 'hsl(220, 85%, 15%)' }}>Report Issues. Track Progress. Build Community.</h2>
               <p className="text-lg sm:text-xl text-yellow-600 mb-4 sm:mb-8">Your voice matters in building better municipal services</p>
             </div>
-            <div className="flex justify-center lg:justify-end">
+            <div className="flex justify-center lg:justify-end items-center gap-3">
+              <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                <User className="w-4 h-4 mr-1" />
+                Citizen{currentUser?.username && ` - ${currentUser.username}`}
+              </Badge>
               <RealTimeNotifications userRole="citizen" />
             </div>
           </div>

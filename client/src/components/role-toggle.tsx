@@ -53,7 +53,11 @@ const roleConfig: Record<UserRole, { label: string; icon: any; color: string; de
   }
 };
 
-export function RoleToggle({ currentRole, onRoleChange }: RoleToggleProps) {
+interface RoleToggleWithUserProps extends RoleToggleProps {
+  username?: string;
+}
+
+export function RoleToggle({ currentRole, onRoleChange, username }: RoleToggleWithUserProps) {
   if (!currentRole) {
     return null;
   }
@@ -65,7 +69,7 @@ export function RoleToggle({ currentRole, onRoleChange }: RoleToggleProps) {
     <div className="flex items-center gap-3">
       <Badge variant="outline" className={currentConfig.color}>
         <Icon className="w-4 h-4 mr-1" />
-        {currentConfig.label}
+        {currentConfig.label}{username && ` - ${username}`}
       </Badge>
       
       <Select value={currentRole} onValueChange={onRoleChange}>
