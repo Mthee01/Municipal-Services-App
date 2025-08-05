@@ -137,8 +137,10 @@ export default function CitizenDashboard() {
   console.log('Community filtering debug:', {
     totalAllIssues: allIssues.length,
     currentUserId: currentUserId,
+    currentUser: currentUser,
     userIssues: userIssues.length,
-    userIssuesLoading: userIssuesLoading
+    userIssuesLoading: userIssuesLoading,
+    allIssuesWithReporters: allIssues.map(i => ({ id: i.id, title: i.title, reporterId: i.reporterId }))
   });
   
   const communityIssues = allIssues.filter(issue => 
