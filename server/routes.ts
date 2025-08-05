@@ -50,6 +50,29 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup session middleware with in-memory store for now
+  console.log('Setting up session middleware...');
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'your-session-secret-key-change-in-production',
+    resave: false,
+    saveUninitialized: true, // Changed to true to create sessions
+    cookie: {
+      secure: false, // Set to true in production with HTTPS
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  }));
+  
+  // Add session test middleware
+  app.use((req, res, next) => {
+    console.log('Session middleware check:', {
+      hasSession: !!req.session,
+      sessionID: req.sessionID,
+      path: req.path
+    });
+    next();
+  });
+
   // Serve uploaded files
   app.use('/uploads', express.static(uploadDir));
   
