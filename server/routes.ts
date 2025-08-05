@@ -62,8 +62,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { username, password } = req.body;
       
+      console.log('Login attempt:', { username, hasSession: !!req.session });
+      
       const user = await storage.getUserByUsername(username);
       if (user && user.password === password) {
+        // Check if session exists
+        if (!req.session) {
+          console.log('Session is undefined, creating new session object');
+          return res.status(500).json({ message: "Session not initialized" });
+        }
+        
         // Save user to session
         (req.session as any).user = user;
         console.log(`User ${user.username} logged in and saved to session`);
