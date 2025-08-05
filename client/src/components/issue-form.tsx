@@ -308,8 +308,6 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
 
   // Common South African locations for quick selection
   const commonLocations = [
-    "6 Agena Avenue, Maroeladal, 2191", // User's specific address first
-    "Maroeladal, Roodepoort, 2191",
     "Roodepoort CBD, 2191",
     "Cape Town CBD",
     "Johannesburg CBD", 
@@ -396,42 +394,79 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
     const address = data.address || {};
     console.log('Raw address data:', address);
     
-    // Build a comprehensive address
+    // Build a comprehensive address with better South African address formatting
     const streetNumber = address.house_number || '';
     const streetName = address.road || address.street || address.pedestrian || address.path;
     const suburb = address.suburb || address.neighbourhood || address.residential || address.quarter || address.city_district;
-    const city = address.city || address.town || address.municipality || address.village || address.county;
+    const city = address.city || address.town || address.municipality || address.village;
+    const county = address.county; // This might be the district municipality
     const province = address.state || address.province || address.region;
     const postcode = address.postcode;
-    const country = address.country || '';
     
-    // Build the address string
+    // Build the address string prioritizing South African address structure
     const addressParts = [];
     
-    // Add street address
+    // Add street address if available
     if (streetNumber && streetName) {
       addressParts.push(`${streetNumber} ${streetName}`);
     } else if (streetName) {
       addressParts.push(streetName);
     }
     
-    // Add locality info
-    if (suburb) addressParts.push(suburb);
-    if (city && city !== suburb) addressParts.push(city);
-    if (province) addressParts.push(province);
-    if (postcode) addressParts.push(postcode);
+    // Add locality info in SA format: Suburb, City/Municipality, Province
+    if (suburb && !suburb.includes('Ward')) {
+      addressParts.push(suburb);
+    }
     
-    let formattedAddress = addressParts.length > 0 ? addressParts.join(', ') : data.display_name;
+    // For municipal areas, show the ward/municipality info more clearly
+    if (suburb && suburb.includes('Ward')) {
+      addressParts.push(suburb); // Keep ward info
+    }
     
-    // If we still don't have a good address, use display_name as fallback
+    if (city && city !== suburb) {
+      addressParts.push(city);
+    }
+    
+    // Add district if different from city
+    if (county && county !== city && !addressParts.includes(county)) {
+      addressParts.push(county);
+    }
+    
+    if (province) {
+      addressParts.push(province);
+    }
+    
+    if (postcode) {
+      addressParts.push(postcode);
+    }
+    
+    // Start with constructed address
+    let formattedAddress = addressParts.length > 0 ? addressParts.join(', ') : '';
+    
+    // If we don't have enough detail, use the full display_name but clean it up
     if (!formattedAddress || formattedAddress.length < 10) {
-      formattedAddress = data.display_name || `Location near ${city || suburb || 'coordinates'}`;
+      formattedAddress = data.display_name || `Coordinates: ${lat}, ${lng}`;
+      
+      // Clean up the display name for better readability
+      if (formattedAddress.includes(',')) {
+        const parts = formattedAddress.split(',').map(p => p.trim());
+        // Take the most relevant parts (usually first 3-4 components)
+        formattedAddress = parts.slice(0, 4).join(', ');
+      }
     }
     
     // Clean up the address
-    formattedAddress = formattedAddress.replace(/,\s*,/g, ',').replace(/^,\s*/, '').replace(/,\s*$/, '');
+    formattedAddress = formattedAddress
+      .replace(/,\s*,/g, ',')
+      .replace(/^,\s*/, '')
+      .replace(/,\s*$/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
     
     console.log('Final formatted address:', formattedAddress);
+    console.log('Original coordinates:', lat, lng);
+    console.log('Raw geocoding data:', data);
+    
     return formattedAddress;
   };
 
@@ -526,15 +561,15 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
         });
       }
       
-      // Check if coordinates are reasonable for Gauteng area (where Maroeladal is)
-      // Gauteng approximate bounds: Lat: -26.5 to -25.5, Lng: 27.5 to 29.0
-      const isInGauteng = latitude >= -26.5 && latitude <= -25.5 && longitude >= 27.5 && longitude <= 29.0;
+      // Check if coordinates are reasonable for South Africa
+      // South Africa approximate bounds: Lat: -35 to -22, Lng: 16 to 33
+      const isInSouthAfrica = latitude >= -35 && latitude <= -22 && longitude >= 16 && longitude <= 33;
       
-      if (!isInGauteng) {
-        console.warn(`Coordinates (${latitude}, ${longitude}) appear to be outside Gauteng region`);
+      if (!isInSouthAfrica) {
+        console.warn(`Coordinates (${latitude}, ${longitude}) appear to be outside South Africa`);
         toast({
-          title: "Location accuracy check",
-          description: `GPS shows coordinates outside expected area. Please verify the address is correct.`,
+          title: "Location check",
+          description: `GPS coordinates appear to be outside South Africa. Please verify your location.`,
           variant: "destructive",
         });
       }
@@ -543,24 +578,33 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       try {
         toast({
           title: "Getting your address...",
-          description: `Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)} ${isInGauteng ? '(Gauteng region)' : '(outside Gauteng)'}`,
+          description: `Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
         });
         
         const address = await reverseGeocode(latitude, longitude);
         
-        // Validate that the address makes sense for Maroeladal area
+        // Validate that the address makes sense for South Africa
         const addressLower = address.toLowerCase();
         const isValidSALocation = 
+          addressLower.includes('south africa') || 
           addressLower.includes('gauteng') || 
-          addressLower.includes('johannesburg') || 
-          addressLower.includes('roodepoort') || 
-          addressLower.includes('maroeladal') ||
-          addressLower.includes('2191') ||
-          (isInGauteng && !addressLower.includes('kwazulu'));
+          addressLower.includes('kwazulu') ||
+          addressLower.includes('western cape') ||
+          addressLower.includes('eastern cape') ||
+          addressLower.includes('free state') ||
+          addressLower.includes('limpopo') ||
+          addressLower.includes('mpumalanga') ||
+          addressLower.includes('northern cape') ||
+          addressLower.includes('north west') ||
+          isInSouthAfrica; // Accept any location within South Africa
         
         if (!isValidSALocation) {
-          console.warn('Geocoded address seems incorrect for expected location:', address);
-          throw new Error('Address lookup returned unexpected location. Please enter your address manually.');
+          console.warn('Geocoded address seems to be outside South Africa:', address);
+          toast({
+            title: "Location verification",
+            description: "Please verify the address is correct as it appears to be outside South Africa.",
+            variant: "destructive",
+          });
         }
         
         form.setValue("location", address);
@@ -573,8 +617,8 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       } catch (geocodeError) {
         console.error("Reverse geocoding failed:", geocodeError);
         
-        // Provide helpful fallback based on expected location
-        const fallbackLocation = `Near Maroeladal area (GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+        // Provide helpful fallback with actual coordinates
+        const fallbackLocation = `GPS Location: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
         form.setValue("location", fallbackLocation);
         
         toast({
