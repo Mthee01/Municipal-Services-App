@@ -499,7 +499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: user.email || 'N/A',
           department: 'General', // Default department, can be enhanced later
           skills: [],
-          status: user.status === 'active' ? 'available' : 'offline',
+          status: user.status === 'on_job' ? 'on_job' : user.status === 'active' ? 'available' : 'offline',
           currentLocation: null,
           latitude: null,
           longitude: null,
