@@ -160,6 +160,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: issueData.title,
         category: issueData.category,
         location: issueData.location,
+        latitude: issueData.latitude,
+        longitude: issueData.longitude,
         photos: issueData.photos,
         photoCount: issueData.photos?.length || 0
       });
@@ -542,34 +544,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Haversine formula to calculate distance between two GPS coordinates
+  function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Radius of the Earth in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c; // Distance in kilometers
+    return distance;
+  }
+
   // Find nearest technicians endpoint
   app.post("/api/technicians/nearest", async (req, res) => {
     try {
       const { latitude, longitude, department } = req.body;
       
       console.log("Finding nearest technicians for department:", department);
+      console.log("Issue location:", latitude, longitude);
+      
+      if (!latitude || !longitude) {
+        return res.status(400).json({ message: "Issue location coordinates are required" });
+      }
       
       // Get technicians from users table with role 'field_technician'
       const users = await storage.getAllUsers();
+      
+      // Get technician locations
+      const technicianLocations = await storage.getTechnicianLocations();
+      console.log("Technician locations found:", technicianLocations.length);
+      
       const allTechnicians = users
         .filter(user => user.role === 'field_technician')
-        .map(user => ({
-          id: user.id,
-          name: user.name,
-          phone: user.phone || 'N/A',
-          email: user.email || 'N/A',
-          department: 'General',
-          skills: [],
-          status: user.status === 'active' ? 'available' : 'offline',
-          currentLocation: null,
-          latitude: null,
-          longitude: null,
-          teamId: null,
-          performanceRating: 5,
-          completedIssues: 0,
-          avgResolutionTime: 0,
-          lastUpdate: user.updatedAt || user.createdAt
-        }));
+        .map(user => {
+          // Find location data for this technician
+          const locationData = technicianLocations.find(loc => loc.technicianId === user.id);
+          
+          return {
+            id: user.id,
+            name: user.name,
+            phone: user.phone || 'N/A',
+            email: user.email || 'N/A',
+            department: 'General',
+            skills: [],
+            status: user.status === 'active' ? 'available' : 'offline',
+            currentLocation: locationData?.address || null,
+            latitude: locationData?.latitude ? parseFloat(locationData.latitude) : null,
+            longitude: locationData?.longitude ? parseFloat(locationData.longitude) : null,
+            teamId: null,
+            performanceRating: 5,
+            completedIssues: 0,
+            avgResolutionTime: 0,
+            lastUpdate: user.updatedAt || user.createdAt
+          };
+        });
       
       console.log("Total technicians:", allTechnicians.length);
       
@@ -590,16 +621,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Department '${department}' technicians: ${departmentTechnicians.length}, Others: ${otherTechnicians.length}`);
       }
       
-      // Calculate distances and sort by nearest
-      const technicianWithDistances = availableTechnicians.map(tech => ({
-        ...tech,
-        distance: Math.random() * 8 + 2, // 2-10 km distance
-        estimatedArrival: Math.floor(Math.random() * 25) + 15 // 15-40 minutes
-      })).sort((a, b) => a.distance - b.distance);
+      // Calculate real GPS distances and sort by nearest
+      const technicianWithDistances = availableTechnicians.map(tech => {
+        let distance: number;
+        let estimatedArrival: number;
+        
+        if (tech.latitude && tech.longitude) {
+          // Calculate real distance using GPS coordinates
+          distance = calculateDistance(
+            parseFloat(latitude), 
+            parseFloat(longitude), 
+            tech.latitude, 
+            tech.longitude
+          );
+          // Estimate arrival time: ~3km/h average including traffic, setup time
+          estimatedArrival = Math.round((distance / 3) * 60); // minutes
+          console.log(`Real distance to ${tech.name}: ${distance.toFixed(2)}km, ETA: ${estimatedArrival}min`);
+        } else {
+          // Fallback for technicians without GPS coordinates
+          distance = Math.random() * 8 + 2; // 2-10 km
+          estimatedArrival = Math.floor(Math.random() * 25) + 15; // 15-40 minutes
+          console.log(`Fallback distance to ${tech.name}: ${distance.toFixed(2)}km (no GPS data)`);
+        }
+        
+        return {
+          ...tech,
+          distance: Math.round(distance * 100) / 100, // Round to 2 decimal places
+          estimatedArrival: Math.max(estimatedArrival, 10) // Minimum 10 minutes
+        };
+      }).sort((a, b) => a.distance - b.distance);
 
       console.log("Technicians with distances:", technicianWithDistances.length);
       const result = technicianWithDistances.slice(0, 5); // Return top 5 nearest
-      console.log("Returning technicians:", result.map(t => `${t.name} (${t.department})`));
+      console.log("Returning technicians:", result.map(t => `${t.name} (${t.department}) - ${t.distance}km`));
       
       res.json(result);
     } catch (error) {

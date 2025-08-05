@@ -40,6 +40,7 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [currentGPS, setCurrentGPS] = useState<{latitude: number, longitude: number} | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -73,6 +74,13 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
           formData.append(key, value.toString());
         }
       });
+
+      // Add GPS coordinates if available
+      if (currentGPS) {
+        formData.append("latitude", currentGPS.latitude.toString());
+        formData.append("longitude", currentGPS.longitude.toString());
+        console.log("Adding GPS coordinates:", currentGPS);
+      }
 
       // Add photos
       photos.forEach((photo, index) => {
@@ -505,6 +513,9 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
       const { latitude, longitude, accuracy } = position.coords;
       
       console.log("GPS coordinates captured:", { latitude, longitude, accuracy });
+      
+      // Store GPS coordinates for form submission
+      setCurrentGPS({ latitude, longitude });
       
       // Check GPS accuracy - if it's too poor, warn the user
       if (accuracy && accuracy > 100) {

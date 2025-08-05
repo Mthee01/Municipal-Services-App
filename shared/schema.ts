@@ -37,6 +37,8 @@ export const issues = pgTable("issues", {
   priority: text("priority").notNull().default("medium"),
   status: text("status").notNull().default("open"),
   location: text("location").notNull(),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
   ward: text("ward"),
   reporterName: text("reporter_name"),
   reporterPhone: text("reporter_phone"),

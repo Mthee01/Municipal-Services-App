@@ -150,11 +150,14 @@ export default function TechManagerDashboard() {
 
   const findNearestTechnicians = async (issue: any) => {
     try {
-      // Mock coordinates for demonstration - in real app, would use geocoding
-      const mockCoords = {
-        latitude: -25.7461,
-        longitude: 28.1881,
+      // Use actual issue GPS coordinates if available, otherwise use default coordinates
+      const coordinates = {
+        latitude: issue.latitude ? parseFloat(issue.latitude) : -25.7461,
+        longitude: issue.longitude ? parseFloat(issue.longitude) : 28.1881,
       };
+
+      console.log("Using coordinates for technician search:", coordinates);
+      console.log("Issue location:", issue.location);
 
       const categoryToDepartment: { [key: string]: string } = {
         "water_sanitation": "Water & Sanitation",
@@ -166,8 +169,8 @@ export default function TechManagerDashboard() {
       const department = categoryToDepartment[issue.category];
 
       const technicianData = await apiRequest("POST", "/api/technicians/nearest", {
-        latitude: mockCoords.latitude,
-        longitude: mockCoords.longitude,
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
         department,
       });
 
