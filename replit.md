@@ -6,6 +6,12 @@ This project is a comprehensive municipal services management system designed to
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+- Removed default field technician from sample data initialization to allow clean technician management
+- Fixed GPS distance calculation accuracy with real coordinates 
+- Resolved technician name display issues in admin dashboard
+- Updated Active Assignments display logic to use correct field mapping
+
 ## System Architecture
 
 ### Frontend

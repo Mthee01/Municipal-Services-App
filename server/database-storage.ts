@@ -43,7 +43,6 @@ export class DatabaseStorage implements IStorage {
         { id: 3, username: "mayor", name: "Mayor Thompson", email: "mayor@municipality.gov.za", phone: "0835551234", role: "mayor" as const },
         { id: 4, username: "councillor", name: "Councillor Smith", email: "councillor@municipality.gov.za", phone: "0847778901", role: "ward_councillor" as const },
         { id: 5, username: "techmanager", name: "Tech Manager Jones", email: "techmanager@municipality.gov.za", phone: "0820123456", role: "tech_manager" as const },
-        { id: 6, username: "technician", name: "Field Tech Williams", email: "technician@municipality.gov.za", phone: "0833456789", role: "field_technician" as const },
         { id: 7, username: "admin", name: "Admin User", email: "admin@municipality.gov.za", phone: "0821112222", role: "admin" as const }
       ];
 
