@@ -2,6 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import session from "express-session";
 import ConnectPgSimple from "connect-pg-simple";
+
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { DatabaseStorage } from "./database-storage";
@@ -50,12 +51,12 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup session middleware with in-memory store for now
+  // Setup session middleware
   console.log('Setting up session middleware...');
   app.use(session({
     secret: process.env.SESSION_SECRET || 'your-session-secret-key-change-in-production',
     resave: false,
-    saveUninitialized: true, // Changed to true to create sessions
+    saveUninitialized: false,
     cookie: {
       secure: false, // Set to true in production with HTTPS
       httpOnly: true,
@@ -97,7 +98,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Save user to session
         (req.session as any).user = user;
-        console.log(`User ${user.username} logged in and saved to session`);
+        await new Promise<void>((resolve, reject) => {
+          req.session.save((err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+        console.log(`User ${user.username} logged in and saved to session ${req.sessionID}`);
         res.json({ success: true, user });
       } else {
         res.status(401).json({ message: "Invalid credentials" });
@@ -105,6 +112,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  // Logout endpoint
+  app.post("/api/auth/logout", (req, res) => {
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destruction error:', err);
+          return res.status(500).json({ message: "Could not log out" });
+        }
+        res.clearCookie('connect.sid');
+        res.json({ message: "Logged out successfully" });
+      });
+    } else {
+      res.json({ message: "No session to destroy" });
     }
   });
 
