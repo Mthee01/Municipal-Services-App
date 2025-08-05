@@ -99,6 +99,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentUser = (req.session as any)?.user;
       const userId = currentUser?.id;
       const userRole = currentUser?.role;
+      
+      console.log('Session debug:', {
+        hasSession: !!req.session,
+        sessionId: (req.session as any)?.id,
+        currentUser: currentUser ? { id: userId, username: currentUser.username, role: userRole } : null
+      });
 
       if (technicianId) {
         const id = parseInt(technicianId as string);
