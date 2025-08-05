@@ -130,8 +130,11 @@ export default function CitizenDashboard() {
   });
 
   // Community issues are all issues except user's own (for community tab)
+  const userIssueIds = userIssues.map(issue => issue.id);
   const communityIssues = allIssues.filter(issue => 
-    issue.status !== "resolved" && issue.status !== "closed"
+    issue.status !== "resolved" && 
+    issue.status !== "closed" &&
+    !userIssueIds.includes(issue.id)
   ).slice(0, 6);
 
   const filteredUserIssues = userIssues.filter(issue => {
