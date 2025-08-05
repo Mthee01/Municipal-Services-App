@@ -561,14 +561,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Find nearest technicians endpoint
   app.post("/api/technicians/nearest", async (req, res) => {
     try {
-      const { latitude, longitude, department } = req.body;
+      const { latitude, longitude, department, issueId } = req.body;
       
       console.log("Finding nearest technicians for department:", department);
-      console.log("Issue location:", latitude, longitude);
+      console.log("Request coordinates:", latitude, longitude);
+      console.log("Issue ID:", issueId);
       
-      if (!latitude || !longitude) {
-        return res.status(400).json({ message: "Issue location coordinates are required" });
+      let finalLatitude = latitude;
+      let finalLongitude = longitude;
+      
+      // If coordinates not provided in request, try to get from issue
+      if ((!latitude || !longitude) && issueId) {
+        const issue = await storage.getIssue(issueId);
+        if (issue && issue.latitude && issue.longitude) {
+          finalLatitude = parseFloat(issue.latitude);
+          finalLongitude = parseFloat(issue.longitude);
+          console.log("Using issue GPS coordinates:", finalLatitude, finalLongitude);
+        }
       }
+      
+      if (!finalLatitude || !finalLongitude) {
+        return res.status(400).json({ message: "Issue location coordinates are required for accurate distance calculation" });
+      }
+      
+      console.log("Final coordinates for calculation:", finalLatitude, finalLongitude);
       
       // Get technicians from users table with role 'field_technician'
       const users = await storage.getAllUsers();
@@ -629,8 +645,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (tech.latitude && tech.longitude) {
           // Calculate real distance using GPS coordinates
           distance = calculateDistance(
-            parseFloat(latitude), 
-            parseFloat(longitude), 
+            finalLatitude, 
+            finalLongitude, 
             tech.latitude, 
             tech.longitude
           );

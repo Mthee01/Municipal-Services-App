@@ -172,6 +172,7 @@ export default function TechManagerDashboard() {
         latitude: coordinates.latitude,
         longitude: coordinates.longitude,
         department,
+        issueId: issue.id,
       });
 
       console.log("Nearest technicians data:", technicianData);
