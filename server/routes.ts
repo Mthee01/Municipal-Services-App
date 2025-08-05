@@ -1,5 +1,7 @@
 import type { Express } from "express";
 import express from "express";
+import session from "express-session";
+import ConnectPgSimple from "connect-pg-simple";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { DatabaseStorage } from "./database-storage";
@@ -62,6 +64,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const user = await storage.getUserByUsername(username);
       if (user && user.password === password) {
+        // Save user to session
+        (req.session as any).user = user;
+        console.log(`User ${user.username} logged in and saved to session`);
         res.json({ success: true, user });
       } else {
         res.status(401).json({ message: "Invalid credentials" });
