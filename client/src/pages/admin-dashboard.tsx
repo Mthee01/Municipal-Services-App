@@ -224,16 +224,7 @@ export default function AdminDashboard() {
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: "active" | "inactive" | "suspended" }) => {
       console.log("Updating user status:", { id, status });
-      const response = await apiRequest("PATCH", `/api/admin/users/${id}/status`, { status });
-      console.log("Status update response:", response.status, response.ok);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
-        console.error("Status update failed:", errorData);
-        throw new Error(errorData.message || "Failed to update user status");
-      }
-      
-      const result = await response.json();
+      const result = await apiRequest("PATCH", `/api/admin/users/${id}/status`, { status });
       console.log("Status update successful:", result);
       return result;
     },
@@ -282,15 +273,7 @@ export default function AdminDashboard() {
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ id, password }: { id: number; password: string }) => {
       console.log("Resetting password for user:", id);
-      const response = await apiRequest("PATCH", `/api/admin/users/${id}/reset-password`, { newPassword: password });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
-        console.error("Password reset failed:", errorData);
-        throw new Error(errorData.message || "Failed to reset password");
-      }
-      
-      const result = await response.json();
+      const result = await apiRequest("PATCH", `/api/admin/users/${id}/reset-password`, { newPassword: password });
       console.log("Password reset successful:", result);
       return result;
     },
@@ -317,15 +300,7 @@ export default function AdminDashboard() {
   const resetAllPasswordsMutation = useMutation({
     mutationFn: async (password: string) => {
       console.log("Resetting all user passwords");
-      const response = await apiRequest("POST", "/api/admin/users/reset-all-passwords", { newPassword: password });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
-        console.error("All passwords reset failed:", errorData);
-        throw new Error(errorData.message || "Failed to reset all passwords");
-      }
-      
-      const result = await response.json();
+      const result = await apiRequest("POST", "/api/admin/users/reset-all-passwords", { newPassword: password });
       console.log("All passwords reset successful:", result);
       return result;
     },
