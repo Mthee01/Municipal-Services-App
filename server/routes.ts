@@ -1383,9 +1383,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: userData.name,
           phone: userData.phone || 'N/A',
           email: userData.email || 'N/A',
-          department: 'General',
-          skills: [],
-          status: 'available',
+          department: userData.department || 'General',
+          skills: userData.skills || [],
+          status: 'available' as const,
           currentLocation: null,
           latitude: null,
           longitude: null,
@@ -1393,6 +1393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           performanceRating: 5,
           completedIssues: 0,
           avgResolutionTime: 0
+          // Note: id field is omitted to allow auto-generation
         });
       }
       
