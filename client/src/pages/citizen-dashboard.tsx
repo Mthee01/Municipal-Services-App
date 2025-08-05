@@ -20,6 +20,7 @@ import { GISMapIntegration } from "@/components/gis-map-integration";
 import Chatbot from "@/components/chatbot";
 import WhatsAppIntegration from "@/components/whatsapp-integration";
 import CitizenWhatsAppCenter from "@/components/citizen-whatsapp-center";
+import { useAuth } from "@/hooks/useAuth";
 import type { Issue, Technician } from "@shared/schema";
 
 // Helper functions for status and priority colors
@@ -79,6 +80,7 @@ export default function CitizenDashboard() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
 
   // Check URL parameters to auto-open report issue form or navigate to specific tabs
   useEffect(() => {
@@ -130,21 +132,25 @@ export default function CitizenDashboard() {
   });
 
   // Community issues are all issues except user's own (for community tab)
-  const userIssueIds = userIssues.map(issue => issue.id);
+  // Use frontend auth to get current user ID and filter by reporterId instead of relying on userIssues query
+  const currentUserId = currentUser?.id;
   console.log('Community filtering debug:', {
     totalAllIssues: allIssues.length,
+    currentUserId: currentUserId,
     userIssues: userIssues.length,
-    userIssueIds: userIssueIds,
     userIssuesLoading: userIssuesLoading
   });
   
   const communityIssues = allIssues.filter(issue => 
     issue.status !== "resolved" && 
     issue.status !== "closed" &&
-    !userIssueIds.includes(issue.id)
+    (!currentUserId || issue.reporterId !== currentUserId) // Filter out current user's issues
   ).slice(0, 6);
   
-  console.log('Community issues after filtering:', communityIssues.length);
+  console.log('Community issues after filtering:', {
+    communityCount: communityIssues.length,
+    sampleIssues: communityIssues.map(i => ({ id: i.id, title: i.title, reporterId: i.reporterId }))
+  });
 
   const filteredUserIssues = userIssues.filter(issue => {
     if (statusFilter !== "all" && issue.status !== statusFilter) return false;
