@@ -513,7 +513,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(technicians);
     } catch (error) {
       console.error("Error fetching technicians:", error);
-      res.status(500).json({ message: "Failed to fetch technicians" });
+      res.status(500).json({ message: "Unable to load technician information. Please refresh the page." });
     }
   });
 
@@ -857,7 +857,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(performance);
     } catch (error) {
       console.error("Error fetching technician performance:", error);
-      res.status(500).json({ message: "Failed to fetch technician performance" });
+      res.status(500).json({ message: "Unable to load performance information. Please try again." });
     }
   });
 
@@ -977,7 +977,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Login error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: "Unable to sign you in. Please check your username and password." });
     }
   });
 
@@ -1020,7 +1020,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Registration error:", error);
-      res.status(500).json({ message: "Registration failed" });
+      res.status(500).json({ message: "Unable to create your account at this time. Please try again later." });
     }
   });
 
@@ -1048,7 +1048,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: "Password changed successfully" });
     } catch (error) {
       console.error("Password change error:", error);
-      res.status(500).json({ message: "Password change failed" });
+      res.status(500).json({ message: "Unable to update your password. Please try again." });
     }
   });
 
@@ -1308,7 +1308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, user: formattedUser });
     } catch (error) {
       console.error("Error creating user:", error);
-      res.status(500).json({ message: "Failed to create user" });
+      res.status(500).json({ message: "Unable to create the user account. Please check the information and try again." });
     }
   });
 
