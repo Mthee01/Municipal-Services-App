@@ -220,12 +220,12 @@ export default function TechManagerDashboard() {
 
   // Prioritize new citizen issues in unassigned list
   const unassignedIssues = issuesList
-    .filter((issue: any) => !issue.assignedTechnicianId && issue.status === "open")
+    .filter((issue: any) => !issue.assignedTo && issue.status === "open")
     .sort((a: any, b: any) => {
       // Sort by creation time - newest citizen reports first
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  const assignedIssues = issuesList.filter((issue: any) => issue.assignedTechnicianId && issue.status !== "resolved");
+  const assignedIssues = issuesList.filter((issue: any) => issue.assignedTo && issue.status !== "resolved");
 
   const availableTechs = techniciansList.filter((tech: any) => tech.status === "available").length;
   const onJobTechs = techniciansList.filter((tech: any) => tech.status === "on_job").length;
@@ -757,7 +757,7 @@ export default function TechManagerDashboard() {
                         </div>
                       </div>
                       <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">
-                        <span className="font-medium">Assigned to:</span> {getTechnicianName(issue.assignedTechnicianId)}
+                        <span className="font-medium">Assigned to:</span> {getTechnicianName(issue.assignedTo)}
                       </p>
                       <p className="text-xs text-gray-500">
                         {issue.location} • {formatRelativeTime(issue.updatedAt)}
