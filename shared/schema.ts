@@ -41,6 +41,7 @@ export const issues = pgTable("issues", {
   latitude: text("latitude"),
   longitude: text("longitude"),
   ward: text("ward"),
+  reporterId: integer("reporter_id"),
   reporterName: text("reporter_name"),
   reporterPhone: text("reporter_phone"),
   assignedTo: text("assigned_to"),

@@ -473,6 +473,10 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(issues).where(eq(issues.assignedTo, technicianId));
   }
 
+  async getIssuesByReporter(reporterId: number): Promise<Issue[]> {
+    return db.select().from(issues).where(eq(issues.reporterId, reporterId));
+  }
+
   private generateReferenceNumber(): string {
     const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
     return randomPart.padEnd(6, '0').substring(0, 6);

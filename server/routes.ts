@@ -90,16 +90,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Issues endpoints
   app.get("/api/issues", async (req, res) => {
     try {
-      const { status, category, ward, technicianId } = req.query;
+      const { status, category, ward, technicianId, user } = req.query;
       let issues;
 
-      console.log('Fetching issues with params:', { status, category, ward, technicianId });
+      console.log('Fetching issues with params:', { status, category, ward, technicianId, user });
+
+      // Get user from session
+      const currentUser = (req.session as any)?.user;
+      const userId = currentUser?.id;
+      const userRole = currentUser?.role;
 
       if (technicianId) {
         const id = parseInt(technicianId as string);
         console.log(`Fetching issues for technician ${id}`);
         issues = await storage.getIssuesByTechnician(id);
         console.log(`Found ${issues.length} assigned issues for technician ${id}`);
+      } else if (user === "current" || userRole === "citizen") {
+        // Citizens should only see their own issues
+        if (!userId) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
+        console.log(`Fetching issues for current user ${userId} (role: ${userRole})`);
+        issues = await storage.getIssuesByReporter(userId);
+        console.log(`Found ${issues.length} issues for user ${userId}`);
       } else if (status) {
         issues = await storage.getIssuesByStatus(status as string);
       } else if (category) {
@@ -107,7 +120,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (ward) {
         issues = await storage.getIssuesByWard(ward as string);
       } else {
-        issues = await storage.getIssues();
+        // For non-citizen users (admins, managers, etc.), show all issues
+        if (userRole === "citizen") {
+          // If somehow a citizen gets here without the user=current param, still filter by their ID
+          issues = await storage.getIssuesByReporter(userId);
+        } else {
+          issues = await storage.getIssues();
+        }
       }
 
       res.json(issues);
@@ -151,9 +170,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const photos = files ? files.map(file => `/uploads/${file.filename}`) : [];
       console.log("Photo paths:", photos);
       
+      // Get user from session to set reporterId
+      const currentUser = (req.session as any)?.user;
+      const userId = currentUser?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
       const issueData = {
         ...req.body,
-        photos
+        photos,
+        reporterId: userId,
+        reporterName: currentUser.name,
+        reporterPhone: currentUser.phone
       };
 
       console.log("Issue data before validation:", {
@@ -163,7 +193,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         latitude: issueData.latitude,
         longitude: issueData.longitude,
         photos: issueData.photos,
-        photoCount: issueData.photos?.length || 0
+        photoCount: issueData.photos?.length || 0,
+        reporterId: issueData.reporterId
       });
 
       const validatedData = insertIssueSchema.parse(issueData);

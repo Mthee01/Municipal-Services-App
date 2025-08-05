@@ -32,6 +32,7 @@ export interface IStorage {
   getIssuesByCategory(category: string): Promise<Issue[]>;
   getIssuesByWard(ward: string): Promise<Issue[]>;
   getIssuesByTechnician(technicianId: number): Promise<Issue[]>;
+  getIssuesByReporter(reporterId: number): Promise<Issue[]>;
   createIssue(issue: InsertIssue): Promise<Issue>;
   updateIssue(id: number, updates: Partial<Issue>): Promise<Issue | undefined>;
   deleteIssue(id: number): Promise<boolean>;
@@ -857,6 +858,12 @@ export class MemStorage implements IStorage {
   async getIssuesByTechnician(technicianId: number): Promise<Issue[]> {
     return Array.from(this.issues.values()).filter(issue => 
       issue.assignedTo === technicianId && issue.status !== 'resolved'
+    );
+  }
+
+  async getIssuesByReporter(reporterId: number): Promise<Issue[]> {
+    return Array.from(this.issues.values()).filter(issue => 
+      issue.reporterId === reporterId
     );
   }
 
