@@ -23,6 +23,7 @@ export const users = pgTable("users", {
   phone: text("phone"),
   municipalityAccountNo: text("municipality_account_no"),
   status: text("status").notNull().default("active"), // active, inactive, suspended
+  requirePasswordChange: boolean("require_password_change").notNull().default(false),
   lastActive: timestamp("last_active").defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

@@ -949,42 +949,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Username and password are required" });
       }
 
-      // Hardcoded admin credentials for immediate access
-      const adminCredentials = [
-        { username: "admin", password: "password", role: "admin", name: "System Administrator", id: 1 },
-        { username: "citizen", password: "password", role: "citizen", name: "John Citizen", id: 2 },
-        { username: "agent", password: "password", role: "call_centre_agent", name: "Sarah Agent", id: 3 },
-        { username: "mayor", password: "password", role: "mayor", name: "Mayor Thompson", id: 4 },
-        { username: "councillor", password: "password", role: "ward_councillor", name: "Ward Councillor Smith", id: 5 },
-        { username: "techmanager", password: "password", role: "tech_manager", name: "Tech Manager Jones", id: 6 },
-        { username: "technician", password: "password", role: "field_technician", name: "Field Technician Wilson", id: 7 },
-        { username: "Themba", password: "password", role: "field_technician", name: "Themba", id: 13 },
-        { username: "Lusanda", password: "password", role: "citizen", name: "Lusanda", id: 15 },
-        { username: "Siphokazi", password: "password", role: "field_technician", name: "Siphokazi", id: 5 }
-      ];
-
-      const validUser = adminCredentials.find(u => u.username === username && u.password === password);
+      // Get user from database
+      const user = await storage.getUserByUsername(username);
       
-      if (!validUser) {
+      if (!user || user.password !== password) {
         return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      // Check if user is active
+      if (user.status !== "active") {
+        return res.status(401).json({ message: "Account is not active" });
       }
 
       res.json({ 
         success: true,
         user: { 
-          id: validUser.id, 
-          username: validUser.username, 
-          name: validUser.name, 
-          email: `${validUser.username}@municipality.gov.za`,
-          phone: "0820123456",
-          municipalityAccountNo: validUser.role === "citizen" ? "MC001234" : null,
-          role: validUser.role 
+          id: user.id, 
+          username: user.username, 
+          name: user.name, 
+          email: user.email,
+          phone: user.phone,
+          municipalityAccountNo: user.municipalityAccountNo,
+          role: user.role,
+          requirePasswordChange: user.requirePasswordChange || false
         },
         rememberMe: rememberMe || false
       });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Citizen self-registration endpoint (only for citizens)
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { username, password, name, email, phone } = req.body;
+      
+      if (!username || !password || !name) {
+        return res.status(400).json({ message: "Username, password, and name are required" });
+      }
+
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      // Create citizen user
+      const newUser = await storage.createUser({
+        username,
+        password,
+        name,
+        email,
+        phone,
+        role: "citizen",
+        status: "active",
+        requirePasswordChange: false // Citizens set their own password
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Account created successfully",
+        user: {
+          id: newUser.id,
+          username: newUser.username,
+          name: newUser.name,
+          role: newUser.role
+        }
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
+  // Password change endpoint
+  app.post("/api/auth/change-password", async (req, res) => {
+    try {
+      const { userId, currentPassword, newPassword } = req.body;
+      
+      if (!userId || !currentPassword || !newPassword) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+
+      // Get user and verify current password
+      const user = await storage.getUserById(userId);
+      if (!user || user.password !== currentPassword) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+
+      // Update password and clear password change requirement
+      await storage.updateUser(userId, {
+        password: newPassword,
+        requirePasswordChange: false
+      });
+
+      res.json({ success: true, message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Password change error:", error);
+      res.status(500).json({ message: "Password change failed" });
     }
   });
 
@@ -1193,6 +1257,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
+      // Prevent citizen role creation through admin endpoint
+      if (userData.role === "citizen") {
+        return res.status(400).json({ message: "Citizens must register through the public registration form" });
+      }
+
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
@@ -1207,8 +1276,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: userData.email,
         phone: userData.phone,
         role: userData.role,
-        municipalityAccountNo: userData.municipalityAccountNo || null
+        municipalityAccountNo: userData.municipalityAccountNo || null,
+        requirePasswordChange: true // Admin-created users must change password on first login
       });
+
+      // Create technician record if role is field_technician
+      if (userData.role === 'field_technician') {
+        await storage.createTechnician({
+          name: userData.name,
+          phone: userData.phone || 'N/A',
+          email: userData.email || 'N/A',
+          department: 'General',
+          skills: [],
+          status: 'available',
+          currentLocation: null,
+          latitude: null,
+          longitude: null,
+          teamId: null,
+          performanceRating: 5,
+          completedIssues: 0,
+          avgResolutionTime: 0
+        });
+      }
       
       const formattedUser = {
         ...newUser,

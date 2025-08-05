@@ -11,6 +11,7 @@ Preferred communication style: Simple, everyday language.
 - Fixed GPS distance calculation accuracy with real coordinates 
 - Resolved technician name display issues in admin dashboard
 - Updated Active Assignments display logic to use correct field mapping
+- Implemented secure user management: citizens self-register, admins create other roles with mandatory password change
 
 ## System Architecture
 
