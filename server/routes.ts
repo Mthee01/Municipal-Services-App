@@ -1034,7 +1034,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get user and verify current password
-      const user = await storage.getUserById(userId);
+      const users = await storage.getAllUsers();
+      const user = users.find(u => u.id === userId);
       if (!user || user.password !== currentPassword) {
         return res.status(400).json({ message: "Current password is incorrect" });
       }
