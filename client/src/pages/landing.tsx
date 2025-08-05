@@ -102,7 +102,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       email: "",
       phone: "",
       municipalityAccountNo: "",
-      role: undefined as any, // Force user to make a selection
+      role: "citizen", // Only citizens can self-register
     },
   });
 
@@ -618,32 +618,17 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                             )}
                           />
 
-                          <FormField
-                            control={registerForm.control}
-                            name="role"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>User Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select your user type" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="citizen">Citizen</SelectItem>
-                                    <SelectItem value="call_centre_agent">Call Centre Agent</SelectItem>
-                                    <SelectItem value="ward_councillor">Ward Councillor</SelectItem>
-                                    <SelectItem value="mayor">Mayor</SelectItem>
-                                    <SelectItem value="tech_manager">Technical Manager</SelectItem>
-                                    <SelectItem value="field_technician">Field Technician</SelectItem>
-                                    <SelectItem value="admin">Administrator</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div className="flex items-center gap-2">
+                              <Users className="h-5 w-5 text-blue-600" />
+                              <span className="text-sm font-medium text-blue-900">
+                                You will be registered as a Citizen
+                              </span>
+                            </div>
+                            <p className="text-xs text-blue-700 mt-1">
+                              Citizens can report issues, track progress, and make payments. Other user types are created by administrators.
+                            </p>
+                          </div>
 
                           <FormField
                             control={registerForm.control}
