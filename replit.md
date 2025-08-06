@@ -7,7 +7,9 @@ This project is a comprehensive municipal services management system designed to
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
-- Removed default field technician from sample data initialization to allow clean technician management
+- FIXED: Submit Report button disappearing issue in citizen issue form - restructured modal with sticky footer design
+- CLEANED: Technician database to match actual users - removed 13 sample records, keeping only John Tech
+- RESOLVED: Admin dashboard now correctly shows "1 available technician" 
 - Fixed GPS distance calculation accuracy with real coordinates 
 - Resolved technician name display issues in admin dashboard
 - Updated Active Assignments display logic to use correct field mapping

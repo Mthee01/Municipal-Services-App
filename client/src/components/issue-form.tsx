@@ -1088,25 +1088,16 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
           </Form>
         </CardContent>
         
-        {/* Sticky Submit Button Footer - Always Visible */}
-        <div className="flex-shrink-0 p-4 border-t-2 border-gray-300 bg-white shadow-lg">
+        {/* Submit Button Footer */}
+        <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-white">
           <Button 
             type="submit" 
             form="issue-report-form"
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg shadow-md transition-all duration-200 transform hover:scale-105"
+            className="w-full bg-sa-green hover:bg-green-700 text-white font-semibold py-4 transition-colors duration-200"
             disabled={createIssueMutation.isPending}
             onClick={(e) => {
               e.preventDefault();
-              console.log("Submit button clicked!");
               form.handleSubmit(onSubmit)();
-            }}
-            style={{
-              backgroundColor: '#16a34a',
-              minHeight: '48px',
-              display: 'flex',
-              visibility: 'visible',
-              opacity: 1,
-              zIndex: 1000
             }}
           >
             {createIssueMutation.isPending ? (
@@ -1118,11 +1109,6 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
               </>
             )}
           </Button>
-          
-          {/* Debug info - remove after testing */}
-          <p className="text-xs text-center mt-2 text-gray-500">
-            Button should be visible here
-          </p>
         </div>
       </div>
     </div>
