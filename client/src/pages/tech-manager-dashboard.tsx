@@ -801,12 +801,12 @@ export default function TechManagerDashboard() {
                             {report.jobCardNumber}
                           </Badge>
                           <Badge className={
-                            report.approvalStatus === "approved" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100" :
-                            report.approvalStatus === "rejected" ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100" :
+                            report.approval_status === "approved" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100" :
+                            report.approval_status === "rejected" ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100" :
                             "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
                           }>
-                            {report.approvalStatus === "approved" ? "Approved" : 
-                             report.approvalStatus === "rejected" ? "Rejected" : "Pending Review"}
+                            {report.approval_status === "approved" ? "Approved" : 
+                             report.approval_status === "rejected" ? "Rejected" : "Pending Review"}
                           </Badge>
                           <div className="flex items-center gap-1 text-sm text-yellow-600">
                             {'★'.repeat(report.customerSatisfaction)}
@@ -830,12 +830,12 @@ export default function TechManagerDashboard() {
                             variant="outline"
                             size="sm"
                             className={
-                              report.approvalStatus === "pending" 
+                              report.approval_status === "pending" 
                                 ? "text-green-600 border-green-200 hover:bg-green-50" 
                                 : "text-gray-400 border-gray-200 cursor-not-allowed"
                             }
-                            disabled={report.approvalStatus !== "pending"}
-                            onClick={() => report.approvalStatus === "pending" && handleApproveReport(report)}
+                            disabled={report.approval_status !== "pending"}
+                            onClick={() => report.approval_status === "pending" && handleApproveReport(report)}
                           >
                             ✓ Approve
                           </Button>
@@ -843,12 +843,12 @@ export default function TechManagerDashboard() {
                             variant="outline"
                             size="sm"
                             className={
-                              report.approvalStatus === "pending" 
+                              report.approval_status === "pending" 
                                 ? "text-red-600 border-red-200 hover:bg-red-50" 
                                 : "text-gray-400 border-gray-200 cursor-not-allowed"
                             }
-                            disabled={report.approvalStatus !== "pending"}
-                            onClick={() => report.approvalStatus === "pending" && handleRejectReport(report)}
+                            disabled={report.approval_status !== "pending"}
+                            onClick={() => report.approval_status === "pending" && handleRejectReport(report)}
                           >
                             ✗ Reject
                           </Button>
