@@ -669,7 +669,7 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="w-full max-w-2xl max-h-[90vh] flex flex-col bg-white rounded-lg shadow-xl border border-gray-200">
         <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
           <CardTitle className="text-2xl font-bold text-gray-900">Report an Issue</CardTitle>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -1089,26 +1089,42 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
         </CardContent>
         
         {/* Sticky Submit Button Footer - Always Visible */}
-        <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-white">
+        <div className="flex-shrink-0 p-4 border-t-2 border-gray-300 bg-white shadow-lg">
           <Button 
             type="submit" 
             form="issue-report-form"
-            className="w-full bg-sa-green hover:bg-green-700 text-white font-semibold py-4 transition-colors duration-200"
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg shadow-md transition-all duration-200 transform hover:scale-105"
             disabled={createIssueMutation.isPending}
             onClick={(e) => {
               e.preventDefault();
+              console.log("Submit button clicked!");
               form.handleSubmit(onSubmit)();
             }}
+            style={{
+              backgroundColor: '#16a34a',
+              minHeight: '48px',
+              display: 'flex',
+              visibility: 'visible',
+              opacity: 1,
+              zIndex: 1000
+            }}
           >
-            {createIssueMutation.isPending ? "Submitting..." : (
+            {createIssueMutation.isPending ? (
+              "Submitting..."
+            ) : (
               <>
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="mr-2 h-5 w-5" />
                 Submit Report
               </>
             )}
           </Button>
+          
+          {/* Debug info - remove after testing */}
+          <p className="text-xs text-center mt-2 text-gray-500">
+            Button should be visible here
+          </p>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
