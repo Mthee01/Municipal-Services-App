@@ -669,16 +669,16 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <CardHeader className="flex flex-row items-center justify-between">
+      <Card className="w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
           <CardTitle className="text-2xl font-bold text-gray-900">Report an Issue</CardTitle>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 overflow-y-auto">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form id="issue-report-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Category Selection */}
               <FormField
                 control={form.control}
@@ -1084,31 +1084,30 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
                 />
               </div>
 
-              {/* Submit Button - Always Visible */}
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                <Button 
-                  type="submit" 
-                  className="w-full bg-sa-green hover:bg-green-700 text-white font-semibold py-4 transition-colors duration-200"
-                  disabled={createIssueMutation.isPending}
-                  style={{ 
-                    visibility: 'visible',
-                    display: 'flex',
-                    opacity: 1,
-                    position: 'relative',
-                    zIndex: 10
-                  }}
-                >
-                  {createIssueMutation.isPending ? "Submitting..." : (
-                    <>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Submit Report
-                    </>
-                  )}
-                </Button>
-              </div>
             </form>
           </Form>
         </CardContent>
+        
+        {/* Sticky Submit Button Footer - Always Visible */}
+        <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-white">
+          <Button 
+            type="submit" 
+            form="issue-report-form"
+            className="w-full bg-sa-green hover:bg-green-700 text-white font-semibold py-4 transition-colors duration-200"
+            disabled={createIssueMutation.isPending}
+            onClick={(e) => {
+              e.preventDefault();
+              form.handleSubmit(onSubmit)();
+            }}
+          >
+            {createIssueMutation.isPending ? "Submitting..." : (
+              <>
+                <Plus className="mr-2 h-4 w-4" />
+                Submit Report
+              </>
+            )}
+          </Button>
+        </div>
       </Card>
     </div>
   );

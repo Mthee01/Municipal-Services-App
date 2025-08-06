@@ -1013,12 +1013,7 @@ export default function CitizenDashboard() {
         </Dialog>
       )}
 
-      {showIssueForm && (
-        <IssueForm
-          isOpen={showIssueForm}
-          onClose={() => setShowIssueForm(false)}
-        />
-      )}
+
 
       {/* Floating Chatbot */}
       <Chatbot userId={1} />
