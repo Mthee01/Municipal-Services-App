@@ -826,26 +826,32 @@ export default function TechManagerDashboard() {
                             View Report
                           </Button>
                           
-                          {report.approvalStatus === "pending" && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-green-600 border-green-200 hover:bg-green-50"
-                                onClick={() => handleApproveReport(report)}
-                              >
-                                ✓ Approve
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-red-600 border-red-200 hover:bg-red-50"
-                                onClick={() => handleRejectReport(report)}
-                              >
-                                ✗ Reject
-                              </Button>
-                            </>
-                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={
+                              report.approvalStatus === "pending" 
+                                ? "text-green-600 border-green-200 hover:bg-green-50" 
+                                : "text-gray-400 border-gray-200 cursor-not-allowed"
+                            }
+                            disabled={report.approvalStatus !== "pending"}
+                            onClick={() => report.approvalStatus === "pending" && handleApproveReport(report)}
+                          >
+                            ✓ Approve
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={
+                              report.approvalStatus === "pending" 
+                                ? "text-red-600 border-red-200 hover:bg-red-50" 
+                                : "text-gray-400 border-gray-200 cursor-not-allowed"
+                            }
+                            disabled={report.approvalStatus !== "pending"}
+                            onClick={() => report.approvalStatus === "pending" && handleRejectReport(report)}
+                          >
+                            ✗ Reject
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"

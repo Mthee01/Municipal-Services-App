@@ -8,6 +8,8 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 - FIXED: Submit Report button disappearing issue in citizen issue form - restructured modal with sticky footer design
+- FIXED: Technician dashboard ID mapping issue - changed from hardcoded ID 6 to actual logged-in user ID using useAuth hook
+- FIXED: Tech manager dashboard Approve/Reject buttons now remain visible but greyed out after approval/rejection instead of disappearing
 - CLEANED: Technician database to match actual users - removed 13 sample records, keeping only John Tech
 - RESOLVED: Admin dashboard now correctly shows "1 available technician" 
 - Fixed GPS distance calculation accuracy with real coordinates 
