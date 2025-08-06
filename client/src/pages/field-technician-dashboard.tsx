@@ -35,6 +35,7 @@ import {
   Printer
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Issue {
   id: number;
@@ -139,9 +140,10 @@ interface TechnicianStats {
 export default function FieldTechnicianDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
-  // Current user ID - would typically come from auth context
-  const currentUserId = 6; // Field technician user ID (matching test data)
+  // Current user ID - get from authenticated user
+  const currentUserId = user?.id || 0;
   
   // State for UI
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
