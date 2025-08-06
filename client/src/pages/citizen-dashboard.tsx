@@ -270,10 +270,7 @@ export default function CitizenDashboard() {
               <p className="text-lg sm:text-xl text-yellow-600 mb-4 sm:mb-8">Your voice matters in building better municipal services</p>
             </div>
             <div className="flex justify-center lg:justify-end items-center gap-3">
-              <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                <User className="w-4 h-4 mr-1" />
-                Citizen{currentUser?.username && ` - ${currentUser.username}`}
-              </Badge>
+
               <RealTimeNotifications userRole="citizen" />
             </div>
           </div>
