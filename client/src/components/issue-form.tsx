@@ -670,13 +670,16 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="w-full max-w-2xl max-h-[90vh] flex flex-col bg-white rounded-lg shadow-xl border border-gray-200">
-        <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
-          <CardTitle className="text-2xl font-bold text-gray-900">Report an Issue</CardTitle>
+        {/* Header */}
+        <div className="flex flex-row items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+          <h2 className="text-2xl font-bold text-gray-900">Report an Issue</h2>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto">
+        </div>
+        
+        {/* Form Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-6">
           <Form {...form}>
             <form id="issue-report-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Category Selection */}
@@ -1086,22 +1089,24 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
 
             </form>
           </Form>
-        </CardContent>
+        </div>
         
-        {/* Submit Button Footer */}
-        <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-white">
+        {/* Fixed Submit Button Footer - ALWAYS VISIBLE */}
+        <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-white rounded-b-lg">
           <Button 
-            type="submit" 
-            form="issue-report-form"
-            className="w-full bg-sa-green hover:bg-green-700 text-white font-semibold py-4 transition-colors duration-200"
+            type="button"
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 text-lg shadow-md"
             disabled={createIssueMutation.isPending}
-            onClick={(e) => {
-              e.preventDefault();
+            onClick={() => {
+              console.log("Submit button clicked - triggering form submission");
               form.handleSubmit(onSubmit)();
             }}
           >
             {createIssueMutation.isPending ? (
-              "Submitting..."
+              <>
+                <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                Submitting...
+              </>
             ) : (
               <>
                 <Plus className="mr-2 h-5 w-5" />
