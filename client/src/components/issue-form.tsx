@@ -1084,19 +1084,28 @@ export function IssueForm({ isOpen, onClose }: IssueFormProps) {
                 />
               </div>
 
-              {/* Submit Button */}
-              <Button 
-                type="submit" 
-                className="w-full bg-sa-green hover:bg-green-700 text-white font-semibold py-4"
-                disabled={createIssueMutation.isPending}
-              >
-                {createIssueMutation.isPending ? "Submitting..." : (
-                  <>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Submit Report
-                  </>
-                )}
-              </Button>
+              {/* Submit Button - Always Visible */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <Button 
+                  type="submit" 
+                  className="w-full bg-sa-green hover:bg-green-700 text-white font-semibold py-4 transition-colors duration-200"
+                  disabled={createIssueMutation.isPending}
+                  style={{ 
+                    visibility: 'visible',
+                    display: 'flex',
+                    opacity: 1,
+                    position: 'relative',
+                    zIndex: 10
+                  }}
+                >
+                  {createIssueMutation.isPending ? "Submitting..." : (
+                    <>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Submit Report
+                    </>
+                  )}
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>
