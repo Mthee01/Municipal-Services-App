@@ -1,0 +1,146 @@
+You are building an SMS module for a Node.js/Express app called Citizen Engagement App using MTN OCEP HTTP SMS API.
+
+Requirements
+Tech stack
+
+Node.js (latest LTS), Express.
+
+Axios for HTTP calls.
+
+dotenv for env loading.
+
+A small, typed response helper (TypeScript optional; if JS, JSDoc types).
+
+Secrets & config
+
+Read these from environment variables (use Replit Secrets):
+
+MTN_BASE_URL = https://sms01.umsg.co.za 
+
+MTN_USERNAME
+
+MTN_PASSWORD
+
+PUBLIC_BASE_URL (the public URL where MTN can reach your callbacks)
+
+API usage (REST)
+
+Use REST JSON endpoint: POST {MTN_BASE_URL}/send/sms/
+
+Basic Auth header with username:password in Base64.
+
+Request body:
+
+json
+Copy
+Edit
+{
+  "to": "E.164 number or array",
+  "message": "string",
+  "ems": "0 or 1",
+  "userref": "optional-unique-id"
+}
+Expect JSON response with fields Action, Key, Result, Number, Error. Treat "enqueued" + Result=1 as success. 
+
+If sending to multiple numbers, support both a single string and an array for to. 
+
+Number format & long messages
+
+Validate destination numbers to E.164 (e.g., +27…, max 15 digits). 
+
+If message.length > 160, allow client to set ems=1 to enable concatenated SMS; otherwise warn that it will be truncated to 160 chars. Each segment is billed as an SMS. 
+
+Delivery Receipts (DLR) callback
+
+Create GET /webhooks/mtn/dlr to receive DLRs. Accept query params:
+
+FN (from/recipient on device), TN (sender/origin), SC (1 success, 0 failed), ST (SMSC status text/code), RF (message key/reference), TS (timestamp).
+
+Log and persist each receipt; map SC and ST to internal statuses (e.g., Delivered/Expired/Failed). 
+
+Incoming MO (citizen replies) callback
+
+Create GET /webhooks/mtn/mo to receive replies. Accept query params:
+
+FN (the citizen’s number), TN (your sending number), MS (message text), TS (timestamp).
+
+Store the message, then respond 200 OK. 
+
+Error handling
+
+If REST returns Action="not enqueued" or Result=0, surface Error and map common codes (e.g., 150 invalid creds, 153 insufficient credits, 154 invalid/banned number, 155 duplicate within 15 min, 162 WASPA DNC) to friendly messages and retry/stop logic. 
+
+Idempotency / duplicate guard
+
+Add a lightweight duplicate-suppressor (e.g., cache hash(to|message) for 15 minutes). 
+
+Endpoints to implement
+
+POST /sms/send
+
+Body: { to: string | string[], message: string, ems?: 0|1, userref?: string }
+
+Validations: non-empty message; to = valid E.164 (or array thereof); ems defaults to 0.
+
+Calls MTN REST, returns { status: "queued", keys: [...], details } or { status: "failed", error }.
+
+GET /webhooks/mtn/dlr (see #5)
+
+GET /webhooks/mtn/mo (see #6)
+
+Security
+
+Require a WEBHOOK_TOKEN env; both callbacks must check req.query.token === WEBHOOK_TOKEN and return 403 if not present/matching.
+
+Never log credentials; mask phone numbers (…####) in logs.
+
+DX niceties
+
+Provide a small client SDK file lib/smsClient.js exporting sendSms({to, message, ems, userref}).
+
+Include a curl example in the README to test /sms/send.
+
+Provide sample .env template and Replit instructions for setting Secrets.
+
+Testing stubs
+
+Add /dev/ping GET.
+
+Add /dev/send-test?to=+27xxxx&msg=Hello that internally calls the same sendSms.
+
+Docs
+
+Add a concise README.md covering:
+
+Config & Secrets
+
+How to test sending
+
+How to expose public URL for callbacks (e.g., Replit automatically provides one)
+
+Notes: DLRs may take time to finalize; status codes come from the SMSC. 
+
+Implementation details
+Create files:
+
+server.js (or index.js) bootstrapping Express and routes.
+
+lib/smsClient.js with Axios instance using Basic Auth header:
+
+Build Authorization: Basic <base64(username:password)> from env. 
+
+POST to ${MTN_BASE_URL}/send/sms/ with JSON body (to, message, ems, userref). 
+
+routes/sms.js for /sms/send.
+
+routes/webhooks.js for /webhooks/mtn/dlr and /webhooks/mtn/mo.
+
+README.md and .env.example.
+
+In smsClient, normalize to to:
+
+string if one number; array if multiple; always E.164 validated. 
+
+Support ems=1 when message.length > 160; otherwise default ems=0. 
+
+Return an array of enqueued items when sending to multiple recipients (the API returns an array in that case). 
