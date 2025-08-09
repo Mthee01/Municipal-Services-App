@@ -18,6 +18,7 @@ Preferred communication style: Simple, everyday language.
 - Implemented secure user management: citizens self-register, admins create other roles with mandatory password change
 - ADDED: Complete MTN OCEP SMS module with REST API integration, webhook handling, and database schema
 - ADDED: SMS delivery receipts and incoming message processing with security token validation
+- FIXED: Admin user update functionality - corrected frontend response handling in updateUserMutation to work with apiRequest helper
 
 ## System Architecture
 

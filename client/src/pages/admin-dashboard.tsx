@@ -157,23 +157,27 @@ export default function AdminDashboard() {
   // Update user mutation
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<CreateUserData> }) => {
-      const response = await apiRequest("PUT", `/api/admin/users/${id}`, data);
-      if (!response.ok) throw new Error("Failed to update user");
-      return response.json();
+      console.log("Updating user with data:", { id, data });
+      // apiRequest already handles response parsing and throws errors appropriately
+      const result = await apiRequest("PUT", `/api/admin/users/${id}`, data);
+      console.log("Update user success:", result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Update user mutation success:", data);
       toast({
         title: "User Updated",
-        description: "User has been successfully updated.",
+        description: data.message || "User has been successfully updated.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       setShowEditUser(false);
       setSelectedUser(null);
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error("Update user mutation error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to update user",
         variant: "destructive",
       });
     },
