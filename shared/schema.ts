@@ -558,3 +558,72 @@ export type WhatsappMessage = typeof whatsappMessages.$inferSelect;
 export type InsertWhatsappMessage = z.infer<typeof insertWhatsappMessageSchema>;
 export type WhatsappConversation = typeof whatsappConversations.$inferSelect;
 export type InsertWhatsappConversation = z.infer<typeof insertWhatsappConversationSchema>;
+
+// SMS Messages Table (MTN OCEP)
+export const smsMessages = pgTable("sms_messages", {
+  id: serial("id").primaryKey(),
+  to: text("to").notNull(), // destination phone number(s) - JSON array for multiple
+  message: text("message").notNull(),
+  ems: integer("ems").default(0).notNull(), // 0 or 1 for long messages
+  userref: text("userref"), // user reference
+  status: text("status").default("pending").notNull(), // pending, queued, sent, delivered, failed
+  messageKey: text("message_key"), // MTN reference key
+  errorCode: integer("error_code"), // MTN error code if failed
+  errorMessage: text("error_message"), // error description
+  totalRecipients: integer("total_recipients").default(1),
+  successfulRecipients: integer("successful_recipients").default(0),
+  failedRecipients: integer("failed_recipients").default(0),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// SMS Delivery Receipts (DLR)
+export const smsDeliveryReceipts = pgTable("sms_delivery_receipts", {
+  id: serial("id").primaryKey(),
+  messageKey: text("message_key").notNull(), // MTN message reference
+  recipientNumber: text("recipient_number").notNull(),
+  senderNumber: text("sender_number"),
+  statusCode: integer("status_code").notNull(), // 1 = delivered, 0 = failed
+  statusText: text("status_text"), // SMSC status text
+  deliveryStatus: text("delivery_status").notNull(), // delivered, failed, unknown
+  timestamp: timestamp("timestamp"), // delivery timestamp
+  receivedAt: timestamp("received_at").notNull().defaultNow(),
+});
+
+// SMS Incoming Messages (MO - Mobile Originated)
+export const smsIncomingMessages = pgTable("sms_incoming_messages", {
+  id: serial("id").primaryKey(),
+  fromNumber: text("from_number").notNull(), // citizen's number
+  toNumber: text("to_number").notNull(), // system number
+  messageText: text("message_text").notNull(),
+  timestamp: timestamp("timestamp"), // message timestamp from MTN
+  receivedAt: timestamp("received_at").notNull().defaultNow(),
+  processed: boolean("processed").default(false),
+  processedAt: timestamp("processed_at"),
+  relatedIssueId: integer("related_issue_id"), // if message relates to specific issue
+  autoResponse: text("auto_response"), // any automatic response sent
+});
+
+export const insertSmsMessageSchema = createInsertSchema(smsMessages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSmsDeliveryReceiptSchema = createInsertSchema(smsDeliveryReceipts).omit({
+  id: true,
+  receivedAt: true,
+});
+
+export const insertSmsIncomingMessageSchema = createInsertSchema(smsIncomingMessages).omit({
+  id: true,
+  receivedAt: true,
+});
+
+export type SmsMessage = typeof smsMessages.$inferSelect;
+export type InsertSmsMessage = z.infer<typeof insertSmsMessageSchema>;
+export type SmsDeliveryReceipt = typeof smsDeliveryReceipts.$inferSelect;
+export type InsertSmsDeliveryReceipt = z.infer<typeof insertSmsDeliveryReceiptSchema>;
+export type SmsIncomingMessage = typeof smsIncomingMessages.$inferSelect;
+export type InsertSmsIncomingMessage = z.infer<typeof insertSmsIncomingMessageSchema>;

@@ -2587,6 +2587,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // SMS Module Routes Integration - Load asynchronously to prevent blocking
+  Promise.resolve().then(async () => {
+    try {
+      const { default: smsRoutes } = await import('../routes/sms');
+      const { default: webhookRoutes } = await import('../routes/webhooks');
+      const { default: devRoutes } = await import('../routes/dev');
+      
+      app.use('/sms', smsRoutes);
+      app.use('/webhooks', webhookRoutes);
+      app.use('/dev', devRoutes);
+      
+      console.log('SMS module routes registered successfully');
+    } catch (error: any) {
+      console.warn('SMS module not available:', error.message);
+      console.log('SMS routes will be skipped. Check SMS_README.md for setup instructions.');
+    }
+  });
+
   return httpServer;
 }
 

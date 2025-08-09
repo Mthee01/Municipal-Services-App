@@ -16,6 +16,8 @@ Preferred communication style: Simple, everyday language.
 - Resolved technician name display issues in admin dashboard
 - Updated Active Assignments display logic to use correct field mapping
 - Implemented secure user management: citizens self-register, admins create other roles with mandatory password change
+- ADDED: Complete MTN OCEP SMS module with REST API integration, webhook handling, and database schema
+- ADDED: SMS delivery receipts and incoming message processing with security token validation
 
 ## System Architecture
 
@@ -42,7 +44,7 @@ Preferred communication style: Simple, everyday language.
 ### Core System Features
 - **User Management**: Multi-role authentication (citizen, admin, mayor, ward councillor, tech manager, field technician, call centre agent) with role-based access control.
 - **Issue Management**: Citizens can report categorized municipal issues (water, electricity, roads, waste, safety, housing) with photo uploads, priority handling, and real-time status updates. Includes unique 6-character reference numbers for tracking.
-- **Communication Layer**: WhatsApp Business API integration, built-in chatbot, real-time notifications via WebSockets, multi-language support (English, Afrikaans, Zulu, Xhosa).
+- **Communication Layer**: WhatsApp Business API integration, MTN OCEP SMS API integration with delivery receipts and incoming message handling, built-in chatbot, real-time notifications via WebSockets, multi-language support (English, Afrikaans, Zulu, Xhosa).
 - **Payment & Voucher System**: Municipal payment processing, prepaid utility voucher sales, payment tracking, integrated with South African payment methods.
 - **Technician Dispatch**: Mobile interface for field technicians, real-time GPS tracking (Leaflet maps with OpenStreetMap), work order management, parts inventory, and mandatory completion reports with photo documentation.
 - **Analytics & Reporting**: AI-powered insights, municipal performance dashboards, ward-specific and executive-level reporting.
