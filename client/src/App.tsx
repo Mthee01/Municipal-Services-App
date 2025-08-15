@@ -195,7 +195,7 @@ function App() {
               <div className="flex justify-between items-center py-4">
                 <div className="flex items-center space-x-4">
                   {/* MTN Logo */}
-                  <div className="w-12 h-10 rounded-lg overflow-hidden bg-gradient-to-br from-mtn-yellow to-mtn-light-yellow shadow-md border-2 border-white/20 p-0.5">
+                  <div className="w-16 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-mtn-yellow to-mtn-light-yellow shadow-md border-2 border-white/20 p-1">
                     <img 
                       src="/attached_assets/image_1755271254719.png" 
                       alt="MTN Logo"
@@ -352,7 +352,7 @@ function App() {
               <div className="grid grid-cols-1 gap-8">
                 <div className="text-center">
                   <div className="flex items-center justify-center space-x-3 mb-4">
-                    <div className="w-12 h-10 rounded-lg overflow-hidden bg-gradient-to-br from-mtn-yellow to-mtn-light-yellow shadow-lg border border-white/30 p-0.5">
+                    <div className="w-16 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-mtn-yellow to-mtn-light-yellow shadow-lg border border-white/30 p-1">
                       <img 
                         src="/attached_assets/image_1755271254719.png" 
                         alt="MTN Logo"

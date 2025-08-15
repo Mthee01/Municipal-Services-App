@@ -321,7 +321,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
               {/* MTN Logo */}
-              <div className="w-12 h-10 rounded-lg overflow-hidden bg-gradient-to-br from-white to-gray-50 shadow-lg border-2 border-mtn-blue/20 p-0.5 hover:shadow-xl transition-all duration-300">
+              <div className="w-16 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-white to-gray-50 shadow-lg border-2 border-mtn-blue/20 p-1 hover:shadow-xl transition-all duration-300">
                 <img 
                   src="/attached_assets/image_1755271254719.png" 
                   alt="MTN Logo"
