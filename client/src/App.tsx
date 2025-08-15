@@ -195,11 +195,11 @@ function App() {
               <div className="flex justify-between items-center py-4">
                 <div className="flex items-center space-x-4">
                   {/* MTN Logo */}
-                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-white p-1">
+                  <div className="w-12 h-10 rounded-lg overflow-hidden bg-gradient-to-br from-mtn-yellow to-mtn-light-yellow shadow-md border-2 border-white/20 p-0.5">
                     <img 
                       src="/attached_assets/image_1755271254719.png" 
                       alt="MTN Logo"
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-contain rounded-md"
                       onError={(e) => {
                         console.error('Logo failed to load:', e);
                         (e.target as HTMLImageElement).style.display = 'none';
@@ -208,9 +208,11 @@ function App() {
                     />
                     <div className="hidden text-xs font-bold text-center">MTN</div>
                   </div>
-                  <div>
-                    <h1 className="text-xl font-bold text-gray-900">Smart Munic</h1>
-                    <p className="text-sm text-gray-600">Citizen Engagement Platform</p>
+                  <div className="flex flex-col">
+                    <h1 className="text-xl font-bold leading-tight text-transparent bg-clip-text bg-gradient-to-r from-mtn-blue to-mtn-dark-blue">
+                      Smart Munic
+                    </h1>
+                    <p className="text-xs text-gray-600 -mt-0.5 font-medium">Citizen Engagement Platform</p>
                   </div>
                 </div>
                 
@@ -350,14 +352,14 @@ function App() {
               <div className="grid grid-cols-1 gap-8">
                 <div className="text-center">
                   <div className="flex items-center justify-center space-x-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-white p-1">
+                    <div className="w-12 h-10 rounded-lg overflow-hidden bg-gradient-to-br from-mtn-yellow to-mtn-light-yellow shadow-lg border border-white/30 p-0.5">
                       <img 
                         src="/attached_assets/image_1755271254719.png" 
                         alt="MTN Logo"
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-contain rounded-md"
                       />
                     </div>
-                    <h3 className="text-xl font-bold">Smart Munic</h3>
+                    <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-mtn-light-yellow">Smart Munic</h3>
                   </div>
                   <p className="text-gray-300 mb-4">
                     Connecting citizens with their local government for better service delivery and community engagement.

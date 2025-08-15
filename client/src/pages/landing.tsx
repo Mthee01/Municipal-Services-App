@@ -321,11 +321,11 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
               {/* MTN Logo */}
-              <div className="w-10 h-10 rounded-xl overflow-hidden bg-white p-1">
+              <div className="w-12 h-10 rounded-lg overflow-hidden bg-gradient-to-br from-white to-gray-50 shadow-lg border-2 border-mtn-blue/20 p-0.5 hover:shadow-xl transition-all duration-300">
                 <img 
                   src="/attached_assets/image_1755271254719.png" 
                   alt="MTN Logo"
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain rounded-md hover:scale-105 transition-transform duration-300"
                   onError={(e) => {
                     console.error('Logo failed to load:', e);
                     // Fallback to text if image fails
@@ -335,9 +335,11 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 />
                 <div className="hidden text-xs font-bold text-center">MTN</div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-black">Smart Munic</h1>
-                <p className="text-xs text-gray-600">Citizen Engagement Platform</p>
+              <div className="flex flex-col">
+                <h1 className="text-xl font-bold leading-tight text-transparent bg-clip-text bg-gradient-to-r from-gray-800 to-mtn-blue">
+                  Smart Munic
+                </h1>
+                <p className="text-xs text-gray-700 -mt-0.5 font-medium">Citizen Engagement Platform</p>
               </div>
             </div>
             
