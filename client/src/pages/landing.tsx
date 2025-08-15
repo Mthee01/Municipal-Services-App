@@ -323,7 +323,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
               {/* MTN Logo */}
               <div className="w-10 h-10 rounded-xl overflow-hidden bg-white p-1">
                 <img 
-                  src="/attached_assets/mtn-logo_1753216420020.jpg" 
+                  src="/attached_assets/image_1755271254719.png" 
                   alt="MTN Logo"
                   className="w-full h-full object-contain"
                   onError={(e) => {
