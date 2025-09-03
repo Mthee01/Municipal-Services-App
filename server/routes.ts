@@ -1851,6 +1851,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Location update endpoint for field technicians
+  app.post("/api/technicians/location", async (req, res) => {
+    try {
+      const { technicianId, latitude, longitude, accuracy, address } = req.body;
+      
+      console.log(`Location update from technician ${technicianId}:`, { latitude, longitude, accuracy, address });
+      
+      if (!technicianId || !latitude || !longitude) {
+        return res.status(400).json({ error: "Missing required location data" });
+      }
+
+      const locationData = {
+        technicianId: parseInt(technicianId),
+        latitude: latitude.toString(),
+        longitude: longitude.toString(),
+        accuracy: accuracy || null,
+        address: address || null,
+        speed: null,
+        heading: null,
+        isOnSite: null,
+        currentIssueId: null
+      };
+
+      const location = await storage.createTechnicianLocation(locationData);
+      console.log("Location saved successfully:", location.id);
+      
+      res.status(201).json({ success: true, location });
+    } catch (error) {
+      console.error("Location update error:", error);
+      res.status(400).json({ error: "Failed to update location" });
+    }
+  });
+
   app.post("/api/technician-locations", async (req, res) => {
     try {
       const locationData = insertTechnicianLocationSchema.parse(req.body);
