@@ -176,87 +176,196 @@ export function TechnicianLocationTracker() {
           
           {selectedTechnician && (
             <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Department</label>
-                  <p className="text-gray-900">{selectedTechnician.department}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Status</label>
-                  <Badge variant="outline" className={
-                    selectedTechnician.status === 'available' ? 'border-green-200 text-green-700' :
-                    selectedTechnician.status === 'on_job' ? 'border-blue-200 text-blue-700' :
-                    'border-gray-200 text-gray-700'
-                  }>
-                    {selectedTechnician.status === 'on_job' ? 'On Job' : 
-                     selectedTechnician.status === 'available' ? 'Available' : 
-                     selectedTechnician.status}
-                  </Badge>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">GPS Tracking</label>
-                  <Badge variant={selectedTechnician.location?.timestamp && 
-                    new Date(selectedTechnician.location.timestamp).getTime() > Date.now() - 30 * 60 * 1000 ? 
-                    "default" : "secondary"} className={
-                    selectedTechnician.location?.timestamp && 
-                    new Date(selectedTechnician.location.timestamp).getTime() > Date.now() - 30 * 60 * 1000 ? 
-                    "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
-                  }>
-                    {selectedTechnician.location?.timestamp && 
-                     new Date(selectedTechnician.location.timestamp).getTime() > Date.now() - 30 * 60 * 1000 ? 
-                     "Enabled" : "Disabled"}
-                  </Badge>
-                </div>
-              </div>
-
-              {selectedTechnician.location ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Current Location</label>
-                    <div className="mt-1 p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-900">
-                        Lat: {selectedTechnician.location.latitude}, Lng: {selectedTechnician.location.longitude}
-                      </p>
-                      {selectedTechnician.location.accuracy && (
-                        <p className="text-xs text-gray-500">
-                          Accuracy: ±{Math.round(Number(selectedTechnician.location.accuracy))} meters
-                        </p>
-                      )}
+              {/* Map Container */}
+              {selectedTechnician.location && selectedTechnician.location.latitude && selectedTechnician.location.longitude && (
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <MapPin className="h-8 w-8" />
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">Live Location Tracking</h3>
+                        <p className="text-orange-100 text-sm">Real-time GPS coordinates</p>
+                      </div>
                     </div>
                   </div>
                   
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Last Update</label>
-                    <p className="text-gray-900">{formatTimeAgo(selectedTechnician.location.timestamp)}</p>
-                  </div>
-                  
-                  {selectedTechnician.location.isOnSite && (
-                    <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
-                      <Navigation className="h-4 w-4 text-blue-600" />
-                      <span className="text-blue-700 font-medium">Technician is currently on-site</span>
+                  <div className="bg-gray-50 p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Coordinates Display */}
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Coordinates</label>
+                          <div className="mt-1 p-3 bg-white rounded-lg border">
+                            <div className="font-mono text-sm">
+                              <div>Lat: {parseFloat(selectedTechnician.location.latitude).toFixed(6)}</div>
+                              <div>Lng: {parseFloat(selectedTechnician.location.longitude).toFixed(6)}</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Address</label>
+                          <div className="mt-1 p-3 bg-white rounded-lg border">
+                            <p className="text-sm text-gray-900">
+                              {selectedTechnician.location.address || 'Address resolving...'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Status Information */}
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Accuracy</label>
+                          <div className="mt-1 p-3 bg-white rounded-lg border">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${
+                                selectedTechnician.location.accuracy && parseInt(selectedTechnician.location.accuracy.toString()) < 50 
+                                  ? 'bg-green-500' 
+                                  : parseInt(selectedTechnician.location.accuracy?.toString() || '999') < 100 
+                                    ? 'bg-yellow-500' 
+                                    : 'bg-red-500'
+                              }`}></div>
+                              <span className="text-sm">±{selectedTechnician.location.accuracy || 'N/A'} meters</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Last Update</label>
+                          <div className="mt-1 p-3 bg-white rounded-lg border">
+                            <p className="text-sm text-gray-900">
+                              {formatTimeAgo(selectedTechnician.location.timestamp)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  
-                  <Button 
-                    onClick={() => {
-                      const url = `https://www.google.com/maps?q=${selectedTechnician.location?.latitude},${selectedTechnician.location?.longitude}`;
-                      window.open(url, '_blank');
-                    }}
-                    className="w-full"
-                  >
-                    <Navigation className="h-4 w-4 mr-2" />
-                    View on Map
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 p-4 bg-yellow-50 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                  <div>
-                    <p className="text-yellow-800 font-medium">Location Unavailable</p>
-                    <p className="text-sm text-yellow-700">GPS tracking is disabled or no recent location data</p>
+                    
+                    {/* Map Action Button */}
+                    <div className="mt-6 flex gap-3">
+                      <Button 
+                        onClick={() => {
+                          const url = `https://www.google.com/maps?q=${selectedTechnician.location?.latitude},${selectedTechnician.location?.longitude}`;
+                          window.open(url, '_blank');
+                        }}
+                        className="flex-1"
+                      >
+                        <Navigation className="h-4 w-4 mr-2" />
+                        View on Google Maps
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          const coords = `${selectedTechnician.location?.latitude},${selectedTechnician.location?.longitude}`;
+                          navigator.clipboard?.writeText(coords);
+                        }}
+                        className="px-4"
+                      >
+                        Copy Coordinates
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
+              
+              {/* Location Details Sidebar */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900">Technician Details</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Department</label>
+                      <p className="text-gray-900">{selectedTechnician.department}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Status</label>
+                      <Badge variant="outline" className={
+                        selectedTechnician.status === 'available' ? 'border-green-200 text-green-700' :
+                        selectedTechnician.status === 'on_job' ? 'border-blue-200 text-blue-700' :
+                        'border-gray-200 text-gray-700'
+                      }>
+                        {selectedTechnician.status === 'on_job' ? 'On Job' : 
+                         selectedTechnician.status === 'available' ? 'Available' : 
+                         selectedTechnician.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">GPS Tracking</label>
+                    <Badge variant={selectedTechnician.location?.timestamp && 
+                      new Date(selectedTechnician.location.timestamp).getTime() > Date.now() - 30 * 60 * 1000 ? 
+                      "default" : "secondary"} className={
+                      selectedTechnician.location?.timestamp && 
+                      new Date(selectedTechnician.location.timestamp).getTime() > Date.now() - 30 * 60 * 1000 ? 
+                      "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+                    }>
+                      {selectedTechnician.location?.timestamp && 
+                       new Date(selectedTechnician.location.timestamp).getTime() > Date.now() - 30 * 60 * 1000 ? 
+                       "Enabled" : "Disabled"}
+                    </Badge>
+                  </div>
+                </div>
+                
+                {/* Location Details */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900">Location Information</h4>
+                  {selectedTechnician.location ? (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">Current Position</label>
+                        <div className="mt-1 p-3 bg-gray-50 rounded-lg">
+                          <p className="text-sm text-gray-900">
+                            {parseFloat(selectedTechnician.location.latitude).toFixed(6)}, {parseFloat(selectedTechnician.location.longitude).toFixed(6)}
+                          </p>
+                          {selectedTechnician.location.accuracy && (
+                            <p className="text-xs text-gray-500">
+                              Accuracy: ±{Math.round(Number(selectedTechnician.location.accuracy))} meters
+                            </p>
+                          )}
+                          {selectedTechnician.location.address && (
+                            <p className="text-xs text-gray-600 mt-1">
+                              {selectedTechnician.location.address}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">Last Update</label>
+                        <p className="text-gray-900">{formatTimeAgo(selectedTechnician.location.timestamp)}</p>
+                      </div>
+                      
+                      {selectedTechnician.location.isOnSite && (
+                        <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+                          <Navigation className="h-4 w-4 text-blue-600" />
+                          <span className="text-blue-700 font-medium">Technician is currently on-site</span>
+                        </div>
+                      )}
+                      
+                      <Button 
+                        onClick={() => {
+                          const url = `https://www.google.com/maps?q=${selectedTechnician.location?.latitude},${selectedTechnician.location?.longitude}`;
+                          window.open(url, '_blank');
+                        }}
+                        className="w-full"
+                      >
+                        <Navigation className="h-4 w-4 mr-2" />
+                        Open in Google Maps
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                      <p className="text-gray-500 text-sm">No location data available</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </DialogContent>

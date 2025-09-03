@@ -1862,12 +1862,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Missing required location data" });
       }
 
+      // Generate a simple address if not provided (for demo purposes)
+      let resolvedAddress = address;
+      if (!address) {
+        // Mock address resolution for South African coordinates
+        const lat = parseFloat(latitude);
+        const lng = parseFloat(longitude);
+        
+        if (lat > -30 && lat < -20 && lng > 20 && lng < 35) {
+          const areas = [
+            "Johannesburg CBD, Gauteng",
+            "Pretoria Central, Gauteng", 
+            "Cape Town City Centre, Western Cape",
+            "Durban Central, KwaZulu-Natal",
+            "Bloemfontein Central, Free State",
+            "Port Elizabeth Central, Eastern Cape",
+            "Polokwane Central, Limpopo",
+            "Nelspruit Central, Mpumalanga",
+            "Kimberley Central, Northern Cape"
+          ];
+          
+          const index = Math.abs(Math.floor((lat + lng) * 1000) % areas.length);
+          resolvedAddress = areas[index] + ` (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+        }
+      }
+
       const locationData = {
         technicianId: parseInt(technicianId),
         latitude: latitude.toString(),
         longitude: longitude.toString(),
         accuracy: accuracy || null,
-        address: address || null,
+        address: resolvedAddress || null,
         speed: null,
         heading: null,
         isOnSite: null,
