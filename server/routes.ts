@@ -2,6 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import session from "express-session";
 import ConnectPgSimple from "connect-pg-simple";
+import fetch from "node-fetch";
 
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
@@ -1862,24 +1863,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Missing required location data" });
       }
 
-      // Generate a simple address if not provided (for demo purposes)
+      // Perform reverse geocoding to get address if not provided
       let resolvedAddress = address;
       if (!address) {
-        // Mock address resolution for South African coordinates
-        const lat = parseFloat(latitude);
-        const lng = parseFloat(longitude);
+        try {
+          const lat = parseFloat(latitude);
+          const lng = parseFloat(longitude);
+          
+          // Use OpenStreetMap Nominatim API for reverse geocoding (free service)
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=en`,
+            {
+              headers: {
+                'User-Agent': 'Municipal-Services-App/1.0'
+              }
+            }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.display_name) {
+              // Format address for South African context
+              const addressParts = [];
+              
+              if (data.address) {
+                // Add house number and street
+                if (data.address.house_number && data.address.road) {
+                  addressParts.push(`${data.address.house_number} ${data.address.road}`);
+                } else if (data.address.road) {
+                  addressParts.push(data.address.road);
+                }
+                
+                // Add suburb/neighbourhood
+                if (data.address.suburb || data.address.neighbourhood) {
+                  addressParts.push(data.address.suburb || data.address.neighbourhood);
+                }
+                
+                // Add city
+                if (data.address.city || data.address.town) {
+                  addressParts.push(data.address.city || data.address.town);
+                }
+                
+                // Add province/state
+                if (data.address.state) {
+                  addressParts.push(data.address.state);
+                }
+                
+                // Add country if not South Africa
+                if (data.address.country && data.address.country !== 'South Africa') {
+                  addressParts.push(data.address.country);
+                }
+              }
+              
+              resolvedAddress = addressParts.length > 0 ? addressParts.join(', ') : data.display_name;
+            }
+          }
+        } catch (error) {
+          console.error('Failed to reverse geocode location:', error);
+        }
         
-        if (lat > -30 && lat < -20 && lng > 20 && lng < 35) {
+        // Fallback for South African coordinates if geocoding fails
+        if (!resolvedAddress && lat > -35 && lat < -20 && lng > 15 && lng < 35) {
           const areas = [
-            "Johannesburg CBD, Gauteng",
-            "Pretoria Central, Gauteng", 
+            "Randburg, Johannesburg, Gauteng",
+            "Sandton, Johannesburg, Gauteng",
+            "Roodepoort, Johannesburg, Gauteng",
+            "Soweto, Johannesburg, Gauteng",
             "Cape Town City Centre, Western Cape",
             "Durban Central, KwaZulu-Natal",
-            "Bloemfontein Central, Free State",
-            "Port Elizabeth Central, Eastern Cape",
-            "Polokwane Central, Limpopo",
-            "Nelspruit Central, Mpumalanga",
-            "Kimberley Central, Northern Cape"
+            "Pretoria Central, Gauteng",
+            "Bloemfontein Central, Free State"
           ];
           
           const index = Math.abs(Math.floor((lat + lng) * 1000) % areas.length);
