@@ -586,25 +586,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Get technicians from users table with role 'field_technician'
       const users = await storage.getAllUsers();
-      const technicians = users
-        .filter(user => user.role === 'field_technician')
-        .map(user => ({
-          id: user.id,
-          name: user.name,
-          phone: user.phone || 'N/A',
-          email: user.email || 'N/A',
-          department: 'General', // Default department, can be enhanced later
-          skills: [],
-          status: user.status === 'on_job' ? 'on_job' : user.status === 'active' ? 'available' : 'offline',
-          currentLocation: null,
-          latitude: null,
-          longitude: null,
-          teamId: null,
-          performanceRating: 5,
-          completedIssues: 0,
-          avgResolutionTime: 0,
-          lastUpdate: user.updatedAt || user.createdAt
-        }));
+      const technicians = await Promise.all(
+        users
+          .filter(user => user.role === 'field_technician')
+          .map(async (user) => {
+            // Get the technician's latest location data
+            const location = await storage.getTechnicianLocation(user.id);
+            
+            // Determine if technician is online based on location timestamp
+            const now = Date.now();
+            const isOnline = location && location.timestamp && 
+              (now - new Date(location.timestamp).getTime()) < 30 * 60 * 1000; // 30 minutes
+            
+            // Determine status based on user status and online presence
+            let technicianStatus = 'offline';
+            if (user.status === 'on_job') {
+              technicianStatus = 'on_job';
+            } else if (user.status === 'active' && isOnline) {
+              technicianStatus = 'available';
+            } else if (isOnline) {
+              technicianStatus = 'available';
+            }
+            
+            return {
+              id: user.id,
+              name: user.name,
+              phone: user.phone || 'N/A',
+              email: user.email || 'N/A',
+              department: 'General', // Default department, can be enhanced later
+              skills: [],
+              status: technicianStatus,
+              currentLocation: location?.address || null,
+              latitude: location?.latitude || null,
+              longitude: location?.longitude || null,
+              teamId: null,
+              performanceRating: 5,
+              completedIssues: 0,
+              avgResolutionTime: 0,
+              lastUpdate: location?.timestamp || user.updatedAt || user.createdAt,
+              location: location // Include full location data for tracking component
+            };
+          })
+      );
 
       res.json(technicians);
     } catch (error) {
@@ -1778,25 +1801,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Get technicians from users table with role 'field_technician'
       const users = await storage.getAllUsers();
-      const techniciansWithLocations = users
-        .filter(user => user.role === 'field_technician')
-        .map(user => ({
-          id: user.id,
-          name: user.name,
-          phone: user.phone || 'N/A',
-          email: user.email || 'N/A',
-          department: 'General',
-          skills: [],
-          status: user.status === 'active' ? 'available' : 'offline',
-          currentLocation: null,
-          latitude: null,
-          longitude: null,
-          teamId: null,
-          performanceRating: 5,
-          completedIssues: 0,
-          avgResolutionTime: 0,
-          lastUpdate: user.updatedAt || user.createdAt
-        }));
+      const techniciansWithLocations = await Promise.all(
+        users
+          .filter(user => user.role === 'field_technician')
+          .map(async (user) => {
+            // Get the technician's latest location data
+            const location = await storage.getTechnicianLocation(user.id);
+            
+            // Determine if technician is online based on location timestamp
+            const now = Date.now();
+            const isOnline = location && location.timestamp && 
+              (now - new Date(location.timestamp).getTime()) < 30 * 60 * 1000; // 30 minutes
+            
+            // Determine status based on user status and online presence
+            let technicianStatus = 'offline';
+            if (user.status === 'on_job') {
+              technicianStatus = 'on_job';
+            } else if (user.status === 'active' && isOnline) {
+              technicianStatus = 'available';
+            } else if (isOnline) {
+              technicianStatus = 'available';
+            }
+
+            return {
+              id: user.id,
+              name: user.name,
+              phone: user.phone || 'N/A',
+              email: user.email || 'N/A',
+              department: 'General',
+              skills: [],
+              status: technicianStatus,
+              currentLocation: location?.address || null,
+              latitude: location?.latitude || null,
+              longitude: location?.longitude || null,
+              teamId: null,
+              performanceRating: 5,
+              completedIssues: 0,
+              avgResolutionTime: 0,
+              lastUpdate: location?.timestamp || user.updatedAt || user.createdAt,
+              location: location // Include full location data
+            };
+          })
+      );
       
       res.json(techniciansWithLocations);
     } catch (error) {
