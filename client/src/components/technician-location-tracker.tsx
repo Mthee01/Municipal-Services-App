@@ -166,11 +166,11 @@ export function TechnicianLocationTracker() {
 
       {/* Detailed Location Modal */}
       <Dialog open={!!selectedTechnician} onOpenChange={() => setSelectedTechnician(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5 text-orange-600" />
-              {selectedTechnician?.name} - Location Details
+              {selectedTechnician?.name} - Location Tracking
             </DialogTitle>
           </DialogHeader>
           
@@ -272,31 +272,29 @@ export function TechnicianLocationTracker() {
                 </div>
               )}
               
-              {/* Location Details Sidebar */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900">Technician Details</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Department</label>
-                      <p className="text-gray-900">{selectedTechnician.department}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Status</label>
-                      <Badge variant="outline" className={
-                        selectedTechnician.status === 'available' ? 'border-green-200 text-green-700' :
-                        selectedTechnician.status === 'on_job' ? 'border-blue-200 text-blue-700' :
-                        'border-gray-200 text-gray-700'
-                      }>
-                        {selectedTechnician.status === 'on_job' ? 'On Job' : 
-                         selectedTechnician.status === 'available' ? 'Available' : 
-                         selectedTechnician.status}
-                      </Badge>
-                    </div>
+              {/* Technician Information */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div className="text-center">
+                  <label className="text-sm font-medium text-gray-700">Department</label>
+                  <p className="text-gray-900 font-semibold">{selectedTechnician.department}</p>
+                </div>
+                <div className="text-center">
+                  <label className="text-sm font-medium text-gray-700">Status</label>
+                  <div className="mt-1">
+                    <Badge variant="outline" className={
+                      selectedTechnician.status === 'available' ? 'border-green-200 text-green-700' :
+                      selectedTechnician.status === 'on_job' ? 'border-blue-200 text-blue-700' :
+                      'border-gray-200 text-gray-700'
+                    }>
+                      {selectedTechnician.status === 'on_job' ? 'On Job' : 
+                       selectedTechnician.status === 'available' ? 'Available' : 
+                       selectedTechnician.status}
+                    </Badge>
                   </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">GPS Tracking</label>
+                </div>
+                <div className="text-center">
+                  <label className="text-sm font-medium text-gray-700">GPS Tracking</label>
+                  <div className="mt-1">
                     <Badge variant={selectedTechnician.location?.timestamp && 
                       new Date(selectedTechnician.location.timestamp).getTime() > Date.now() - 30 * 60 * 1000 ? 
                       "default" : "secondary"} className={
@@ -310,62 +308,16 @@ export function TechnicianLocationTracker() {
                     </Badge>
                   </div>
                 </div>
-                
-                {/* Location Details */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900">Location Information</h4>
-                  {selectedTechnician.location ? (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium text-gray-700">Current Position</label>
-                        <div className="mt-1 p-3 bg-gray-50 rounded-lg">
-                          <p className="text-sm text-gray-900">
-                            {parseFloat(selectedTechnician.location.latitude).toFixed(6)}, {parseFloat(selectedTechnician.location.longitude).toFixed(6)}
-                          </p>
-                          {selectedTechnician.location.accuracy && (
-                            <p className="text-xs text-gray-500">
-                              Accuracy: ±{Math.round(Number(selectedTechnician.location.accuracy))} meters
-                            </p>
-                          )}
-                          {selectedTechnician.location.address && (
-                            <p className="text-xs text-gray-600 mt-1">
-                              {selectedTechnician.location.address}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm font-medium text-gray-700">Last Update</label>
-                        <p className="text-gray-900">{formatTimeAgo(selectedTechnician.location.timestamp)}</p>
-                      </div>
-                      
-                      {selectedTechnician.location.isOnSite && (
-                        <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
-                          <Navigation className="h-4 w-4 text-blue-600" />
-                          <span className="text-blue-700 font-medium">Technician is currently on-site</span>
-                        </div>
-                      )}
-                      
-                      <Button 
-                        onClick={() => {
-                          const url = `https://www.google.com/maps?q=${selectedTechnician.location?.latitude},${selectedTechnician.location?.longitude}`;
-                          window.open(url, '_blank');
-                        }}
-                        className="w-full"
-                      >
-                        <Navigation className="h-4 w-4 mr-2" />
-                        Open in Google Maps
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                      <p className="text-gray-500 text-sm">No location data available</p>
-                    </div>
-                  )}
-                </div>
               </div>
+
+              {/* No Location Available State */}
+              {!selectedTechnician.location && (
+                <div className="text-center py-12">
+                  <MapPin className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Location Data Available</h3>
+                  <p className="text-gray-500 text-sm">GPS tracking is disabled or no recent location updates received</p>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
