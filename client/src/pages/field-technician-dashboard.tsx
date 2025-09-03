@@ -150,7 +150,7 @@ export default function FieldTechnicianDashboard() {
   const [showIssueDetails, setShowIssueDetails] = useState(false);
 
   const [messageData, setMessageData] = useState({ subject: '', content: '' });
-  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number, address?: string} | null>(null);
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
   const [isTracking, setIsTracking] = useState(false);
   
@@ -342,19 +342,32 @@ export default function FieldTechnicianDashboard() {
     };
 
     const watchId = navigator.geolocation.watchPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude, accuracy } = position.coords;
         setCurrentLocation({ lat: latitude, lng: longitude });
         setLocationAccuracy(accuracy);
         
-        // Send location update to server
-        apiRequest('POST', '/api/technicians/location', {
-          technicianId: currentUserId,
-          latitude,
-          longitude,
-          accuracy,
-          timestamp: new Date().toISOString()
-        });
+        // Send location update to server and get address
+        try {
+          const response = await apiRequest('POST', '/api/technicians/location', {
+            technicianId: currentUserId,
+            latitude,
+            longitude,
+            accuracy,
+            timestamp: new Date().toISOString()
+          });
+          
+          // Update location with address if received
+          if (response.location?.address) {
+            setCurrentLocation({ 
+              lat: latitude, 
+              lng: longitude, 
+              address: response.location.address 
+            });
+          }
+        } catch (error) {
+          console.error('Failed to update location:', error);
+        }
       },
       (error) => {
         console.error('Geolocation error:', error);
@@ -1171,23 +1184,121 @@ export default function FieldTechnicianDashboard() {
                   </div>
 
                   {currentLocation && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <MapPin className="w-5 h-5 text-blue-600" />
-                        <span className="font-medium text-blue-900 dark:text-blue-100">Current Location</span>
-                        {isTracking && (
-                          <div className="flex items-center gap-1 text-green-600">
-                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                            <span className="text-sm">Live</span>
+                    <div className="border rounded-lg overflow-hidden">
+                      {/* Map Header */}
+                      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <MapPin className="h-8 w-8" />
+                            {isTracking && (
+                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                            )}
                           </div>
-                        )}
+                          <div>
+                            <h3 className="text-lg font-semibold">My Current Location</h3>
+                            <p className="text-blue-100 text-sm flex items-center gap-1">
+                              {isTracking && <span className="text-green-300">● Live</span>}
+                              Real-time GPS tracking enabled
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm text-blue-800 dark:text-blue-200">
-                        <div>Latitude: {currentLocation.lat.toFixed(6)}</div>
-                        <div>Longitude: {currentLocation.lng.toFixed(6)}</div>
-                        {locationAccuracy && (
-                          <div>Accuracy: ±{Math.round(locationAccuracy)}m</div>
-                        )}
+
+                      {/* Location Details */}
+                      <div className="bg-gray-50 dark:bg-gray-800 p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Coordinates */}
+                          <div className="space-y-4">
+                            <div>
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">GPS Coordinates</label>
+                              <div className="mt-2 p-3 bg-white dark:bg-gray-700 rounded-lg border">
+                                <div className="font-mono text-sm">
+                                  <div>Lat: {currentLocation.lat.toFixed(6)}</div>
+                                  <div>Lng: {currentLocation.lng.toFixed(6)}</div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Location Address</label>
+                              <div className="mt-2 p-3 bg-white dark:bg-gray-700 rounded-lg border">
+                                <p className="text-sm text-gray-900 dark:text-gray-100">
+                                  {currentLocation.address || 'Resolving address...'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Status Information */}
+                          <div className="space-y-4">
+                            <div>
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">GPS Accuracy</label>
+                              <div className="mt-2 p-3 bg-white dark:bg-gray-700 rounded-lg border">
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-2 h-2 rounded-full ${
+                                    locationAccuracy && locationAccuracy < 50 
+                                      ? 'bg-green-500' 
+                                      : locationAccuracy && locationAccuracy < 100 
+                                        ? 'bg-yellow-500' 
+                                        : 'bg-red-500'
+                                  }`}></div>
+                                  <span className="text-sm">
+                                    {locationAccuracy ? `±${Math.round(locationAccuracy)} meters` : 'Calculating...'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Tracking Status</label>
+                              <div className="mt-2 p-3 bg-white dark:bg-gray-700 rounded-lg border">
+                                <div className="flex items-center gap-2">
+                                  {isTracking ? (
+                                    <>
+                                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                      <span className="text-sm text-green-600 dark:text-green-400">
+                                        Active - Location shared with dispatch
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                                        Inactive - Location not shared
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="mt-6 flex gap-3">
+                          <Button 
+                            onClick={() => {
+                              const url = `https://www.google.com/maps?q=${currentLocation.lat},${currentLocation.lng}`;
+                              window.open(url, '_blank');
+                            }}
+                            variant="outline"
+                            className="flex-1"
+                          >
+                            <Navigation className="h-4 w-4 mr-2" />
+                            Open in Maps
+                          </Button>
+                          <Button 
+                            onClick={() => {
+                              const coords = `${currentLocation.lat},${currentLocation.lng}`;
+                              navigator.clipboard?.writeText(coords);
+                              toast({ title: 'Coordinates copied to clipboard' });
+                            }}
+                            variant="outline"
+                            className="px-4"
+                          >
+                            Copy Location
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
