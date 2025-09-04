@@ -6,37 +6,32 @@ on:
   workflow_dispatch:
 
 env:
-  # 👇 your Azure Web App name (lowercase)
-  AZURE_WEBAPP_NAME: citizen-engagement-app-mtn
-  # We’re deploying the repo root because your package.json is at the root
-  AZURE_WEBAPP_PACKAGE_PATH: .
-  # Use Node 20.x
-  NODE_VERSION: '20.x'
+  AZURE_WEBAPP_NAME: citizen-engagement-app-mtn      # your Azure Web App name (lowercase)
+  AZURE_WEBAPP_PACKAGE_PATH: .                        # deploy the repo root
+  NODE_VERSION: '20.x'                                # use Node 20
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    concurrency:
-      group: ${{ github.ref }}-azure-deploy
-      cancel-in-progress: true
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node ${{ env.NODE_VERSION }}
+      - name: Use Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          else
+            npm install --no-audit --no-fund
+          fi
         working-directory: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
-      - name: Build (TS → JS + client)
+      - name: Build (compile TS and client)
         run: npm run build
         working-directory: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
@@ -44,4 +39,6 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZ
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
