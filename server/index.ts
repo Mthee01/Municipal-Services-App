@@ -70,12 +70,13 @@ app.use((req, res, next) => {
   } else {
     serveStatic(app);
   }
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok", time: new Date().toISOString() });
+});
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen(port, "0.0.0.0", () => {
-    log(`serving on port ${port}`);
-  });
+  // Listen on the port Azure provides (or 8080 locally)
+const port = parseInt(process.env.PORT ?? process.env.WEBSITES_PORT ?? "8080", 10);
+server.listen(port, "0.0.0.0", () => {
+  log(`serving on port ${port}`);
+});
 })();
