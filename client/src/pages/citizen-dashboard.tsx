@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Plus, Filter, MapPin, X, BarChart3, Users, Clock, CheckCircle, AlertTriangle, TrendingUp, User } from "lucide-react";
+import { Plus, Filter, MapPin, X, BarChart3, Users, Clock, CheckCircle, AlertTriangle, TrendingUp, User, Menu, CreditCard, MessageCircle, Home, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -76,6 +76,8 @@ export default function CitizenDashboard() {
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
+  const [activeSection, setActiveSection] = useState("overview");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [location] = useLocation();
   
   const { toast } = useToast();
@@ -94,20 +96,14 @@ export default function CitizenDashboard() {
     // Handle tab navigation parameters
     const tabParam = urlParams.get('tab');
     if (tabParam) {
-      // For now, just scroll to the relevant section or show appropriate content
-      // In a full implementation, you would have actual tabs to switch to
       if (tabParam === 'payments') {
-        // Could navigate to payments section
-        console.log('Navigate to payments section');
+        setActiveSection('payments');
       } else if (tabParam === 'my-issues') {
-        // Could filter to show only user's issues
-        console.log('Show user issues');
+        setActiveSection('my-issues');
       } else if (tabParam === 'community') {
-        // Could show community forum section
-        console.log('Navigate to community section');
+        setActiveSection('community');
       } else if (tabParam === 'communication') {
-        // Could open chat/help section
-        console.log('Open communication/help section');
+        setActiveSection('communication');
       }
     }
     
@@ -116,6 +112,16 @@ export default function CitizenDashboard() {
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [location]);
+
+  // Sidebar configuration
+  const sidebarItems = [
+    { id: "overview", label: "Dashboard", icon: Home },
+    { id: "my-issues", label: "My Issues", icon: FileText },
+    { id: "community", label: "Community", icon: Users },
+    { id: "map", label: "Map View", icon: MapPin },
+    { id: "payments", label: "Payments", icon: CreditCard },
+    { id: "communication", label: "Help & Chat", icon: MessageCircle },
+  ];
 
   const { data: userIssues = [], isLoading: userIssuesLoading } = useQuery<Issue[]>({
     queryKey: ["/api/issues", { user: "current" }],
@@ -132,52 +138,44 @@ export default function CitizenDashboard() {
   });
 
   // Community issues are all issues except user's own (for community tab)
-  // Use frontend auth to get current user ID and filter by reporterId instead of relying on userIssues query
   const currentUserId = currentUser?.id;
-  console.log('Community filtering debug:', {
-    totalAllIssues: allIssues.length,
-    currentUserId: currentUserId,
-    currentUser: currentUser,
-    userIssues: userIssues.length,
-    userIssuesLoading: userIssuesLoading,
-    allIssuesWithReporters: allIssues.map(i => ({ id: i.id, title: i.title, reporterId: i.reporterId }))
-  });
-  
   const communityIssues = allIssues.filter(issue => 
     issue.status !== "resolved" && 
     issue.status !== "closed" &&
-    (!currentUserId || issue.reporterId !== currentUserId) // Filter out current user's issues
-  ).slice(0, 6);
-  
-  console.log('Community issues after filtering:', {
-    communityCount: communityIssues.length,
-    sampleIssues: communityIssues.map(i => ({ id: i.id, title: i.title, reporterId: i.reporterId }))
-  });
+    (!currentUserId || issue.reporterId !== currentUserId)
+  );
 
+  // Filter user issues based on current filters
   const filteredUserIssues = userIssues.filter(issue => {
-    if (statusFilter !== "all" && issue.status !== statusFilter) return false;
-    if (categoryFilter !== "all" && issue.category !== categoryFilter) return false;
-    return true;
+    const statusMatch = statusFilter === "all" || issue.status === statusFilter;
+    const categoryMatch = categoryFilter === "all" || issue.category === categoryFilter;
+    return statusMatch && categoryMatch;
   });
 
-  // Filter community issues for display
+  // Filter community issues
+  const filteredCommunityIssues = communityIssues.filter(issue => {
+    const categoryMatch = categoryFilter === "all" || issue.category === categoryFilter;
+    return categoryMatch;
+  });
 
-  const handleRateService = (issue: Issue) => {
-    console.log("Opening rating modal for", issue);
-    setIssueToRate(issue);
-    setRating(0);
-    setFeedback("");
-    setShowRatingModal(true);
+  const handleLogout = () => {
+    window.location.href = '/api/auth/logout';
   };
 
+  // Handle issue rating
   const submitRating = useMutation({
     mutationFn: async ({ issueId, rating, feedback }: { issueId: number; rating: number; feedback: string }) => {
-      const response = await fetch(`/api/issues/${issueId}/rate`, {
+      const response = await fetch(`/api/issues/${issueId}/rating`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rating, feedback }),
       });
-      if (!response.ok) throw new Error('Failed to submit rating');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to submit rating');
+      }
+      
       return response.json();
     },
     onSuccess: () => {
@@ -188,729 +186,400 @@ export default function CitizenDashboard() {
       setShowRatingModal(false);
       setRating(0);
       setFeedback("");
+      setIssueToRate(null);
       queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to submit rating. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to submit rating. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  const handleRemovePhoto = async (issueId: number, photoIndex: number) => {
-    try {
-      const response = await fetch(`/api/issues/${issueId}/photos/${photoIndex}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to remove photo');
-      }
-      
-      toast({
-        title: "Photo removed",
-        description: "The photo has been removed successfully.",
-      });
-      
-      // Refresh the issues data
-      queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
-      
-      // Update the selected issue if it's the same one
-      if (selectedIssue && selectedIssue.id === issueId) {
-        const updatedResponse = await fetch(`/api/issues/${issueId}`);
-        if (updatedResponse.ok) {
-          const updatedIssue = await updatedResponse.json();
-          setSelectedIssue(updatedIssue);
-        }
-      }
-    } catch (error) {
-      console.error('Error removing photo:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to remove photo. Please try again.",
-        variant: "destructive",
-      });
-    }
+  const handleRateService = (issue: Issue) => {
+    setIssueToRate(issue);
+    setShowRatingModal(true);
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(51, 100%, 98%) 0%, hsl(196, 100%, 98%) 100%)' }}>
-      {/* Background geometric patterns */}
-      <div className="absolute inset-0 z-0">
-        {/* Animated geometric shapes */}
-        <div className="absolute top-20 left-10 w-64 h-64 rounded-full mix-blend-multiply filter blur-xl animate-pulse" style={{ background: 'linear-gradient(135deg, hsl(51, 100%, 50%, 0.4) 0%, hsl(196, 100%, 31%, 0.4) 100%)' }}></div>
-        <div className="absolute top-40 right-20 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000" style={{ background: 'linear-gradient(135deg, hsl(196, 100%, 31%, 0.4) 0%, hsl(51, 100%, 50%, 0.4) 100%)' }}></div>
-        <div className="absolute -bottom-32 left-20 w-80 h-80 bg-gradient-to-br from-purple-400/40 to-pink-400/40 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
-        <div className="absolute top-60 left-1/2 w-96 h-96 bg-gradient-to-br from-orange-400/30 to-red-400/30 rounded-full mix-blend-multiply filter blur-2xl animate-pulse delay-3000"></div>
-        <div className="absolute bottom-40 right-10 w-60 h-60 bg-gradient-to-br from-cyan-400/35 to-teal-400/35 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-4000"></div>
-        
-        {/* Additional decorative patterns */}
-        <div 
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `
-              radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
-              radial-gradient(circle at 75% 75%, rgba(34, 197, 94, 0.3) 0%, transparent 50%),
-              radial-gradient(circle at 50% 10%, rgba(168, 85, 247, 0.2) 0%, transparent 50%)
-            `
-          }}
-        />
-      </div>
-
-      {/* Hero Section */}
-      <section className="relative z-10 bg-gradient-to-r from-sa-green to-green-600 text-white py-8 sm:py-16">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 sm:mb-8 space-y-4 lg:space-y-0">
-            <div className="text-center lg:text-left flex-1">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4" style={{ color: 'hsl(220, 85%, 15%)' }}>Report Issues. Track Progress. Build Community.</h2>
-              <p className="text-lg sm:text-xl text-yellow-600 mb-4 sm:mb-8">Your voice matters in building better municipal services</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 flex items-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center mr-3">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-semibold text-gray-900">Citizen Dashboard</h1>
+                  <p className="text-sm text-gray-500">Report issues, track progress, and stay connected</p>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-center lg:justify-end items-center gap-3">
-
+            <div className="flex items-center space-x-4">
+              <Button 
+                onClick={() => setShowIssueForm(true)}
+                className="bg-green-600 hover:bg-green-700 text-white hidden md:flex"
+                size="sm"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Report Issue
+              </Button>
               <RealTimeNotifications userRole="citizen" />
-            </div>
-          </div>
-          <div className="text-center">
-            <Button 
-              onClick={() => setShowIssueForm(true)}
-              className="bg-sa-gold hover:bg-yellow-500 text-black font-semibold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg w-full sm:w-auto"
-            >
-              <Plus className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-              Report New Issue
-            </Button>
-            <p className="text-xs sm:text-sm text-red-500 font-bold mt-2">⚡ Report in under 60 seconds</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Actions */}
-      <section className="relative z-10 py-12 bg-white/80 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Service Categories</h2>
-            {categoryFilter !== "all" && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCategoryFilter("all")}
-                className="text-gray-600 hover:text-gray-900"
+                className="md:hidden"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
               >
-                Clear Filter
+                {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </Button>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-6">
-            {categories.map((category) => (
-              <div 
-                key={category.value} 
-                className="text-center group cursor-pointer"
-                onClick={() => setCategoryFilter(category.value)}
-              >
-                <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 transition-all duration-200 ${
-                  categoryFilter === category.value 
-                    ? 'bg-green-200 ring-2 ring-green-500 scale-110' 
-                    : 'bg-gray-100 group-hover:bg-green-100 group-hover:scale-105'
-                }`}>
-                  <span className="text-lg sm:text-2xl">{category.icon}</span>
-                </div>
-                <h3 className={`font-medium text-xs sm:text-sm transition-colors ${
-                  categoryFilter === category.value 
-                    ? 'text-green-700 font-semibold' 
-                    : 'text-gray-900'
-                }`}>
-                  {category.label}
-                </h3>
-              </div>
-            ))}
-          </div>
-          
-          {categoryFilter !== "all" && (
-            <div className="mt-6 text-center">
-              <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                Showing {categories.find(c => c.value === categoryFilter)?.label} issues
-              </div>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <User className="w-4 h-4 mr-1" />
+                Citizen
+              </Badge>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                Sign Out
+              </Button>
             </div>
-          )}
+          </div>
         </div>
-      </section>
+      </header>
 
-      {/* Tabbed Dashboard */}
-      <section className="relative z-10 py-12">
-        <div className="max-w-6xl mx-auto px-4">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <div className="w-full overflow-x-auto scrollbar-hide">
-              <TabsList className="flex w-max min-w-full mobile-tabs p-1 bg-muted rounded-lg">
-                <TabsTrigger value="overview" className="flex-shrink-0 mobile-tab-trigger px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap min-h-[40px] sm:min-h-[44px] flex items-center justify-center">
-                  <BarChart3 className="w-3 h-3 mr-1" />
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger value="my-issues" className="flex-shrink-0 mobile-tab-trigger px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap min-h-[40px] sm:min-h-[44px] flex items-center justify-center">
-                  My Issues
-                </TabsTrigger>
-                <TabsTrigger value="community" className="flex-shrink-0 mobile-tab-trigger px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap min-h-[40px] sm:min-h-[44px] flex items-center justify-center">
-                  Community
-                </TabsTrigger>
-                <TabsTrigger value="map-view" className="flex-shrink-0 mobile-tab-trigger px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap min-h-[40px] sm:min-h-[44px] flex items-center justify-center">
-                  <MapPin className="w-3 h-3 mr-1" />
-                  Map
-                </TabsTrigger>
-                <TabsTrigger value="payments" className="flex-shrink-0 mobile-tab-trigger px-3 py-3 text-xs sm:text-sm whitespace-nowrap min-h-[44px] flex items-center justify-center">
-                  Payments
-                </TabsTrigger>
-                <TabsTrigger value="vouchers" className="flex-shrink-0 mobile-tab-trigger px-3 py-3 text-xs sm:text-sm whitespace-nowrap min-h-[44px] flex items-center justify-center">
-                  Vouchers
-                </TabsTrigger>
-                <TabsTrigger value="communication" className="flex-shrink-0 mobile-tab-trigger px-3 py-3 text-xs sm:text-sm whitespace-nowrap min-h-[44px] flex items-center justify-center">
-                  Support
-                </TabsTrigger>
-                <TabsTrigger value="whatsapp" className="flex-shrink-0 mobile-tab-trigger px-3 py-3 text-xs sm:text-sm whitespace-nowrap min-h-[44px] flex items-center justify-center">
-                  WhatsApp
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            {/* Overview Tab Content */}
-            <TabsContent value="overview" className="space-y-6">
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Your Service Dashboard</h3>
-                <p className="text-gray-600">Get insights into your municipal service interactions and community updates</p>
-              </div>
-
-              {/* Personal Statistics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">My Total Issues</p>
-                      <p className="text-2xl font-bold text-gray-900">{userIssues.length}</p>
-                    </div>
-                    <div className="bg-blue-100 p-3 rounded-full">
-                      <AlertTriangle className="h-6 w-6 text-blue-600" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Resolved Issues</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {userIssues.filter(issue => issue.status === 'resolved' || issue.status === 'closed').length}
-                      </p>
-                    </div>
-                    <div className="bg-green-100 p-3 rounded-full">
-                      <CheckCircle className="h-6 w-6 text-green-600" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">In Progress</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {userIssues.filter(issue => issue.status === 'in_progress' || issue.status === 'assigned').length}
-                      </p>
-                    </div>
-                    <div className="bg-yellow-100 p-3 rounded-full">
-                      <Clock className="h-6 w-6 text-yellow-600" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Community Issues</p>
-                      <p className="text-2xl font-bold text-gray-900">{communityIssues.length}</p>
-                    </div>
-                    <div className="bg-purple-100 p-3 rounded-full">
-                      <Users className="h-6 w-6 text-purple-600" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Service Categories Overview */}
-              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <TrendingUp className="h-5 w-5 mr-2 text-blue-600" />
-                  Your Issues by Category
-                </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {categories.slice(0, -1).map((category) => {
-                    const categoryCount = userIssues.filter(issue => issue.category === category.value).length;
-                    return (
-                      <div key={category.value} className="text-center p-4 bg-gray-50 rounded-lg">
-                        <div className="text-2xl mb-2">{category.icon}</div>
-                        <p className="text-sm font-medium text-gray-600">{category.label}</p>
-                        <p className="text-xl font-bold text-gray-900">{categoryCount}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Recent Activity */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* My Recent Issues */}
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Recent Issues</h4>
-                  {userIssues.slice(0, 3).length > 0 ? (
-                    <div className="space-y-3">
-                      {userIssues.slice(0, 3).map((issue) => (
-                        <div key={issue.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900 text-sm">{issue.title}</p>
-                            <p className="text-xs text-gray-600">{issue.location}</p>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge className={`text-xs ${getStatusColor(issue.status)}`}>
-                              {issue.status}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full mt-3"
-                        onClick={() => setActiveTab("my-issues")}
-                      >
-                        View All My Issues
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600">No issues reported yet</p>
-                      <Button 
-                        onClick={() => setShowIssueForm(true)}
-                        className="mt-3 bg-sa-gold hover:bg-yellow-500 text-black"
-                        size="sm"
-                      >
-                        Report Your First Issue
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Community Updates */}
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Community Updates</h4>
-                  {communityIssues.slice(0, 3).length > 0 ? (
-                    <div className="space-y-3">
-                      {communityIssues.slice(0, 3).map((issue) => (
-                        <div key={issue.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900 text-sm">{issue.title}</p>
-                            <p className="text-xs text-gray-600">{issue.location}</p>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge className={`text-xs ${getPriorityColor(issue.priority)}`}>
-                              {issue.priority}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full mt-3"
-                        onClick={() => setActiveTab("community")}
-                      >
-                        View Community Issues
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600">No community updates</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white">
-                <h4 className="text-lg font-semibold mb-4">Quick Actions</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Button 
-                    onClick={() => setShowIssueForm(true)}
-                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-                    variant="outline"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Report Issue
-                  </Button>
-                  <Button 
-                    onClick={() => setActiveTab("payments")}
-                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-                    variant="outline"
-                  >
-                    Make Payment
-                  </Button>
-                  <Button 
-                    onClick={() => setActiveTab("vouchers")}
-                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-                    variant="outline"
-                  >
-                    Pay Utilities
-                  </Button>
-                  <Button 
-                    onClick={() => setActiveTab("whatsapp")}
-                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-                    variant="outline"
-                  >
-                    Contact Support
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="my-issues" className="space-y-4 sm:space-y-6">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8 space-y-4 sm:space-y-0">
-                <h3 className="text-2xl font-bold text-gray-900">My Recent Issues</h3>
-                <div className="flex flex-wrap gap-4">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="All Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="assigned">Assigned</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="resolved">Resolved</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="All Categories" />
-                    </SelectTrigger>
-                    <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.value} value={category.value}>
-                      {category.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {userIssuesLoading ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600">Loading your issues...</p>
-            </div>
-          ) : filteredUserIssues.length > 0 ? (
-            <div className="space-y-6">
-              {filteredUserIssues.map((issue) => (
-                <IssueCard 
-                  key={issue.id} 
-                  issue={issue} 
-                  onViewDetails={(issue) => {
-                    setSelectedIssue(issue);
-                    setShowDetailsModal(true);
+      <div className="flex h-[calc(100vh-4rem)]">
+        {/* Sidebar */}
+        <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out`}>
+          <div className="flex flex-col h-full">
+            <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
+              <nav className="mt-5 flex-1 px-2 space-y-1">
+                {sidebarItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveSection(item.id);
+                        setSidebarOpen(false);
+                      }}
+                      className={`${
+                        activeSection === item.id
+                          ? 'bg-green-50 border-green-300 text-green-700'
+                          : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      } group flex items-center px-2 py-2 text-sm font-medium rounded-md border-l-4 transition-all duration-200 w-full text-left`}
+                    >
+                      <Icon
+                        className={`${
+                          activeSection === item.id ? 'text-green-500' : 'text-gray-400 group-hover:text-gray-500'
+                        } mr-3 flex-shrink-0 h-6 w-6`}
+                      />
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </nav>
+              
+              {/* Quick Report Button in Sidebar for Mobile */}
+              <div className="mt-6 pt-4 border-t border-gray-200 px-2 md:hidden">
+                <Button 
+                  onClick={() => {
+                    setShowIssueForm(true);
+                    setSidebarOpen(false);
                   }}
-                  onRate={handleRateService}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600 mb-4">
-                {statusFilter !== "all" || categoryFilter !== "all" 
-                  ? "No issues match your filters."
-                  : "You haven't reported any issues yet."
-                }
-              </p>
-              <Button onClick={() => setShowIssueForm(true)} className="bg-sa-green hover:bg-green-700">
-                <Plus className="mr-2 h-4 w-4" />
-                Report Your First Issue
-              </Button>
-            </div>
-          )}
-          </TabsContent>
-
-            <TabsContent value="community" className="space-y-6">
-              <CommunityFeatures />
-            </TabsContent>
-
-            <TabsContent value="map-view" className="space-y-6">
-              <GISMapIntegration 
-                issues={allIssues}
-                onIssueSelect={(issue) => {
-                  console.log('Selected issue from map:', issue);
-                  setSelectedIssue(issue);
-                  setShowDetailsModal(true);
-                }}
-                height="600px"
-              />
-            </TabsContent>
-
-            <TabsContent value="payments" className="space-y-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Make Payment</h2>
-                <Button 
-                  variant="outline" 
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
                   size="sm"
-                  onClick={() => setActiveTab("overview")}
-                  className="flex items-center gap-2"
                 >
-                  <X className="h-4 w-4" />
-                  Close
+                  <Plus className="mr-2 h-4 w-4" />
+                  Report Issue
                 </Button>
               </div>
-              <PaymentSection />
-            </TabsContent>
+            </div>
+          </div>
+        </aside>
 
-            <TabsContent value="vouchers" className="space-y-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Pay Utilities</h2>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setActiveTab("overview")}
-                  className="flex items-center gap-2"
-                >
-                  <X className="h-4 w-4" />
-                  Close
-                </Button>
-              </div>
-              <VoucherSection />
-            </TabsContent>
+        {/* Overlay for mobile */}
+        {sidebarOpen && (
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-gray-600 bg-opacity-75"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
-            <TabsContent value="communication" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <WhatsAppIntegration userId={1} />
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="py-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+
+              {/* Dashboard Overview */}
+              {activeSection === "overview" && (
                 <div className="space-y-6">
-                  <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 shadow-lg border border-gray-200">
-                    <h3 className="text-lg font-semibold mb-4 text-gray-900">Communication Features</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          💬
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-blue-900">AI Assistant</h4>
-                          <p className="text-sm text-blue-700">Get instant help with municipal services via our smart chatbot</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                          📱
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-green-900">WhatsApp Notifications</h4>
-                          <p className="text-sm text-green-700">Receive real-time updates about your service requests</p>
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Welcome to Your Citizen Dashboard</h2>
+                    <p className="text-gray-600 mb-6">Report issues, track progress, and stay connected with your community</p>
+                    
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <div className="flex items-center">
+                          <FileText className="h-8 w-8 text-blue-600" />
+                          <div className="ml-4">
+                            <p className="text-sm font-medium text-blue-600">My Issues</p>
+                            <p className="text-2xl font-bold text-blue-900">{userIssues.length}</p>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                          🔔
+                      <div className="bg-green-50 p-4 rounded-lg">
+                        <div className="flex items-center">
+                          <CheckCircle className="h-8 w-8 text-green-600" />
+                          <div className="ml-4">
+                            <p className="text-sm font-medium text-green-600">Resolved</p>
+                            <p className="text-2xl font-bold text-green-900">
+                              {userIssues.filter(issue => issue.status === 'resolved' || issue.status === 'closed').length}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-medium text-purple-900">Real-time Alerts</h4>
-                          <p className="text-sm text-purple-700">Stay informed about service outages and announcements</p>
+                      </div>
+                      <div className="bg-yellow-50 p-4 rounded-lg">
+                        <div className="flex items-center">
+                          <Clock className="h-8 w-8 text-yellow-600" />
+                          <div className="ml-4">
+                            <p className="text-sm font-medium text-yellow-600">In Progress</p>
+                            <p className="text-2xl font-bold text-yellow-900">
+                              {userIssues.filter(issue => issue.status === 'assigned' || issue.status === 'in_progress').length}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <RealTimeNotifications userRole="citizen" />
-                </div>
-              </div>
-            </TabsContent>
 
-            {/* WhatsApp Center Tab */}
-            <TabsContent value="whatsapp" className="space-y-6">
-              <div className="flex justify-between items-start mb-8">
-                <div className="text-center flex-1">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">WhatsApp Communication Center</h2>
-                  <p className="text-gray-600">Get immediate assistance from our call center agents via WhatsApp</p>
+                    {/* Service Categories */}
+                    <div className="mb-8">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Service Categories</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-6">
+                        {categories.map((category) => (
+                          <div 
+                            key={category.value} 
+                            className="text-center group cursor-pointer"
+                            onClick={() => {
+                              setCategoryFilter(category.value);
+                              setActiveSection('my-issues');
+                            }}
+                          >
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 transition-all duration-200 bg-gray-100 group-hover:bg-green-100 group-hover:scale-105">
+                              <span className="text-lg sm:text-2xl">{category.icon}</span>
+                            </div>
+                            <h3 className="font-medium text-xs sm:text-sm text-gray-900">
+                              {category.label}
+                            </h3>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setActiveTab("overview")}
-                  className="flex items-center gap-2 ml-4"
-                >
-                  <X className="h-4 w-4" />
-                  Close
-                </Button>
-              </div>
-              <CitizenWhatsAppCenter userId={1} />
-            </TabsContent>
-          </Tabs>
-        </div>
-      </section>
+              )}
+
+              {/* My Issues Section */}
+              {activeSection === "my-issues" && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-2xl font-bold text-gray-900">My Issues</h2>
+                      <div className="flex space-x-4">
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                          <SelectTrigger className="w-[150px]">
+                            <SelectValue placeholder="Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Status</SelectItem>
+                            <SelectItem value="open">Open</SelectItem>
+                            <SelectItem value="assigned">Assigned</SelectItem>
+                            <SelectItem value="in_progress">In Progress</SelectItem>
+                            <SelectItem value="resolved">Resolved</SelectItem>
+                            <SelectItem value="closed">Closed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                          <SelectTrigger className="w-[150px]">
+                            <SelectValue placeholder="Category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Categories</SelectItem>
+                            {categories.map((category) => (
+                              <SelectItem key={category.value} value={category.value}>
+                                {category.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {userIssuesLoading ? (
+                      <div className="text-center py-8">Loading your issues...</div>
+                    ) : filteredUserIssues.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">No issues found matching your filters.</p>
+                        <Button 
+                          onClick={() => setShowIssueForm(true)}
+                          className="mt-4 bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Report Your First Issue
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="grid gap-6">
+                        {filteredUserIssues.map((issue) => (
+                          <IssueCard
+                            key={issue.id}
+                            issue={issue}
+                            onViewDetails={(issue) => {
+                              setSelectedIssue(issue);
+                              setShowDetailsModal(true);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Community Section */}
+              {activeSection === "community" && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Community Issues</h2>
+                    <CommunityFeatures />
+                  </div>
+                </div>
+              )}
+
+              {/* Map View Section */}
+              {activeSection === "map" && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Map View</h2>
+                    <GISMapIntegration issues={allIssues} />
+                  </div>
+                </div>
+              )}
+
+              {/* Payments Section */}
+              {activeSection === "payments" && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Payments & Vouchers</h2>
+                    <Tabs defaultValue="payments" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="payments">Payments</TabsTrigger>
+                        <TabsTrigger value="vouchers">Vouchers</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="payments" className="space-y-4">
+                        <PaymentSection />
+                      </TabsContent>
+                      <TabsContent value="vouchers" className="space-y-4">
+                        <VoucherSection />
+                      </TabsContent>
+                    </Tabs>
+                  </div>
+                </div>
+              )}
+
+              {/* Communication Section */}
+              {activeSection === "communication" && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Help & Communication</h2>
+                    <Tabs defaultValue="whatsapp" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+                        <TabsTrigger value="support">Support</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="whatsapp" className="space-y-4">
+                        <CitizenWhatsAppCenter />
+                      </TabsContent>
+                      <TabsContent value="support" className="space-y-4">
+                        <div className="text-center py-8">
+                          <p className="text-gray-600 mb-4">Need help? Our support team is here to assist you.</p>
+                          <p className="text-sm text-gray-500">You can also use the chat widget in the bottom right corner.</p>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </main>
+      </div>
 
       {/* Issue Form Modal */}
-      <IssueForm 
-        isOpen={showIssueForm}
-        onClose={() => setShowIssueForm(false)}
-      />
+      {showIssueForm && (
+        <IssueForm
+          isOpen={showIssueForm}
+          onClose={() => setShowIssueForm(false)}
+        />
+      )}
 
       {/* Issue Details Modal */}
-      {selectedIssue && (
+      {showDetailsModal && selectedIssue && (
         <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader className="pb-4">
-              <DialogTitle className="text-lg font-semibold truncate">{selectedIssue.title}</DialogTitle>
-              <DialogDescription className="flex items-center gap-2 text-sm">
-                <span>RefNo: {selectedIssue.referenceNumber}</span>
-                <span>•</span>
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {selectedIssue.location}
-                </span>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedIssue.title}</DialogTitle>
+              <DialogDescription>
+                Issue #{selectedIssue.referenceNumber} • {selectedIssue.category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
               </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Category</Label>
-                  <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded capitalize">{selectedIssue.category.replace("_", " & ")}</p>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Priority</Label>
-                  <div>
-                    <Badge variant="outline" className={getPriorityColor(selectedIssue.priority)}>
-                      {selectedIssue.priority}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="space-y-2">
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Description</Label>
+                <p className="text-sm text-gray-600">{selectedIssue.description}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <Label className="text-sm font-medium">Status</Label>
-                  <div>
-                    <Badge variant="outline" className={getStatusColor(selectedIssue.status)}>
-                      {selectedIssue.status.replace("_", " ")}
-                    </Badge>
-                  </div>
+                  <Badge className={getStatusColor(selectedIssue.status)}>
+                    {selectedIssue.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </Badge>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Created Date</Label>
-                  <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                    {new Date(selectedIssue.createdAt).toLocaleString()}
-                  </p>
+                <div>
+                  <Label className="text-sm font-medium">Priority</Label>
+                  <Badge className={getPriorityColor(selectedIssue.priority)}>
+                    {selectedIssue.priority.replace(/\b\w/g, l => l.toUpperCase())}
+                  </Badge>
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Description</Label>
-                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                  <p className="text-sm leading-relaxed">{selectedIssue.description}</p>
-                </div>
+              <div>
+                <Label className="text-sm font-medium">Location</Label>
+                <p className="text-sm text-gray-600">{selectedIssue.location}</p>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">Reported</Label>
+                <p className="text-sm text-gray-600">{new Date(selectedIssue.createdAt).toLocaleDateString()}</p>
               </div>
 
-              {selectedIssue.photos && selectedIssue.photos.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Photos ({selectedIssue.photos.length})</Label>
-                    {selectedIssue.status === 'open' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => {
-                          // TODO: Add functionality to add more photos to existing issue
-                          toast({
-                            title: "Coming Soon",
-                            description: "Photo editing will be available soon",
-                          });
-                        }}
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add Photos
-                      </Button>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {selectedIssue.photos.map((photo, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={photo}
-                          alt={`Issue photo ${index + 1}`}
-                          className="w-full h-40 sm:h-48 object-cover rounded-lg border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
-                          onError={(e) => {
-                            e.currentTarget.src = '/placeholder-image.png';
-                            e.currentTarget.className += ' opacity-50';
-                          }}
-                          onClick={() => {
-                            // Open photo in new window for full view
-                            window.open(photo, '_blank');
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-lg transition-all duration-200 flex items-center justify-center">
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity text-center">
-                            <div className="bg-white bg-opacity-90 text-gray-800 px-3 py-1 rounded-md text-sm font-medium">
-                              Click to enlarge
-                            </div>
-                          </div>
-                        </div>
-                        <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                          Photo {index + 1}
-                        </div>
-                        {selectedIssue.status === 'open' && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="absolute top-2 left-2 h-8 w-8 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemovePhoto(selectedIssue.id, index);
-                            }}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {selectedIssue.assignedTo && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Assigned Technician</Label>
-                  <p className="text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 p-2 rounded border border-blue-200 dark:border-blue-800">
-                    {(() => {
-                      const technician = technicians.find(t => t.id === parseInt(selectedIssue.assignedTo!));
-                      return technician ? `${technician.name} (${technician.department})` : `Technician ID: ${selectedIssue.assignedTo}`;
-                    })()}
-                  </p>
-                </div>
-              )}
-
-              {(selectedIssue.status === 'resolved' || selectedIssue.status === 'closed') && selectedIssue.resolvedAt && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Resolved Date</Label>
-                  <p className="text-sm bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 p-2 rounded border border-green-200 dark:border-green-800">
-                    {new Date(selectedIssue.resolvedAt).toLocaleString()}
-                  </p>
-                </div>
-              )}
-
-              {selectedIssue.feedback && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Resolution Notes</Label>
-                  <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                    <p className="text-sm text-green-700 dark:text-green-400">{selectedIssue.feedback}</p>
-                  </div>
+                <div>
+                  <Label className="text-sm font-medium">Assigned To</Label>
+                  <p className="text-sm text-gray-600">Technician #{selectedIssue.assignedTo}</p>
                 </div>
               )}
 
               {selectedIssue.rating && (
-                <div className="space-y-2">
+                <div>
                   <Label className="text-sm font-medium">Your Rating</Label>
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <span key={star} className={star <= selectedIssue.rating! ? "text-yellow-400" : "text-gray-300"}>
                         ⭐
@@ -932,7 +601,7 @@ export default function CitizenDashboard() {
                     setShowDetailsModal(false);
                     handleRateService(selectedIssue);
                   }}
-                  className="bg-sa-gold hover:bg-yellow-500 text-black"
+                  className="bg-green-600 hover:bg-green-700 text-white"
                 >
                   Rate Service
                 </Button>
@@ -976,14 +645,12 @@ export default function CitizenDashboard() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="feedback" className="text-sm font-medium">
-                  Additional Comments (Optional)
-                </Label>
-                <Textarea
+                <Label htmlFor="feedback" className="text-sm font-medium">Feedback (Optional)</Label>
+                <Textarea 
                   id="feedback"
-                  placeholder="Share your experience..."
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
+                  placeholder="Share your experience..."
                   className="min-h-[80px]"
                 />
               </div>
@@ -1004,7 +671,7 @@ export default function CitizenDashboard() {
                   feedback 
                 })}
                 disabled={rating === 0 || submitRating.isPending}
-                className="bg-sa-gold hover:bg-yellow-500 text-black"
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 {submitRating.isPending ? "Submitting..." : "Submit Rating"}
               </Button>
@@ -1013,10 +680,8 @@ export default function CitizenDashboard() {
         </Dialog>
       )}
 
-
-
       {/* Floating Chatbot */}
-      <Chatbot userId={1} />
+      <Chatbot userId={currentUser?.id || 1} />
     </div>
   );
 }
