@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -33,7 +32,9 @@ import {
   Phone,
   LogOut,
   Key,
-  RefreshCw
+  RefreshCw,
+  Menu,
+  X
 } from "lucide-react";
 
 // User creation form schema
@@ -379,119 +380,325 @@ export default function AdminDashboard() {
     );
   };
 
+  const [activeSection, setActiveSection] = useState("overview");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const handleLogout = () => {
     localStorage.removeItem("municipalAuth");
     sessionStorage.removeItem("municipalAuth");
     window.location.href = "/";
   };
 
+  const sidebarItems = [
+    { id: "overview", label: "Overview", icon: BarChart3 },
+    { id: "users", label: "Users", icon: Users },
+    { id: "permissions", label: "Roles", icon: Shield },
+    { id: "settings", label: "Settings", icon: Settings },
+  ];
+
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, hsl(51, 100%, 98%) 0%, hsl(196, 100%, 98%) 100%)' }}>
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm" style={{ borderBottom: '3px solid hsl(196, 100%, 31%)' }}>
+      <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
-              <Shield className="w-8 h-8" style={{ color: 'hsl(196, 100%, 31%)' }} />
+              <div className="bg-yellow-400 rounded-lg p-2">
+                <span className="text-black font-bold text-lg">MTN</span>
+              </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Administrator Dashboard</h1>
-                <p className="text-sm text-gray-500">Full System Access & User Management</p>
+                <h1 className="text-xl font-semibold text-gray-900">Smart Municipal</h1>
+                <p className="text-sm text-gray-500">Citizen Engagement Platform</p>
               </div>
             </div>
-
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="outline"
+                size="sm"
+                className="md:hidden"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              </Button>
+              <span className="bg-gray-100 px-3 py-1 rounded-md text-sm">Admin</span>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="overview" className="space-y-6">
-          <div className="overflow-x-auto">
-            <TabsList className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground min-w-max w-full">
-              <TabsTrigger value="overview" className="px-3 py-1.5 text-sm whitespace-nowrap">Overview</TabsTrigger>
-              <TabsTrigger value="users" className="px-3 py-1.5 text-sm whitespace-nowrap">Users</TabsTrigger>
-              <TabsTrigger value="permissions" className="px-3 py-1.5 text-sm whitespace-nowrap">Roles</TabsTrigger>
-              <TabsTrigger value="settings" className="px-3 py-1.5 text-sm whitespace-nowrap">Settings</TabsTrigger>
-            </TabsList>
-          </div>
-
-          {/* System Overview */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats?.activeUsers || 0} active users
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Issues</CardTitle>
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.totalIssues || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats?.resolvedIssues || 0} resolved
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Teams</CardTitle>
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.totalTeams || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats?.activeTechnicians || 0} available technicians
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">System Status</CardTitle>
-                  <Database className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">Online</div>
-                  <p className="text-xs text-muted-foreground">
-                    Uptime: {stats?.systemUptime || "24h"}
-                  </p>
-                </CardContent>
-              </Card>
+      <div className="flex h-[calc(100vh-4rem)]">
+        {/* Sidebar */}
+        <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out`}>
+          <div className="flex flex-col h-full">
+            <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
+              <nav className="mt-5 flex-1 px-2 space-y-1">
+                {sidebarItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveSection(item.id);
+                        setSidebarOpen(false);
+                      }}
+                      className={`${
+                        activeSection === item.id
+                          ? 'bg-blue-50 border-blue-300 text-blue-700'
+                          : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      } group flex items-center px-2 py-2 text-sm font-medium rounded-md border-l-4 transition-all duration-200 w-full text-left`}
+                    >
+                      <Icon
+                        className={`${
+                          activeSection === item.id ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+                        } mr-3 flex-shrink-0 h-6 w-6`}
+                      />
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </nav>
+              
+              {/* User Management Actions in Sidebar */}
+              {activeSection === "users" && (
+                <div className="mt-6 pt-4 border-t border-gray-200 px-2">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                    Quick Actions
+                  </h3>
+                  <div className="space-y-2">
+                    <Dialog open={showResetAllPasswords} onOpenChange={setShowResetAllPasswords}>
+                      <DialogTrigger asChild>
+                        <button className="w-full flex items-center px-2 py-2 text-sm text-gray-600 hover:bg-orange-50 hover:text-orange-700 rounded-md transition-colors">
+                          <RefreshCw className="w-4 h-4 mr-3" />
+                          Reset All Passwords
+                        </button>
+                      </DialogTrigger>
+                    </Dialog>
+                    
+                    <Dialog open={showCreateUser} onOpenChange={setShowCreateUser}>
+                      <DialogTrigger asChild>
+                        <button className="w-full flex items-center px-2 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors">
+                          <Plus className="w-4 h-4 mr-3" />
+                          Add User
+                        </button>
+                      </DialogTrigger>
+                    </Dialog>
+                  </div>
+                </div>
+              )}
             </div>
-          </TabsContent>
+          </div>
+        </aside>
 
-          {/* User Management */}
-          <TabsContent value="users" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">User Management</h2>
-              <div className="flex items-center gap-3">
-                <Dialog open={showResetAllPasswords} onOpenChange={setShowResetAllPasswords}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="flex items-center space-x-2 bg-orange-50 hover:bg-orange-100 border-orange-200">
-                      <RefreshCw className="w-4 h-4" />
-                      <span>Reset All Passwords</span>
-                    </Button>
-                  </DialogTrigger>
-                </Dialog>
+        {/* Overlay for mobile */}
+        {sidebarOpen && (
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-gray-600 bg-opacity-75"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="py-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+
+            {/* System Overview */}
+            {activeSection === "overview" && (
+              <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="bg-white border border-gray-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3">
+                    <Users className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Users</p>
+                      <p className="text-2xl font-bold text-gray-900">{stats?.totalUsers || 12}</p>
+                      <p className="text-xs text-gray-500">{stats?.activeUsers || 12} active users</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border border-gray-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3">
+                    <BarChart3 className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Issues</p>
+                      <p className="text-2xl font-bold text-gray-900">{stats?.totalIssues || 2}</p>
+                      <p className="text-xs text-gray-500">{stats?.resolvedIssues || 1} resolved</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border border-gray-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3">
+                    <Activity className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Active Teams</p>
+                      <p className="text-2xl font-bold text-gray-900">{stats?.activeTechnicians || 0}</p>
+                      <p className="text-xs text-gray-500">{stats?.activeTechnicians || 0} available technicians</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border border-gray-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3">
+                    <Database className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">System Status</p>
+                      <p className="text-2xl font-bold text-green-600">Online</p>
+                      <p className="text-xs text-gray-500">Uptime: {stats?.systemUptime || "48h 23m"}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              </div>
+              </div>
+            )}
+
+            {/* User Management */}
+            {activeSection === "users" && (
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">User Management</h2>
                 
-                <Dialog open={showCreateUser} onOpenChange={setShowCreateUser}>
-                  <DialogTrigger asChild>
-                    <Button className="flex items-center space-x-2">
-                      <Plus className="w-4 h-4" />
-                      <span>Add User</span>
-                    </Button>
-                  </DialogTrigger>
+            <Card className="bg-white border border-gray-200">
+              <CardContent className="p-6">
+                <div className="overflow-x-auto">
+                  <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="hidden lg:table-cell">Last Active</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {usersLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8">
+                          Loading users...
+                        </TableCell>
+                      </TableRow>
+                    ) : users.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8">
+                          No users found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      users.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium text-sm">{user.name}</div>
+                              <div className="text-xs text-gray-500 truncate max-w-[140px]">{user.email}</div>
+                              <div className="text-xs text-gray-400">@{user.username}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-1">
+                              {getRoleIcon(user.role)}
+                              <span className="text-xs hidden sm:inline">{roleConfig[user.role]?.label}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(user.status)}</TableCell>
+                          <TableCell className="text-xs text-gray-500 hidden lg:table-cell">
+                            {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : "Never"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditDialog(user)}
+                                className="h-7 px-2 text-xs"
+                              >
+                                <Edit className="w-3 h-3" />
+                                <span className="ml-1 hidden sm:inline">Edit</span>
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openResetPasswordDialog(user)}
+                                className="h-7 px-2 text-xs"
+                                title="Reset Password"
+                              >
+                                <Key className="w-3 h-3" />
+                                <span className="ml-1 hidden lg:inline">Reset</span>
+                              </Button>
+                              
+                              <Select
+                                value={user.status}
+                                onValueChange={(status: "active" | "inactive" | "suspended") => 
+                                  handleToggleStatus(user, status)
+                                }
+                              >
+                                <SelectTrigger className="w-16 h-7 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="active">Active</SelectItem>
+                                  <SelectItem value="inactive">Inactive</SelectItem>
+                                  <SelectItem value="suspended">Suspended</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm" 
+                                    className="h-7 w-7 p-0 flex-shrink-0"
+                                    title="Delete user"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete User</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete {user.name}? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={() => handleDeleteUser(user)}
+                                      disabled={deleteUserMutation.isPending}
+                                      className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400"
+                                    >
+                                      {deleteUserMutation.isPending ? "Deleting..." : "Delete"}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+              </div>
+            )}
+
+            {/* Create User Dialog */}
+            <Dialog open={showCreateUser} onOpenChange={setShowCreateUser}>
                 <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Create New User</DialogTitle>
@@ -627,134 +834,6 @@ export default function AdminDashboard() {
                   </Form>
                 </DialogContent>
               </Dialog>
-            </div>
-
-            <Card>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table className="min-w-full">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="min-w-[200px]">User</TableHead>
-                        <TableHead className="min-w-[120px]">Role</TableHead>
-                        <TableHead className="min-w-[100px]">Status</TableHead>
-                        <TableHead className="min-w-[120px]">Last Active</TableHead>
-                        <TableHead className="min-w-[320px]">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                  <TableBody>
-                    {usersLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8">
-                          Loading users...
-                        </TableCell>
-                      </TableRow>
-                    ) : users.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8">
-                          No users found
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      users.map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell className="min-w-[200px]">
-                            <div>
-                              <div className="font-medium">{user.name}</div>
-                              <div className="text-sm text-gray-500">{user.email}</div>
-                              <div className="text-xs text-gray-400">@{user.username}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="min-w-[120px]">
-                            <div className="flex items-center space-x-2">
-                              {getRoleIcon(user.role)}
-                              <span className="text-sm">{roleConfig[user.role]?.label}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="min-w-[100px]">{getStatusBadge(user.status)}</TableCell>
-                          <TableCell className="text-sm text-gray-500 min-w-[120px]">
-                            {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : "Never"}
-                          </TableCell>
-                          <TableCell className="min-w-[280px]">
-                            <div className="flex items-center gap-2 justify-start">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openEditDialog(user)}
-                                className="flex items-center gap-1 px-3 py-1 h-8 whitespace-nowrap"
-                              >
-                                <Edit className="w-3 h-3" />
-                                <span className="text-xs">Edit</span>
-                              </Button>
-
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openResetPasswordDialog(user)}
-                                className="flex items-center gap-1 px-3 py-1 h-8 whitespace-nowrap"
-                                title="Reset Password"
-                              >
-                                <Key className="w-3 h-3" />
-                                <span className="text-xs">Reset</span>
-                              </Button>
-                              
-                              <Select
-                                value={user.status}
-                                onValueChange={(status: "active" | "inactive" | "suspended") => 
-                                  handleToggleStatus(user, status)
-                                }
-                              >
-                                <SelectTrigger className="w-20 h-8 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="active">Active</SelectItem>
-                                  <SelectItem value="inactive">Inactive</SelectItem>
-                                  <SelectItem value="suspended">Suspended</SelectItem>
-                                </SelectContent>
-                              </Select>
-
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button 
-                                    variant="destructive" 
-                                    size="sm" 
-                                    className="h-8 w-8 p-0 flex-shrink-0"
-                                    title="Delete user"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete User</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete {user.name}? This action cannot be undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction 
-                                      onClick={() => handleDeleteUser(user)}
-                                      disabled={deleteUserMutation.isPending}
-                                      className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400"
-                                    >
-                                      {deleteUserMutation.isPending ? "Deleting..." : "Delete"}
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-            </div>
 
             {/* Edit User Dialog */}
             <Dialog open={showEditUser} onOpenChange={setShowEditUser}>
@@ -944,10 +1023,10 @@ export default function AdminDashboard() {
                 </div>
               </DialogContent>
             </Dialog>
-          </TabsContent>
 
-          {/* Roles & Permissions */}
-          <TabsContent value="permissions" className="space-y-6">
+            {/* Roles & Permissions */}
+            {activeSection === "permissions" && (
+              <div className="space-y-6">
             <h2 className="text-xl font-semibold">Roles & Permissions</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Object.entries(roleConfig).map(([role, config]) => (
@@ -1021,10 +1100,12 @@ export default function AdminDashboard() {
                 </Card>
               ))}
             </div>
-          </TabsContent>
+              </div>
+            )}
 
-          {/* System Settings */}
-          <TabsContent value="settings" className="space-y-6">
+            {/* System Settings */}
+            {activeSection === "settings" && (
+              <div className="space-y-6">
             <h2 className="text-xl font-semibold">System Settings</h2>
             <Card>
               <CardHeader>
@@ -1058,8 +1139,11 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+              </div>
+            )}
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );
