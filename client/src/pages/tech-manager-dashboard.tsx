@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Users, Wrench, MapPin, Clock, Star, AlertCircle, CheckCircle, Navigation, StickyNote, Eye, FileText, Download, Printer, Calendar, User, Phone, Mail } from "lucide-react";
+import { Users, Wrench, MapPin, Clock, Star, AlertCircle, CheckCircle, Navigation, StickyNote, Eye, FileText, Download, Printer, Calendar, User, Phone, Mail, Menu, X, ClipboardList, BarChart3 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
@@ -32,6 +32,8 @@ export default function TechManagerDashboard() {
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [selectedReportForReview, setSelectedReportForReview] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");
+  const [activeSection, setActiveSection] = useState("assignments");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: technicians = [], isLoading: techLoading } = useQuery({
@@ -426,43 +428,99 @@ export default function TechManagerDashboard() {
   };
 
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative overflow-hidden">
-      {/* Background geometric patterns */}
-      <div className="absolute inset-0 z-0">
-        {/* Animated geometric shapes */}
-        <div className="absolute top-20 left-10 w-64 h-64 bg-gradient-to-br from-blue-400/40 to-purple-400/40 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-green-400/40 to-blue-400/40 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
-        <div className="absolute -bottom-32 left-20 w-80 h-80 bg-gradient-to-br from-purple-400/40 to-pink-400/40 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
-        <div className="absolute top-60 left-1/2 w-96 h-96 bg-gradient-to-br from-orange-400/30 to-red-400/30 rounded-full mix-blend-multiply filter blur-2xl animate-pulse delay-3000"></div>
-        <div className="absolute bottom-40 right-10 w-60 h-60 bg-gradient-to-br from-cyan-400/35 to-teal-400/35 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-4000"></div>
-        
-        {/* Additional decorative patterns */}
-        <div 
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `
-              radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
-              radial-gradient(circle at 75% 75%, rgba(34, 197, 94, 0.3) 0%, transparent 50%),
-              radial-gradient(circle at 50% 10%, rgba(168, 85, 247, 0.2) 0%, transparent 50%)
-            `
-          }}
-        />
-      </div>
+  const handleLogout = () => {
+    localStorage.removeItem("municipalAuth");
+    sessionStorage.removeItem("municipalAuth");
+    window.location.href = "/";
+  };
 
-    <div className="relative z-10 container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Technical Manager Dashboard</h1>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">Technician allocation and performance management</p>
+  const sidebarItems = [
+    { id: "assignments", label: "Issue Assignments", icon: ClipboardList },
+    { id: "completed", label: "Completed Work", icon: CheckCircle },
+    { id: "technicians", label: "Technician Management", icon: Users },
+    { id: "tracking", label: "Location Tracking", icon: MapPin },
+    { id: "performance", label: "Performance Analytics", icon: BarChart3 },
+    { id: "departments", label: "Department Overview", icon: Star },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-4">
+              <div className="bg-yellow-400 rounded-lg p-2">
+                <span className="text-black font-bold text-lg">MTN</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold text-gray-900">Technical Manager Dashboard</h1>
+                <p className="text-sm text-gray-500">Technician allocation and performance management</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="outline"
+                size="sm"
+                className="md:hidden"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              </Button>
+              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                <Wrench className="w-4 h-4 mr-1" />
+                Technical View
+              </Badge>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                Sign Out
+              </Button>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center">
-          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-            <Wrench className="w-4 h-4 mr-1" />
-            Technical View
-          </Badge>
+      </header>
+
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Layout Container */}
+      <div className="flex h-[calc(100vh-80px)]">
+        {/* Sidebar */}
+        <div className={`${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:translate-x-0 fixed md:static inset-y-0 left-0 z-30 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col border-r border-gray-200`}>
+          
+          <nav className="flex-1 px-4 py-6 space-y-1">
+            {sidebarItems.map((item) => {
+              const IconComponent = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveSection(item.id);
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                    activeSection === item.id
+                      ? 'bg-mtn-yellow text-black'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <IconComponent className="w-5 h-5 mr-3" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
         </div>
-      </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 bg-gray-50 md:ml-0">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -519,35 +577,9 @@ export default function TechManagerDashboard() {
         </Card>
       </div>
 
-      <Tabs defaultValue="assignments" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6 h-auto">
-          <TabsTrigger value="assignments" className="text-xs sm:text-sm p-2 sm:p-3">
-            <span className="hidden sm:inline">Issue Assignments</span>
-            <span className="sm:hidden">Issues</span>
-          </TabsTrigger>
-          <TabsTrigger value="completed" className="text-xs sm:text-sm p-2 sm:p-3">
-            <span className="hidden sm:inline">Completed Work</span>
-            <span className="sm:hidden">Completed</span>
-          </TabsTrigger>
-          <TabsTrigger value="technicians" className="text-xs sm:text-sm p-2 sm:p-3">
-            <span className="hidden sm:inline">Technician Management</span>
-            <span className="sm:hidden">Technicians</span>
-          </TabsTrigger>
-          <TabsTrigger value="tracking" className="text-xs sm:text-sm p-2 sm:p-3">
-            <span className="hidden sm:inline">Location Tracking</span>
-            <span className="sm:hidden">Tracking</span>
-          </TabsTrigger>
-          <TabsTrigger value="performance" className="text-xs sm:text-sm p-2 sm:p-3">
-            <span className="hidden sm:inline">Performance Analytics</span>
-            <span className="sm:hidden">Analytics</span>
-          </TabsTrigger>
-          <TabsTrigger value="departments" className="text-xs sm:text-sm p-2 sm:p-3">
-            <span className="hidden sm:inline">Department Overview</span>
-            <span className="sm:hidden">Departments</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="assignments" className="space-y-4">
+            {/* Issue Assignments Section */}
+            {activeSection === "assignments" && (
+              <div className="space-y-6">
           {/* Export Controls */}
           <Card className="mb-4">
             <CardHeader className="pb-3">
@@ -775,9 +807,12 @@ export default function TechManagerDashboard() {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
+              </div>
+            )}
 
-        <TabsContent value="completed" className="space-y-4">
+            {/* Completed Work Section */}
+            {activeSection === "completed" && (
+              <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Completed Work Reports</CardTitle>
@@ -928,9 +963,12 @@ ${report.additionalNotes}
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+              </div>
+            )}
 
-        <TabsContent value="technicians" className="space-y-4">
+            {/* Technician Management Section */}
+            {activeSection === "technicians" && (
+              <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {filteredTechnicians?.map((tech: any) => (
               <Card key={tech.id}>
@@ -992,36 +1030,43 @@ ${report.additionalNotes}
               </Card>
             ))}
           </div>
-        </TabsContent>
+              </div>
+            )}
 
-        <TabsContent value="tracking" className="space-y-4">
-          <TechnicianLocationTracker />
-        </TabsContent>
+            {/* Location Tracking Section */}
+            {activeSection === "tracking" && (
+              <div className="space-y-6">
+                <TechnicianLocationTracker />
+              </div>
+            )}
 
-        <TabsContent value="performance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Technician Performance Overview</CardTitle>
-              <CardDescription>Performance metrics and completion rates</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={(techPerformance as any[])?.slice(0, 10) || []}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="completedIssues" fill="#0ea5e9" name="Completed Issues" />
-                  <Bar dataKey="performanceRating" fill="#10b981" name="Performance Rating" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            {/* Performance Analytics Section */}
+            {activeSection === "performance" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Technician Performance Overview</CardTitle>
+                    <CardDescription>Performance metrics and completion rates</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={400}>
+                      <BarChart data={(techPerformance as any[])?.slice(0, 10) || []}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="completedIssues" fill="#0ea5e9" name="Completed Issues" />
+                        <Bar dataKey="performanceRating" fill="#10b981" name="Performance Rating" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
-
-
-        <TabsContent value="departments" className="space-y-4">
+            {/* Department Overview Section */}
+            {activeSection === "departments" && (
+              <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Department Statistics</CardTitle>
@@ -1054,8 +1099,8 @@ ${report.additionalNotes}
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+              </div>
+            )}
 
       {/* Assignment Dialog */}
       <Dialog open={!!selectedIssue} onOpenChange={() => setSelectedIssue(null)}>
@@ -1686,7 +1731,9 @@ ${selectedCompletionReport.additionalNotes || 'None'}
         </DialogContent>
       </Dialog>
 
-    </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
