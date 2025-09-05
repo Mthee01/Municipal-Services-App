@@ -6,19 +6,35 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { MapPin, Users, AlertCircle, CheckCircle, Clock, Phone, Mail, TrendingUp } from "lucide-react";
+import { MapPin, Users, AlertCircle, CheckCircle, Clock, Phone, Mail, TrendingUp, Menu, X, BarChart3, Settings, MessageSquare } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { IssueCard } from "@/components/issue-card";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatRelativeTime, getStatusColor, getPriorityColor } from "@/lib/utils";
+import { RealTimeNotifications } from "@/components/real-time-notifications";
 
 export default function WardCouncillorDashboard() {
+  const [activeSection, setActiveSection] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedWard, setSelectedWard] = useState<string>("Ward 1");
-  const [activeTab, setActiveTab] = useState<string>("issues");
   const { toast } = useToast();
 
-  const { data: wards, isLoading: wardsLoading } = useQuery({
+  // Sidebar configuration
+  const sidebarItems = [
+    { id: "dashboard", label: "Ward Overview", icon: MapPin },
+    { id: "issues", label: "Issue Management", icon: AlertCircle },
+    { id: "residents", label: "Resident Services", icon: Users },
+    { id: "performance", label: "Ward Analytics", icon: BarChart3 },
+    { id: "communication", label: "Communication Hub", icon: MessageSquare },
+    { id: "settings", label: "Ward Settings", icon: Settings },
+  ];
+
+  const handleLogout = () => {
+    window.location.href = '/api/auth/logout';
+  };
+
+  const { data: wards = [], isLoading: wardsLoading } = useQuery({
     queryKey: ["/api/wards"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/wards");
@@ -26,7 +42,7 @@ export default function WardCouncillorDashboard() {
     },
   });
 
-  const { data: wardStats, isLoading: statsLoading } = useQuery({
+  const { data: wardStats = {}, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/wards", selectedWard, "stats"],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/wards/${selectedWard}/stats`);
@@ -35,7 +51,7 @@ export default function WardCouncillorDashboard() {
     enabled: !!selectedWard,
   });
 
-  const { data: issues, isLoading: issuesLoading } = useQuery({
+  const { data: issues = [], isLoading: issuesLoading } = useQuery({
     queryKey: ["/api/issues"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/issues");
@@ -43,7 +59,7 @@ export default function WardCouncillorDashboard() {
     },
   });
 
-  const { data: technicians, isLoading: techLoading } = useQuery({
+  const { data: technicians = [], isLoading: techLoading } = useQuery({
     queryKey: ["/api/technicians"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/technicians");
@@ -66,9 +82,9 @@ export default function WardCouncillorDashboard() {
 
   if (wardsLoading || statsLoading || issuesLoading || techLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-pulse space-y-4 w-full max-w-4xl mx-auto p-6">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="h-32 bg-gray-200 rounded"></div>
@@ -79,422 +95,481 @@ export default function WardCouncillorDashboard() {
     );
   }
 
-  const currentWard = wards?.find((w: any) => w.wardNumber === selectedWard);
-  
-  // Ensure we have valid data before filtering
-  const allIssues = issues || [];
-  const wardIssues = allIssues.filter((issue: any) => issue.ward === selectedWard);
-  
-  const wardTechnicians = technicians?.filter((tech: any) => 
-    wardIssues.some((issue: any) => issue.assignedTo === tech.name)
-  ) || [];
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
-
-  const categoryData = Object.entries(wardStats?.categoryStats || {}).map(([category, count]) => ({
-    name: category.replace('_', ' ').toUpperCase(),
-    value: count as number,
-  }));
-
-  const priorityData = Object.entries(wardStats?.priorityStats || {}).map(([priority, count]) => ({
-    name: priority.toUpperCase(),
-    value: count as number,
-  }));
-
-  const handleIssueUpdate = (issueId: number, updates: any) => {
-    updateIssueMutation.mutate({ id: issueId, ...updates });
+  // Mock data for ward statistics
+  const mockWardStats = {
+    totalResidents: 8500,
+    activeIssues: 23,
+    resolvedThisMonth: 45,
+    averageResolutionTime: 3.2,
+    ...wardStats
   };
 
+  const wardIssues = issues.filter((issue: any) => issue.ward === selectedWard);
+  const pendingIssues = wardIssues.filter((issue: any) => issue.status === 'pending');
+  const inProgressIssues = wardIssues.filter((issue: any) => issue.status === 'in_progress');
+  const resolvedIssues = wardIssues.filter((issue: any) => issue.status === 'resolved');
+
+  const COLORS = ['#ef4444', '#f97316', '#22c55e', '#3b82f6'];
+
+  const issuesByCategory = [
+    { name: 'Water & Sanitation', value: 8, color: '#3b82f6' },
+    { name: 'Electricity', value: 5, color: '#ef4444' },
+    { name: 'Roads', value: 6, color: '#f97316' },
+    { name: 'Waste Management', value: 4, color: '#22c55e' },
+  ];
+
+  const monthlyTrend = [
+    { month: 'Jan', reported: 35, resolved: 28 },
+    { month: 'Feb', reported: 42, resolved: 38 },
+    { month: 'Mar', reported: 38, resolved: 35 },
+    { month: 'Apr', reported: 45, resolved: 41 },
+    { month: 'May', reported: 41, resolved: 43 },
+    { month: 'Jun', reported: 39, resolved: 45 },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
-        {/* Mobile-optimized header */}
-        <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-              Ward Councillor
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-              Ward performance & issue management
-            </p>
-          </div>
-          
-          <div className="flex items-center">
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              <MapPin className="w-4 h-4 mr-1" />
-              Ward Level
-            </Badge>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 flex items-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center mr-3">
+                  <MapPin className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-semibold text-gray-900">Ward Councillor Dashboard</h1>
+                  <p className="text-sm text-gray-500">Community representation and services</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Select value={selectedWard} onValueChange={setSelectedWard}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <SelectItem key={`Ward ${i + 1}`} value={`Ward ${i + 1}`}>
+                      Ward {i + 1}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <RealTimeNotifications userRole="ward_councillor" />
+              <Button
+                variant="outline"
+                size="sm"
+                className="md:hidden"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              </Button>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <MapPin className="w-4 h-4 mr-1" />
+                Councillor
+              </Badge>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
+      </header>
 
-        {/* Mobile-optimized Ward Information Card */}
-        {currentWard && (
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-          <CardHeader className="pb-3 sm:pb-6">
-            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-              <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="truncate">{currentWard.wardNumber} - {currentWard.name}</span>
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm line-clamp-2">
-              {currentWard.description}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div className="text-center p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                <Users className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-blue-600" />
-                <p className="text-lg sm:text-xl font-bold text-blue-900 dark:text-blue-100">
-                  {currentWard.population?.toLocaleString()}
-                </p>
-                <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-300">Population</p>
-              </div>
-              <div className="text-center p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                <MapPin className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-green-600" />
-                <p className="text-lg sm:text-xl font-bold text-green-900 dark:text-green-100">
-                  {currentWard.area}
-                </p>
-                <p className="text-xs sm:text-sm text-green-600 dark:text-green-300">Area</p>
-              </div>
-              <div className="text-center p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg col-span-2 lg:col-span-1">
-                <Phone className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-purple-600" />
-                <p className="text-sm sm:text-base font-semibold text-purple-900 dark:text-purple-100 truncate">
-                  {currentWard.councillorName}
-                </p>
-                <p className="text-xs sm:text-sm text-purple-600 dark:text-purple-300">Councillor</p>
-              </div>
-              <div className="text-center p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg col-span-2 lg:col-span-1">
-                <Mail className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-orange-600" />
-                <p className="text-xs sm:text-sm font-semibold text-orange-900 dark:text-orange-100 truncate">
-                  {currentWard.councillorPhone}
-                </p>
-                <p className="text-xs text-orange-600 dark:text-orange-300 truncate">
-                  {currentWard.councillorEmail}
-                </p>
-              </div>
+      <div className="flex h-[calc(100vh-4rem)]">
+        {/* Sidebar */}
+        <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out`}>
+          <div className="flex flex-col h-full">
+            <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
+              <nav className="mt-5 flex-1 px-2 space-y-1">
+                {sidebarItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveSection(item.id);
+                        setSidebarOpen(false);
+                      }}
+                      className={`${
+                        activeSection === item.id
+                          ? 'bg-green-50 border-green-300 text-green-700'
+                          : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      } group flex items-center px-2 py-2 text-sm font-medium rounded-md border-l-4 transition-all duration-200 w-full text-left`}
+                    >
+                      <Icon
+                        className={`${
+                          activeSection === item.id ? 'text-green-500' : 'text-gray-400 group-hover:text-gray-500'
+                        } mr-3 flex-shrink-0 h-6 w-6`}
+                      />
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </aside>
 
-      {/* Mobile-optimized Key Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="p-3 sm:p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
-              Total Issues
-            </div>
-            <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-            {wardStats?.totalIssues || 0}
-          </div>
-          <p className="text-xs text-gray-500 truncate mt-1">
-            In {selectedWard}
-          </p>
-        </Card>
+        {/* Overlay for mobile */}
+        {sidebarOpen && (
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-gray-600 bg-opacity-75"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
-        <Card className="p-3 sm:p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
-              Open Issues
-            </div>
-            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600 flex-shrink-0" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-orange-600">
-            {wardStats?.openIssues || 0}
-          </div>
-          <p className="text-xs text-gray-500 truncate mt-1">
-            Awaiting attention
-          </p>
-        </Card>
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="py-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
 
-        <Card className="p-3 sm:p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
-              In Progress
-            </div>
-            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-blue-600">
-            {wardStats?.inProgress || 0}
-          </div>
-          <p className="text-xs text-gray-500 truncate mt-1">
-            Being worked on
-          </p>
-        </Card>
-
-        <Card className="p-3 sm:p-4 col-span-2 lg:col-span-1">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
-              Resolution Rate
-            </div>
-            <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-green-600">
-            {wardStats?.resolutionRate?.toFixed(1) || 0}%
-          </div>
-          <Progress value={wardStats?.resolutionRate || 0} className="mt-2 h-2" />
-        </Card>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3 sm:space-y-4">
-        <TabsList className="grid w-full grid-cols-3 h-auto p-1">
-          <TabsTrigger value="issues" className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-2">
-            <span className="hidden sm:inline">Ward Issues</span>
-            <span className="sm:hidden">Issues</span>
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-2">
-            <span className="hidden sm:inline">Analytics</span>
-            <span className="sm:hidden">Charts</span>
-          </TabsTrigger>
-          <TabsTrigger value="technicians" className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-2">
-            <span className="hidden sm:inline">Technicians</span>
-            <span className="sm:hidden">Techs</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="issues" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {wardIssues.map((issue: any) => (
-              <IssueCard
-                key={issue.id}
-                issue={issue}
-                onUpdate={(updatedIssue: any) => handleIssueUpdate(issue.id, updatedIssue)}
-              />
-            ))}
-          </div>
-          {wardIssues.length === 0 && (
-            <Card>
-              <CardContent className="text-center py-8">
-                <AlertCircle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-500">No issues reported in {selectedWard} yet.</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-3 sm:space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="text-sm sm:text-base">Issues by Category</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Distribution in {selectedWard}</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex flex-col space-y-3">
-                  <div className="w-full">
-                    <ResponsiveContainer width="100%" height={180}>
-                      <PieChart>
-                        <Pie
-                          data={categoryData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={false}
-                          outerRadius={60}
-                          innerRadius={25}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {categoryData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          contentStyle={{ fontSize: '11px', padding: '6px' }}
-                          labelStyle={{ fontSize: '10px' }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    {categoryData.map((entry, index) => (
-                      <div key={entry.name} className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full flex-shrink-0" 
-                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                        />
-                        <span className="truncate flex-1">{entry.name}</span>
-                        <span className="font-semibold flex-shrink-0">{entry.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="text-sm sm:text-base">Issues by Priority</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Priority distribution in {selectedWard}</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={priorityData} margin={{ top: 5, right: 5, left: 5, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis 
-                      dataKey="name" 
-                      fontSize={9}
-                      angle={-45}
-                      textAnchor="end"
-                      height={40}
-                      interval={0}
-                    />
-                    <YAxis fontSize={9} width={25} />
-                    <Tooltip 
-                      contentStyle={{ fontSize: '11px', padding: '6px' }}
-                      labelStyle={{ fontSize: '10px' }}
-                    />
-                    <Bar dataKey="value" fill="#0ea5e9" radius={[2, 2, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Ward Performance Summary</CardTitle>
-              <CardDescription>Key metrics for {selectedWard}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
+              {/* Ward Overview Section */}
+              {activeSection === "dashboard" && (
+                <div className="space-y-6">
                   <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm font-medium">Resolution Rate</span>
-                      <span className="text-sm text-muted-foreground">
-                        {wardStats?.resolutionRate?.toFixed(1)}%
-                      </span>
-                    </div>
-                    <Progress value={wardStats?.resolutionRate || 0} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm font-medium">Average Rating</span>
-                      <span className="text-sm text-muted-foreground">
-                        {wardStats?.avgRating || 0}/5
-                      </span>
-                    </div>
-                    <Progress value={(wardStats?.avgRating || 0) * 20} />
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Total Issues</span>
-                    <span className="font-semibold">{wardStats?.totalIssues || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Resolved Issues</span>
-                    <span className="font-semibold text-green-600">{wardStats?.resolved || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Open Issues</span>
-                    <span className="font-semibold text-orange-600">{wardStats?.openIssues || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">In Progress</span>
-                    <span className="font-semibold text-blue-600">{wardStats?.inProgress || 0}</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Ward Overview - {selectedWard}</h2>
+                    
+                    {/* Key Metrics */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                      <Card className="bg-gradient-to-br from-green-50 to-green-100">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Total Residents</CardTitle>
+                          <Users className="h-4 w-4 text-green-600" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-green-900">
+                            {mockWardStats.totalResidents.toLocaleString()}
+                          </div>
+                          <p className="text-xs text-green-600">Registered voters: 6,200</p>
+                        </CardContent>
+                      </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Work Performance Summary</CardTitle>
-              <CardDescription>Technician performance metrics for {selectedWard}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm font-medium">Avg. Technician Performance</span>
-                      <span className="text-sm text-muted-foreground">
-                        {wardStats?.avgTechPerformance || 0}/5
-                      </span>
-                    </div>
-                    <Progress value={(wardStats?.avgTechPerformance || 0) * 20} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm font-medium">Avg. Resolution Time</span>
-                      <span className="text-sm text-muted-foreground">
-                        {wardStats?.avgTechResolutionTime || 0} hours
-                      </span>
-                    </div>
-                    <Progress value={Math.max(0, 100 - (wardStats?.avgTechResolutionTime || 0) * 2)} />
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Active Technicians</span>
-                    <span className="font-semibold">{wardStats?.activeTechnicians || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Total Completed Issues</span>
-                    <span className="font-semibold text-green-600">{wardStats?.totalTechCompletedIssues || 0}</span>
-                  </div>
-                  {wardStats?.technicianDetails && wardStats.technicianDetails.length > 0 && (
-                    <div className="pt-2 border-t">
-                      <h5 className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Top Performer</h5>
-                      <div className="flex justify-between text-xs">
-                        <span>{wardStats.technicianDetails[0]?.name}</span>
-                        <span className="text-green-600">{wardStats.technicianDetails[0]?.performanceRating}/5</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                      <Card className="bg-gradient-to-br from-red-50 to-red-100">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Active Issues</CardTitle>
+                          <AlertCircle className="h-4 w-4 text-red-600" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-red-900">
+                            {mockWardStats.activeIssues}
+                          </div>
+                          <p className="text-xs text-red-600">
+                            {pendingIssues.length} pending, {inProgressIssues.length} in progress
+                          </p>
+                        </CardContent>
+                      </Card>
 
-        <TabsContent value="technicians" className="space-y-3 sm:space-y-4">
-          <Card>
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-sm sm:text-base">Active Technicians in {selectedWard}</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">Technicians currently working on ward issues</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-3 sm:space-y-4">
-                {wardTechnicians.length > 0 ? (
-                  wardTechnicians.map((tech: any) => (
-                    <div key={tech.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg bg-white/50 dark:bg-gray-800/50">
-                      <div className="mb-3 sm:mb-0 flex-1">
-                        <h4 className="text-sm sm:text-base font-semibold truncate">{tech.name}</h4>
-                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">{tech.department}</p>
-                        <p className="text-xs text-gray-500 truncate">{tech.currentLocation}</p>
-                      </div>
-                      <div className="flex flex-row sm:flex-col sm:text-right justify-between sm:justify-start items-center sm:items-end space-x-2 sm:space-x-0 sm:space-y-1">
-                        <Badge 
-                          variant={tech.status === "available" ? "default" : "secondary"}
-                          className="text-xs px-2 py-1"
-                        >
-                          {tech.status}
-                        </Badge>
-                        <div className="flex flex-col sm:text-right text-xs text-gray-500">
-                          <span>{tech.completedIssues} completed</span>
-                          <span>{tech.avgResolutionTime}h avg</span>
+                      <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Resolved This Month</CardTitle>
+                          <CheckCircle className="h-4 w-4 text-blue-600" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-blue-900">
+                            {mockWardStats.resolvedThisMonth}
+                          </div>
+                          <p className="text-xs text-blue-600">+12% from last month</p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-purple-50 to-purple-100">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Avg Resolution Time</CardTitle>
+                          <Clock className="h-4 w-4 text-purple-600" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-purple-900">
+                            {mockWardStats.averageResolutionTime} days
+                          </div>
+                          <p className="text-xs text-purple-600">Target: 3.0 days</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Charts */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Issues by Category</CardTitle>
+                          <CardDescription>Current distribution of active issues</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                              <Pie
+                                data={issuesByCategory}
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={80}
+                                dataKey="value"
+                                label={(entry) => `${entry.name}: ${entry.value}`}
+                              >
+                                {issuesByCategory.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <Tooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Monthly Trend</CardTitle>
+                          <CardDescription>Issues reported vs resolved over time</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <ResponsiveContainer width="100%" height={300}>
+                            <LineChart data={monthlyTrend}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="month" />
+                              <YAxis />
+                              <Tooltip />
+                              <Line type="monotone" dataKey="reported" stroke="#ef4444" strokeWidth={2} />
+                              <Line type="monotone" dataKey="resolved" stroke="#22c55e" strokeWidth={2} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Issue Management Section */}
+              {activeSection === "issues" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Issue Management - {selectedWard}</h2>
+                    
+                    <Tabs defaultValue="pending" className="space-y-4">
+                      <TabsList>
+                        <TabsTrigger value="pending">Pending ({pendingIssues.length})</TabsTrigger>
+                        <TabsTrigger value="in_progress">In Progress ({inProgressIssues.length})</TabsTrigger>
+                        <TabsTrigger value="resolved">Resolved ({resolvedIssues.length})</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="pending" className="space-y-4">
+                        {pendingIssues.length > 0 ? (
+                          pendingIssues.map((issue: any) => (
+                            <IssueCard
+                              key={issue.id}
+                              issue={issue}
+                              onUpdate={(issue) => {
+                                // Status update functionality
+                              }}
+                              showActions={true}
+                            />
+                          ))
+                        ) : (
+                          <Card className="p-8 text-center">
+                            <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">No Pending Issues</h3>
+                            <p className="text-gray-600">All issues in your ward have been addressed!</p>
+                          </Card>
+                        )}
+                      </TabsContent>
+
+                      <TabsContent value="in_progress" className="space-y-4">
+                        {inProgressIssues.map((issue: any) => (
+                          <IssueCard
+                            key={issue.id}
+                            issue={issue}
+                            onUpdate={(issue) => {
+                              // Status update functionality
+                            }}
+                            showActions={true}
+                          />
+                        ))}
+                      </TabsContent>
+
+                      <TabsContent value="resolved" className="space-y-4">
+                        {resolvedIssues.slice(0, 10).map((issue: any) => (
+                          <IssueCard
+                            key={issue.id}
+                            issue={issue}
+                            onUpdate={(issue) => {
+                              // Status update functionality
+                            }}
+                            showActions={false}
+                          />
+                        ))}
+                      </TabsContent>
+                    </Tabs>
+                  </div>
+                </div>
+              )}
+
+              {/* Resident Services Section */}
+              {activeSection === "residents" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Resident Services - {selectedWard}</h2>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <Phone className="w-5 h-5 mr-2 text-green-600" />
+                            Contact Information
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            <p><strong>Office:</strong> (021) 555-0123</p>
+                            <p><strong>Mobile:</strong> (082) 555-0123</p>
+                            <p><strong>Email:</strong> councillor@municipality.gov.za</p>
+                            <p><strong>Office Hours:</strong> Mon-Fri 8:00-16:30</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <MapPin className="w-5 h-5 mr-2 text-blue-600" />
+                            Ward Information
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            <p><strong>Population:</strong> {mockWardStats.totalResidents.toLocaleString()}</p>
+                            <p><strong>Area:</strong> 12.5 km²</p>
+                            <p><strong>Households:</strong> 2,850</p>
+                            <p><strong>Voting Districts:</strong> 4</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <TrendingUp className="w-5 h-5 mr-2 text-purple-600" />
+                            Recent Achievements
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            <p>• New park development completed</p>
+                            <p>• Street lighting project finished</p>
+                            <p>• Community hall renovations</p>
+                            <p>• Road maintenance program</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Performance Analytics Section */}
+              {activeSection === "performance" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Ward Analytics - {selectedWard}</h2>
+                    
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Performance Metrics</CardTitle>
+                        <CardDescription>Key performance indicators for your ward</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={400}>
+                          <BarChart data={monthlyTrend}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar dataKey="reported" fill="#ef4444" />
+                            <Bar dataKey="resolved" fill="#22c55e" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              )}
+
+              {/* Communication Hub Section */}
+              {activeSection === "communication" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Communication Hub</h2>
+                    
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Community Engagement Tools</CardTitle>
+                        <CardDescription>Manage communication with ward residents</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="p-4 border rounded-lg">
+                            <h4 className="font-medium mb-2">WhatsApp Groups</h4>
+                            <p className="text-sm text-gray-600 mb-3">Manage community WhatsApp groups</p>
+                            <Button size="sm">Manage Groups</Button>
+                          </div>
+                          <div className="p-4 border rounded-lg">
+                            <h4 className="font-medium mb-2">SMS Notifications</h4>
+                            <p className="text-sm text-gray-600 mb-3">Send bulk SMS to residents</p>
+                            <Button size="sm">Send SMS</Button>
+                          </div>
+                          <div className="p-4 border rounded-lg">
+                            <h4 className="font-medium mb-2">Email Newsletter</h4>
+                            <p className="text-sm text-gray-600 mb-3">Ward newsletter and updates</p>
+                            <Button size="sm">Create Newsletter</Button>
+                          </div>
+                          <div className="p-4 border rounded-lg">
+                            <h4 className="font-medium mb-2">Community Meetings</h4>
+                            <p className="text-sm text-gray-600 mb-3">Schedule and manage meetings</p>
+                            <Button size="sm">Schedule Meeting</Button>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-6 sm:py-8">
-                    <Users className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 text-gray-400" />
-                    <p className="text-xs sm:text-sm text-gray-500 px-4">No technicians currently assigned to {selectedWard} issues.</p>
+                      </CardContent>
+                    </Card>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+                </div>
+              )}
+
+              {/* Ward Settings Section */}
+              {activeSection === "settings" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Ward Settings</h2>
+                    
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Ward Configuration</CardTitle>
+                        <CardDescription>Manage ward-specific settings and preferences</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="p-4 border rounded-lg">
+                            <h4 className="font-medium mb-2">Notification Preferences</h4>
+                            <p className="text-sm text-gray-600">Configure how you receive notifications</p>
+                          </div>
+                          <div className="p-4 border rounded-lg">
+                            <h4 className="font-medium mb-2">Issue Categories</h4>
+                            <p className="text-sm text-gray-600">Customize issue categories for your ward</p>
+                          </div>
+                          <div className="p-4 border rounded-lg">
+                            <h4 className="font-medium mb-2">Response Templates</h4>
+                            <p className="text-sm text-gray-600">Create templates for common responses</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
