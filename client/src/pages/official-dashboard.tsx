@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
@@ -34,11 +35,16 @@ import {
   MessageCircle,
   StickyNote,
   AlertCircle,
-  Send
+  Send,
+  Menu,
+  X,
+  BarChart3,
+  Settings,
+  Phone,
+  MessageSquare
 } from "lucide-react";
 import { Link } from "wouter";
 import type { Issue, Technician, Team, IssueNote, IssueEscalation } from "@shared/schema";
-import { Textarea } from "@/components/ui/textarea";
 import { TechnicianLocationTracker } from "@/components/technician-location-tracker";
 
 // Helper functions
@@ -74,1580 +80,1134 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const getCategoryIcon = (category: string) => {
-  switch (category) {
-    case 'water_sanitation': return <Water className="h-4 w-4 text-blue-600" />;
-    case 'electricity': return <Zap className="h-4 w-4 text-yellow-600" />;
-    case 'roads_transport': return <Car className="h-4 w-4 text-gray-600" />;
-    case 'waste_management': return <Trash2 className="h-4 w-4 text-green-600" />;
-    default: return <AlertTriangle className="h-4 w-4 text-orange-600" />;
-  }
-};
-
 export default function OfficialDashboard() {
+  const [activeSection, setActiveSection] = useState("overview");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterPriority, setFilterPriority] = useState("all");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [selectedIssues, setSelectedIssues] = useState<Set<number>>(new Set());
+  const [showCreateTeam, setShowCreateTeam] = useState(false);
+  const [showCreateIssue, setShowCreateIssue] = useState(false);
+  const [showLocationTracker, setShowLocationTracker] = useState(false);
+  const [showIssueDetails, setShowIssueDetails] = useState(false);
+  const [selectedIssueForView, setSelectedIssueForView] = useState<Issue | null>(null);
+  const [teamName, setTeamName] = useState("");
+  const [teamMembers, setTeamMembers] = useState<number[]>([]);
+  const [selectedContact, setSelectedContact] = useState<any>(null);
+  const [messageText, setMessageText] = useState("");
+  const [conversationType, setConversationType] = useState("citizens");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Generate unique job order number based on issue ID
-  const generateJobOrderNumber = (issueId: number) => {
-    const year = new Date().getFullYear();
-    const paddedId = String(issueId).padStart(3, '0');
-    return `JO-${paddedId}-${year}`;
+  // Sidebar configuration
+  const sidebarItems = [
+    { id: "overview", label: "Call Centre Overview", icon: Phone },
+    { id: "issues", label: "Issue Management", icon: AlertCircle },
+    { id: "communication", label: "Communication", icon: MessageSquare },
+    { id: "teams", label: "Team Coordination", icon: Users },
+    { id: "tracking", label: "Live Tracking", icon: MapPin },
+    { id: "analytics", label: "Performance Analytics", icon: BarChart3 },
+    { id: "settings", label: "Centre Settings", icon: Settings },
+  ];
+
+  const handleLogout = () => {
+    // Clear frontend authentication data
+    localStorage.removeItem("municipalAuth");
+    sessionStorage.removeItem("municipalAuth");
+    // Redirect to logout endpoint to clear server session
+    window.location.href = '/api/auth/logout';
   };
 
-  // State
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [exportEmail, setExportEmail] = useState("");
-  const [exportMethod, setExportMethod] = useState("email");
-  const [exportScope, setExportScope] = useState("current"); // "current", "all", "selected"
-  const [selectedTickets, setSelectedTickets] = useState<Set<number>>(new Set());
-  const [showNotesModal, setShowNotesModal] = useState(false);
-  const [showEscalateModal, setShowEscalateModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-  const [newNote, setNewNote] = useState("");
-  const [escalationReason, setEscalationReason] = useState("");
-  
-  // Citizen issue reporting states
-  const [showCitizenReportForm, setShowCitizenReportForm] = useState(false);
-  const [citizenReportData, setCitizenReportData] = useState({
-    callerName: "",
-    callerPhone: "",
-    callerEmail: "",
-    title: "",
-    description: "",
-    category: "",
-    location: "",
-    priority: "medium",
-    urgent: false
-  });
-
-  // Queries - Real-time issue fetching for call center agents
-  const { data: issues = [], isLoading: issuesLoading } = useQuery<Issue[]>({
+  // Fetch data
+  const { data: issues = [], isLoading: issuesLoading } = useQuery({
     queryKey: ["/api/issues"],
-    refetchInterval: 5000, // Refetch every 5 seconds to catch new citizen issues
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    refetchInterval: 30000, // Refresh every 30 seconds for call centre
   });
 
-  // Real-time technician location tracking for agents to monitor field staff
-  const { data: technicianLocations = [], isLoading: locationsLoading } = useQuery({
-    queryKey: ["/api/technician-locations"],
-    refetchInterval: 10000, // Refetch every 10 seconds for real-time tracking
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+  const { data: technicians = [], isLoading: techsLoading } = useQuery({
+    queryKey: ["/api/technicians"],
+    refetchInterval: 30000,
   });
 
-  // Get all technicians with their current locations
-  const { data: techniciansWithLocations = [], isLoading: techniciansLoading } = useQuery({
-    queryKey: ["/api/technicians-with-locations"],
-    refetchInterval: 10000, // Refetch every 10 seconds for enhanced real-time tracking
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    staleTime: 5000, // Consider data stale after 5 seconds
+  const { data: teams = [], isLoading: teamsLoading } = useQuery({
+    queryKey: ["/api/teams"],
   });
 
-  const { data: unreadCount = 0 } = useQuery<number>({
-    queryKey: ["/api/whatsapp/unread-count"],
-    refetchInterval: 30000, // Refetch every 30 seconds
+  const { data: analytics = {}, isLoading: analyticsLoading } = useQuery({
+    queryKey: ["/api/analytics/call-centre"],
   });
 
-  // Fetch issue notes and escalations for selected issue
-  const { data: issueNotes = [], isLoading: notesLoading } = useQuery<IssueNote[]>({
-    queryKey: [`/api/issues/${selectedIssue?.id}/notes`],
-    queryFn: async () => {
-      const data = await apiRequest("GET", `/api/issues/${selectedIssue?.id}/notes`);
-      return Array.isArray(data) ? data : [];
-    },
-    enabled: !!selectedIssue,
-    refetchInterval: 5000, // Refresh notes every 5 seconds
-    staleTime: 0, // Always refetch
-    cacheTime: 0 // Don't cache
-  });
-
-  const { data: issueEscalations = [] } = useQuery<IssueEscalation[]>({
-    queryKey: ["/api/issues", selectedIssue?.id, "escalations"],
-    enabled: !!selectedIssue
-  });
-
-  // Mutations for notes and escalations
-  const addNoteMutation = useMutation({
-    mutationFn: async (data: { issueId: number; note: string }) => {
-      const createdBy = user?.name || user?.username || "Unknown User";
-      const createdByRole = user?.role || "call_center_agent";
-      
-      return apiRequest("POST", `/api/issues/${data.issueId}/notes`, {
-        note: data.note,
-        noteType: "general",
-        createdBy,
-        createdByRole
-      });
-    },
-    onSuccess: () => {
-      // Force immediate refetch of notes
-      queryClient.invalidateQueries({ queryKey: [`/api/issues/${selectedIssue?.id}/notes`] });
-      queryClient.refetchQueries({ queryKey: [`/api/issues/${selectedIssue?.id}/notes`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
-      setNewNote("");
-      toast({
-        title: "Success",
-        description: "Note added successfully!",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to add note",
-        variant: "destructive",
-      });
-    }
-  });
-
-  const escalateMutation = useMutation({
-    mutationFn: async (data: { issueId: number; reason: string }) => {
-      return apiRequest("POST", `/api/issues/${data.issueId}/escalate`, {
-        escalationReason: data.reason
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/issues", selectedIssue?.id, "escalations"] });
-      setEscalationReason("");
-      setShowEscalateModal(false);
-      toast({
-        title: "Success",
-        description: "Issue escalated to Technical Manager successfully!",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to escalate issue",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Citizen issue reporting mutation
-  const submitCitizenReportMutation = useMutation({
-    mutationFn: async (reportData: typeof citizenReportData) => {
-      return apiRequest("POST", "/api/issues", {
-        title: reportData.title,
-        description: `REPORTED BY AGENT ON BEHALF OF CITIZEN:\n\nCaller: ${reportData.callerName}\nPhone: ${reportData.callerPhone}\nEmail: ${reportData.callerEmail || 'Not provided'}\n\nIssue Description:\n${reportData.description}`,
-        category: reportData.category,
-        location: reportData.location,
-        priority: reportData.urgent ? "high" : reportData.priority,
-        citizenId: null, // Agent reported on behalf
-        status: "open",
-        reportedBy: `Agent: ${user?.username || 'Unknown Agent'}`,
-        callerInfo: {
-          name: reportData.callerName,
-          phone: reportData.callerPhone,
-          email: reportData.callerEmail
-        }
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
-      setShowCitizenReportForm(false);
-      setCitizenReportData({
-        callerName: "",
-        callerPhone: "",
-        callerEmail: "",
-        title: "",
-        description: "",
-        category: "",
-        location: "",
-        priority: "medium",
-        urgent: false
-      });
-      toast({
-        title: "Success",
-        description: "Issue reported successfully on behalf of citizen",
-      });
-    },
-    onError: (error) => {
-      console.error("Failed to submit citizen report:", error);
-      toast({
-        title: "Error",
-        description: "Failed to submit citizen report",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Filtered issues with priority for new citizen reports, excluding resolved issues
+  // Filter and search issues - MUST be before any conditional returns
   const filteredIssues = useMemo(() => {
-    const filtered = issues.filter((issue: Issue) => {
-      // Exclude resolved issues from call center dashboard
-      if (issue.status === 'resolved') {
-        return false;
-      }
+    return (issues as Issue[]).filter((issue: Issue) => {
+      const matchesSearch = issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        issue.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = filterStatus === "all" || issue.status === filterStatus;
+      const matchesPriority = filterPriority === "all" || issue.priority === filterPriority;
+      const matchesCategory = filterCategory === "all" || issue.category === filterCategory;
       
-      const searchLower = searchTerm.toLowerCase().trim();
-      
-      // If search term is empty, show all issues
-      if (!searchLower) {
-        return true;
-      }
-      
-      // If search term matches RefNo exactly, return only that issue
-      if (issue.referenceNumber && issue.referenceNumber.toLowerCase() === searchLower) {
-        return true;
-      }
-      
-      // If search term is 6 characters (RefNo format), only search by RefNo
-      if (searchLower.length === 6) {
-        return issue.referenceNumber && issue.referenceNumber.toLowerCase().includes(searchLower);
-      }
-      
-      // Also check if search term is a padded ID (like "000018" for issue ID 18)
-      if (searchLower.match(/^0+\d+$/)) {
-        const numericId = parseInt(searchLower);
-        if (issue.id === numericId) {
-          return true;
-        }
-        // Also check if it matches the fallback format
-        const fallbackRef = String(issue.id).padStart(6, '0');
-        if (fallbackRef.toLowerCase() === searchLower) {
-          return true;
-        }
-      }
-      
-      // For other searches, search in multiple fields
-      return issue.title.toLowerCase().includes(searchLower) ||
-             issue.description.toLowerCase().includes(searchLower) ||
-             issue.location.toLowerCase().includes(searchLower) ||
-             issue.category.toLowerCase().includes(searchLower);
+      return matchesSearch && matchesStatus && matchesPriority && matchesCategory;
     });
-    
-    // Sort to show newest issues first (especially new citizen reports)
-    return filtered.sort((a: Issue, b: Issue) => {
-      // Prioritize unassigned issues (new citizen reports)
-      if (a.status === 'open' && b.status !== 'open') return -1;
-      if (b.status === 'open' && a.status !== 'open') return 1;
-      
-      // Then by creation time (newest first)
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-  }, [issues, searchTerm]);
+  }, [issues, searchTerm, filterStatus, filterPriority, filterCategory]);
 
-  // Calculate statistics from issues
-  const stats = useMemo(() => {
-    const totalIssues = issues.length;
-    const openIssues = issues.filter(issue => issue.status === 'open').length;
-    const assignedIssues = issues.filter(issue => issue.status === 'assigned').length;
-    const resolvedIssues = issues.filter(issue => issue.status === 'resolved').length;
-    const criticalIssues = issues.filter(issue => issue.priority === 'high' || issue.priority === 'urgent').length;
-    
-    return {
-      totalIssues,
-      openIssues,
-      assignedIssues,
-      resolvedIssues,
-      criticalIssues,
-      resolutionRate: totalIssues > 0 ? Math.round((resolvedIssues / totalIssues) * 100) : 0
-    };
-  }, [issues]);
+  if (issuesLoading || techsLoading || teamsLoading || analyticsLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-pulse space-y-4 w-full max-w-4xl mx-auto p-6">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  // Handle notes and escalation
-  const handleViewDetails = (issue: Issue) => {
-    setSelectedIssue(issue);
-    setShowDetailsModal(true);
+  // Calculate stats
+  const issuesArray = issues as Issue[];
+  const techniciansArray = technicians as Technician[];
+  const teamsArray = teams as Team[];
+  
+  const stats = {
+    totalIssues: issuesArray.length,
+    openIssues: issuesArray.filter((i: Issue) => i.status === 'open').length,
+    assignedIssues: issuesArray.filter((i: Issue) => i.status === 'assigned').length,
+    inProgressIssues: issuesArray.filter((i: Issue) => i.status === 'in_progress').length,
+    resolvedIssues: issuesArray.filter((i: Issue) => i.status === 'resolved').length,
+    activeTechnicians: techniciansArray.filter((t: Technician) => t.status === 'available' || t.status === 'on_job').length,
+    activeTeams: teamsArray.length,
+    avgResponseTime: 2.5, // Mock data
   };
 
-  const handleViewNotes = (issue: Issue) => {
-    setSelectedIssue(issue);
-    setShowNotesModal(true);
-  };
-
-  const handleEscalateIssue = (issue: Issue) => {
-    setSelectedIssue(issue);
-    setShowEscalateModal(true);
-  };
-
-  const handleAddNote = () => {
-    if (selectedIssue && newNote.trim()) {
-      addNoteMutation.mutate({
-        issueId: selectedIssue.id,
-        note: newNote.trim()
-      });
-    }
-  };
-
-  const handleConfirmEscalation = () => {
-    if (selectedIssue && escalationReason.trim()) {
-      escalateMutation.mutate({
-        issueId: selectedIssue.id,
-        reason: escalationReason.trim()
-      });
-    }
-  };
-
-  // Handle ticket selection
-  const toggleTicketSelection = (ticketId: number) => {
-    const newSelection = new Set(selectedTickets);
-    if (newSelection.has(ticketId)) {
-      newSelection.delete(ticketId);
+  const handleSelectIssue = (issueId: number, selected: boolean) => {
+    const newSelection = new Set(selectedIssues);
+    if (selected) {
+      newSelection.add(issueId);
     } else {
-      newSelection.add(ticketId);
+      newSelection.delete(issueId);
     }
-    setSelectedTickets(newSelection);
+    setSelectedIssues(newSelection);
   };
 
-  const selectAllVisibleTickets = () => {
-    const allVisibleIds = new Set(filteredIssues.map(issue => issue.id));
-    setSelectedTickets(allVisibleIds);
-  };
-
-  const clearTicketSelection = () => {
-    setSelectedTickets(new Set());
-  };
-
-  // Handle export report
-  const handleExportReport = () => {
-    setShowExportModal(true);
-  };
-
-  const handleExportSubmit = async () => {
-    if (exportMethod === "email" && !exportEmail.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter an email address",
-        variant: "destructive",
-      });
-      return;
+  const handleSelectAll = () => {
+    if (selectedIssues.size === filteredIssues.length) {
+      setSelectedIssues(new Set());
+    } else {
+      setSelectedIssues(new Set(filteredIssues.map((issue: Issue) => issue.id)));
     }
+  };
 
-    // Determine which issues to export based on scope
-    let issuesToExport: Issue[] = [];
-    let exportDescription = "";
-
-    switch (exportScope) {
-      case "current":
-        issuesToExport = filteredIssues;
-        exportDescription = `Currently displayed issues (${filteredIssues.length} items)`;
-        break;
-      case "all":
-        issuesToExport = issues;
-        exportDescription = `All issues (${issues.length} items)`;
-        break;
-      case "selected":
-        if (selectedTickets.size === 0) {
-          toast({
-            title: "Error",
-            description: "Please select at least one ticket to export",
-            variant: "destructive",
-          });
-          return;
-        }
-        issuesToExport = issues.filter(issue => selectedTickets.has(issue.id));
-        exportDescription = `Selected tickets (${selectedTickets.size} items)`;
-        break;
-      default:
-        issuesToExport = filteredIssues;
-        exportDescription = `Currently displayed issues (${filteredIssues.length} items)`;
-    }
-
-    const csvContent = [
-      ['ID', 'Ref No', 'Title', 'Category', 'Priority', 'Status', 'Location', 'Ward', 'Assigned To', 'Created', 'Reporter'],
-      ...issuesToExport.map(issue => [
-        issue.id,
-        issue.referenceNumber || `Issue-${issue.id}`,
-        `"${issue.title}"`,
+  const handleExportSelected = () => {
+    const selectedIssueData = filteredIssues.filter((issue: Issue) => selectedIssues.has(issue.id));
+    const csvData = [
+      ['RefNo', 'Title', 'Category', 'Priority', 'Status', 'Assigned To', 'Created', 'Location'],
+      ...selectedIssueData.map((issue: Issue) => [
+        issue.referenceNumber || `REF${issue.id}`,
+        issue.title,
         issue.category.replace('_', ' '),
         issue.priority,
         issue.status.replace('_', ' '),
-        `"${issue.location}"`,
-        issue.ward || 'N/A',
-        issue.assignedTo || 'Unassigned',
-        new Date(issue.createdAt).toLocaleDateString(),
-        issue.reporterName || 'Anonymous'
+        getTechnicianName(issue.assignedTo),
+        formatRelativeTime(issue.createdAt as Date),
+        issue.location || 'Not specified'
       ])
-    ].map(row => row.join(',')).join('\n');
-
-    if (exportMethod === "email") {
-      try {
-        await apiRequest("POST", "/api/export-report", {
-          email: exportEmail,
-          reportData: csvContent,
-          reportType: "issues",
-          fileName: `issues-report-${new Date().toISOString().split('T')[0]}.csv`
-        });
-        
-        toast({
-          title: "Success",
-          description: `Report (${exportDescription}) sent to ${exportEmail}`,
-        });
-        setShowExportModal(false);
-        setExportEmail("");
-        setSelectedTickets(new Set());
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to send report via email",
-          variant: "destructive",
-        });
-      }
-    } else {
-      // Download directly
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `issues-report-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      toast({
-        title: "Success",
-        description: `Report (${exportDescription}) downloaded successfully`,
-      });
-      setShowExportModal(false);
-      setSelectedTickets(new Set());
-    }
+    ];
+    
+    const csvContent = csvData.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `call_centre_issues_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Export Complete",
+      description: `Exported ${selectedIssues.size} issues to CSV file.`,
+    });
   };
 
+  const handleViewIssue = (issue: Issue) => {
+    setSelectedIssueForView(issue);
+    setShowIssueDetails(true);
+  };
 
+  const getTechnicianName = (technicianId: string | number | null) => {
+    if (!technicianId) return '-';
+    const id = typeof technicianId === 'string' ? parseInt(technicianId) : technicianId;
+    const technician = techniciansArray.find((tech: Technician) => tech.id === id);
+    return technician ? technician.name : `Tech #${id}`;
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Municipal Official Dashboard</h1>
-              <p className="text-gray-600 mt-1">Manage service requests and city operations</p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-              <Link href="/whatsapp">
-                <div className="relative">
-                  <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2 w-full sm:w-auto">
-                    <MessageCircle className="h-4 w-4" />
-                    <span className="hidden sm:inline">WhatsApp Center</span>
-                    <span className="sm:hidden">WhatsApp</span>
-                  </Button>
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center min-w-[20px] px-1">
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </span>
-                  )}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 flex items-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                  <Phone className="w-5 h-5 text-white" />
                 </div>
-              </Link>
-              <div className="text-right w-full sm:w-auto">
-                <p className="text-sm text-gray-500">Welcome back</p>
-                <p className="font-semibold text-gray-900">Municipal Official</p>
+                <div>
+                  <h1 className="text-xl font-semibold text-gray-900">Call Centre Dashboard</h1>
+                  <p className="text-sm text-gray-500">Centralized issue coordination and dispatch</p>
+                </div>
               </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="outline"
+                size="sm"
+                className="md:hidden"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              </Button>
+              <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">
+                <Phone className="w-4 h-4 mr-1" />
+                Call Centre
+              </Badge>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                Sign Out
+              </Button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Real-time Technician Location Tracker for Call Center Agents */}
-      <section className="py-4">
-        <div className="max-w-7xl mx-auto px-4">
-          <TechnicianLocationTracker />
-        </div>
-      </section>
-
-      {/* Statistics Overview */}
-      <section className="py-8">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-            <Card className="bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Issues</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.totalIssues}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <AlertTriangle className="h-6 w-6 text-blue-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Active Issues</p>
-                    <p className="text-2xl font-bold text-red-600">{filteredIssues.length}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                    <Clock className="h-6 w-6 text-red-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Assigned</p>
-                    <p className="text-2xl font-bold text-yellow-600">{stats.assignedIssues}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                    <Users className="h-6 w-6 text-yellow-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Resolved</p>
-                    <p className="text-2xl font-bold text-green-600">{stats.resolvedIssues}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Critical</p>
-                    <p className="text-2xl font-bold text-red-600">{stats.criticalIssues}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                    <TriangleAlert className="h-6 w-6 text-red-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Resolution Rate</p>
-                    <p className="text-2xl font-bold text-green-600">{stats.resolutionRate}%</p>
-                  </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <TrendingUp className="h-6 w-6 text-green-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Citizen Issue Reporting Section */}
-      <section className="py-6 bg-blue-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">Report Issue for Citizen</h3>
-              <p className="text-gray-600">Capture and report issues on behalf of citizens who call or can't use the app</p>
-            </div>
-            <Button
-              onClick={() => setShowCitizenReportForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Citizen Report
-            </Button>
-          </div>
-          
-          <div className="bg-white rounded-lg p-6 border border-blue-200">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <Plus className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-green-800">Phone Support</p>
-                  <p className="text-sm text-green-600">Help citizens report issues over the phone</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-blue-800">Accessibility</p>
-                  <p className="text-sm text-blue-600">Assist citizens who can't use digital platforms</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-3 p-4 bg-yellow-50 rounded-lg">
-                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <Clock className="h-6 w-6 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-yellow-800">Immediate Action</p>
-                  <p className="text-sm text-yellow-600">Issues enter system immediately for processing</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Filters and Search */}
-      <section className="py-4 bg-white border-t border-b">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col space-y-4 lg:flex-row lg:space-y-0 lg:space-x-4 lg:items-center">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Enter RefNo (e.g. B41419, 68BE82) or search title/location..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              {/* Selection Summary Bar */}
-              {selectedTickets.size > 0 && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4 flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <span className="text-sm text-blue-800">
-                      <strong>{selectedTickets.size}</strong> ticket(s) selected
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={clearTicketSelection}
-                      className="text-blue-700 border-blue-300 hover:bg-blue-100"
+      <div className="flex h-[calc(100vh-4rem)]">
+        {/* Sidebar */}
+        <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out`}>
+          <div className="flex flex-col h-full">
+            <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
+              <nav className="mt-5 flex-1 px-2 space-y-1">
+                {sidebarItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveSection(item.id);
+                        setSidebarOpen(false);
+                      }}
+                      className={`${
+                        activeSection === item.id
+                          ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                          : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      } group flex items-center px-2 py-2 text-sm font-medium rounded-md border-l-4 transition-all duration-200 w-full text-left`}
                     >
-                      Clear Selection
-                    </Button>
-                  </div>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleExportReport}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <FileDown className="h-4 w-4 mr-2" />
-                    Export Selected
-                  </Button>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center">
-              <Button
-                onClick={handleExportReport}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <FileDown className="h-4 w-4 mr-2" />
-                Export Report
-              </Button>
+                      <Icon
+                        className={`${
+                          activeSection === item.id ? 'text-indigo-500' : 'text-gray-400 group-hover:text-gray-500'
+                        } mr-3 flex-shrink-0 h-6 w-6`}
+                      />
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
           </div>
-        </div>
-      </section>
+        </aside>
 
-      {/* Recent Issues Table */}
-      <section className="py-8">
-        <div className="max-w-7xl mx-auto px-4">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
-                <CardTitle className="text-lg font-semibold text-gray-900">Recent Issues</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {issuesLoading ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-600">Loading issues...</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">
-                          <Checkbox
-                            checked={selectedTickets.size === filteredIssues.length && filteredIssues.length > 0}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                selectAllVisibleTickets();
-                              } else {
-                                clearTicketSelection();
-                              }
-                            }}
-                            className="h-4 w-4"
-                            title="Select all visible tickets"
-                          />
-                        </TableHead>
-                        <TableHead>RefNo</TableHead>
-                        <TableHead>Issue</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Priority</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Assigned To</TableHead>
-                        <TableHead>Reported</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredIssues.slice(0, 10).map((issue) => (
-                        <TableRow key={issue.id} className="hover:bg-gray-50">
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedTickets.has(issue.id)}
-                              onCheckedChange={() => toggleTicketSelection(issue.id)}
-                              className="h-4 w-4"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-mono text-sm font-semibold text-blue-600">
-                              {issue.referenceNumber}
+        {/* Overlay for mobile */}
+        {sidebarOpen && (
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-gray-600 bg-opacity-75"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="py-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+
+              {/* Call Centre Overview Section */}
+              {activeSection === "overview" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Call Centre Overview</h2>
+                    
+                    {/* Key Metrics */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                      <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Total Issues</CardTitle>
+                          <AlertCircle className="h-4 w-4 text-blue-600" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-blue-900">{stats.totalIssues}</div>
+                          <p className="text-xs text-blue-600">All tracked issues</p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Open Issues</CardTitle>
+                          <TriangleAlert className="h-4 w-4 text-orange-600" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-orange-900">{stats.openIssues}</div>
+                          <p className="text-xs text-orange-600">Awaiting assignment</p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-green-50 to-green-100">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Active Technicians</CardTitle>
+                          <Wrench className="h-4 w-4 text-green-600" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-green-900">{stats.activeTechnicians}</div>
+                          <p className="text-xs text-green-600">Available & working</p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-purple-50 to-purple-100">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
+                          <Clock className="h-4 w-4 text-purple-600" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-purple-900">{stats.avgResponseTime}h</div>
+                          <p className="text-xs text-purple-600">Target: 2.0h</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Report Issue for Citizen */}
+                    <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200">
+                      <CardHeader>
+                        <CardTitle className="text-blue-900">Report Issue for Citizen</CardTitle>
+                        <p className="text-sm text-blue-700">Capture and report issues on behalf of citizens who call or can't use the app</p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-200">
+                              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                <Phone className="w-5 h-5 text-green-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-gray-900">Phone Support</h4>
+                                <p className="text-xs text-gray-600">Help citizens report issues over the phone</p>
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <button
-                                className="font-medium text-gray-900 hover:text-blue-600 text-left cursor-pointer"
-                                onClick={() => handleViewDetails(issue)}
-                              >
-                                {issue.title}
-                              </button>
-                              <span className="text-sm text-gray-600">{issue.location}</span>
+                            
+                            <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-200">
+                              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <Users className="w-5 h-5 text-blue-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-gray-900">Accessibility</h4>
+                                <p className="text-xs text-gray-600">Assist citizens who can't use digital platforms</p>
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm text-gray-700">{issue.category.replace('_', ' ')}</span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getPriorityColor(issue.priority)}>
-                              {issue.priority}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getStatusColor(issue.status)}>
-                              {issue.status.replace('_', ' ')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-1">
-                              {issue.assignedTo && (
-                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-1 whitespace-nowrap font-mono w-fit">
-                                  {generateJobOrderNumber(issue.id)}
+                            
+                            <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-200">
+                              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                                <Clock className="w-5 h-5 text-yellow-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-gray-900">Immediate Action</h4>
+                                <p className="text-xs text-gray-600">Issues enter system immediately for processing</p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex sm:flex-col gap-2">
+                            <Button 
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                              onClick={() => setShowCreateIssue(true)}
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              New Citizen Report
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Recent Activity */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Recent Activity</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {filteredIssues.slice(0, 5).map((issue: Issue) => (
+                            <div key={issue.id} className="flex items-center justify-between p-3 border rounded">
+                              <div>
+                                <h4 className="font-medium">{issue.title}</h4>
+                                <p className="text-sm text-gray-600">{issue.category.replace('_', ' ')}</p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Badge className={getPriorityColor(issue.priority)}>
+                                  {issue.priority}
                                 </Badge>
+                                <Badge className={getStatusColor(issue.status)}>
+                                  {issue.status.replace('_', ' ')}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              )}
+
+              {/* Communication Section */}
+              {activeSection === "communication" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Communication Centre</h2>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* Contact List */}
+                      <div className="lg:col-span-1">
+                        <Card>
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <CardTitle>Contacts</CardTitle>
+                              <Select value={conversationType} onValueChange={setConversationType}>
+                                <SelectTrigger className="w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="citizens">Citizens</SelectItem>
+                                  <SelectItem value="technicians">Technicians</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2 max-h-96 overflow-y-auto">
+                              {conversationType === "citizens" ? (
+                                // Mock citizens data - in real app this would come from API
+                                [
+                                  { id: 1, name: "John Smith", phone: "+27 82 123 4567", lastMessage: "Issue with water supply", time: "2 min ago", unread: true },
+                                  { id: 2, name: "Mary Johnson", phone: "+27 83 234 5678", lastMessage: "Thanks for the update", time: "5 min ago", unread: false },
+                                  { id: 3, name: "David Wilson", phone: "+27 84 345 6789", lastMessage: "When will this be fixed?", time: "12 min ago", unread: true },
+                                ].map((citizen) => (
+                                  <div 
+                                    key={citizen.id}
+                                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                                      selectedContact?.id === citizen.id
+                                        ? 'bg-blue-50 border-blue-200 border'
+                                        : 'hover:bg-gray-50 border border-transparent'
+                                    }`}
+                                    onClick={() => setSelectedContact(citizen)}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex-1">
+                                        <div className="flex items-center space-x-2">
+                                          <h4 className="font-medium text-sm">{citizen.name}</h4>
+                                          {citizen.unread && (
+                                            <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                          )}
+                                        </div>
+                                        <p className="text-xs text-gray-600">{citizen.phone}</p>
+                                        <p className="text-xs text-gray-500 truncate">{citizen.lastMessage}</p>
+                                      </div>
+                                      <span className="text-xs text-gray-400">{citizen.time}</span>
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                // Technicians from actual data
+                                techniciansArray.map((technician: any) => (
+                                  <div 
+                                    key={technician.id}
+                                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                                      selectedContact?.id === technician.id
+                                        ? 'bg-blue-50 border-blue-200 border'
+                                        : 'hover:bg-gray-50 border border-transparent'
+                                    }`}
+                                    onClick={() => setSelectedContact(technician)}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex-1">
+                                        <div className="flex items-center space-x-2">
+                                          <h4 className="font-medium text-sm">{technician.name}</h4>
+                                          <div className={`w-2 h-2 rounded-full ${
+                                            technician.status === 'online' ? 'bg-green-500' : 'bg-gray-400'
+                                          }`}></div>
+                                        </div>
+                                        <p className="text-xs text-gray-600">{technician.phone}</p>
+                                        <p className="text-xs text-gray-500">{technician.department}</p>
+                                      </div>
+                                      <span className="text-xs text-gray-400">{technician.status}</span>
+                                    </div>
+                                  </div>
+                                ))
                               )}
-                              <span className="text-sm text-gray-700">
-                                {issue.assignedTo || 'Unassigned'}
-                              </span>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-xs text-gray-500">
-                              {formatRelativeTime(issue.createdAt)}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-1">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleViewDetails(issue)}
-                                className="text-xs"
-                              >
-                                <MessageCircle className="h-3 w-3 mr-1" />
-                                View
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleViewNotes(issue)}
-                                className="text-xs"
-                              >
-                                <StickyNote className="h-3 w-3 mr-1" />
-                                Notes
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant={issue.priority === "urgent" ? "default" : "outline"}
-                                onClick={() => handleEscalateIssue(issue)}
-                                className={`text-xs ${issue.priority === "urgent" ? "bg-red-600 hover:bg-red-700 text-white" : ""}`}
-                                disabled={issue.priority === "urgent"}
-                              >
-                                <AlertCircle className="h-3 w-3 mr-1" />
-                                {issue.priority === "urgent" ? "Escalated" : "Escalate"}
-                              </Button>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {/* Chat Interface */}
+                      <div className="lg:col-span-2">
+                        {selectedContact ? (
+                          <Card className="h-[500px] flex flex-col">
+                            <CardHeader className="border-b">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <span className="text-sm font-medium text-blue-700">
+                                    {selectedContact.name.split(' ').map((n: string) => n[0]).join('')}
+                                  </span>
+                                </div>
+                                <div>
+                                  <h3 className="font-medium">{selectedContact.name}</h3>
+                                  <p className="text-sm text-gray-600">{selectedContact.phone}</p>
+                                </div>
+                              </div>
+                            </CardHeader>
+                            
+                            {/* Messages Area */}
+                            <CardContent className="flex-1 overflow-y-auto p-4">
+                              <div className="space-y-4">
+                                {/* Sample conversation */}
+                                <div className="flex space-x-2">
+                                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span className="text-xs font-medium text-gray-600">
+                                      {selectedContact.name.split(' ').map((n: string) => n[0]).join('')}
+                                    </span>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
+                                      <p className="text-sm">
+                                        {conversationType === "citizens" 
+                                          ? "Hi, I reported a water leak yesterday. Any updates?"
+                                          : "Heading to the site now. Should be there in 15 minutes."
+                                        }
+                                      </p>
+                                    </div>
+                                    <span className="text-xs text-gray-500 ml-2">10:30 AM</span>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex space-x-2 justify-end">
+                                  <div className="flex-1 flex justify-end">
+                                    <div className="bg-blue-600 text-white rounded-lg p-3 max-w-xs">
+                                      <p className="text-sm">
+                                        {conversationType === "citizens" 
+                                          ? "Thank you for following up. Our technician is on the way and should arrive within the next hour."
+                                          : "Perfect! Please update the issue status once you start working on it."
+                                        }
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span className="text-xs font-medium text-white">You</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                            
+                            {/* Message Input */}
+                            <div className="border-t p-4">
+                              <div className="flex space-x-2">
+                                <Input
+                                  placeholder="Type your message..."
+                                  value={messageText}
+                                  onChange={(e) => setMessageText(e.target.value)}
+                                  className="flex-1"
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter' && messageText.trim()) {
+                                      // Handle sending message
+                                      toast({
+                                        title: "Message Sent",
+                                        description: `Message sent to ${selectedContact.name}`,
+                                      });
+                                      setMessageText("");
+                                    }
+                                  }}
+                                />
+                                <Button 
+                                  onClick={() => {
+                                    if (messageText.trim()) {
+                                      toast({
+                                        title: "Message Sent",
+                                        description: `Message sent to ${selectedContact.name}`,
+                                      });
+                                      setMessageText("");
+                                    }
+                                  }}
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                  <Send className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-
-                  {filteredIssues.length === 0 && (
-                    <div className="text-center py-8">
-                      <p className="text-gray-600">No issues match your filters.</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Action Buttons */}
-      <section className="py-4 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4 justify-center">
-            <Button 
-              variant="outline" 
-              className="text-sm px-4 py-2"
-              onClick={handleExportReport}
-            >
-              <FileDown className="mr-2 h-4 w-4" />
-              Export Report
-            </Button>
-            <div className="text-center text-sm text-gray-600">
-              <p>Note: Issue assignments are managed by Technical Managers</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Issue Notes Modal */}
-      <Dialog open={showNotesModal} onOpenChange={setShowNotesModal}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Issue Notes - {selectedIssue?.title}</DialogTitle>
-            <DialogDescription>
-              View and add notes for this issue. Notes help track communication and progress.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 max-h-96 overflow-y-auto">
-            {/* Add new note */}
-            <div className="border-b pb-4">
-              <Label htmlFor="new-note">Add New Note</Label>
-              <Textarea
-                id="new-note"
-                placeholder="Enter your note here..."
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                className="mt-2"
-                rows={3}
-              />
-              <Button 
-                onClick={handleAddNote}
-                disabled={!newNote.trim() || addNoteMutation.isPending}
-                className="mt-2"
-                size="sm"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                {addNoteMutation.isPending ? "Adding..." : "Add Note"}
-              </Button>
-            </div>
-
-            {/* Existing notes */}
-            <div className="space-y-3">
-              <h4 className="font-medium text-gray-900">Previous Notes</h4>
-              {notesLoading ? (
-                <p className="text-gray-500 text-sm">Loading notes...</p>
-              ) : !Array.isArray(issueNotes) || issueNotes.length === 0 ? (
-                <p className="text-gray-500 text-sm">No notes yet for this issue.</p>
-              ) : (
-                issueNotes.map((note) => (
-                  <div key={note.id} className="bg-gray-50 p-3 rounded-lg">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="font-medium text-sm text-gray-900">{note.createdBy}</span>
-                      <span className="text-xs text-gray-500">
-                        {formatRelativeTime(note.createdAt)}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-700">{note.note}</p>
-                    <Badge variant="secondary" className="mt-2 text-xs">
-                      Note
-                    </Badge>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Issue Escalation Modal */}
-      <Dialog open={showEscalateModal} onOpenChange={setShowEscalateModal}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Escalate Issue - {selectedIssue?.title}</DialogTitle>
-            <DialogDescription>
-              Escalate this issue to the Technical Manager. Provide a clear reason for escalation.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-              <div className="flex items-center">
-                <AlertTriangle className="h-5 w-5 text-orange-600 mr-2" />
-                <span className="text-sm font-medium text-orange-800">
-                  This will mark the issue as URGENT priority
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="escalation-reason">Escalation Reason *</Label>
-              <Textarea
-                id="escalation-reason"
-                placeholder="Please provide a detailed reason for escalating this issue..."
-                value={escalationReason}
-                onChange={(e) => setEscalationReason(e.target.value)}
-                rows={4}
-                required
-              />
-            </div>
-
-            {/* Show existing escalations */}
-            {issueEscalations.length > 0 && (
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-2">Previous Escalations</h4>
-                <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {issueEscalations.map((escalation) => (
-                    <div key={escalation.id} className="bg-red-50 p-2 rounded text-sm">
-                      <div className="flex justify-between">
-                        <span className="font-medium">{escalation.escalatedBy}</span>
-                        <span className="text-xs text-gray-500">
-                          {formatRelativeTime(escalation.createdAt)}
-                        </span>
+                          </Card>
+                        ) : (
+                          <Card className="h-[500px] flex items-center justify-center">
+                            <div className="text-center">
+                              <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                              <h3 className="text-lg font-medium text-gray-900 mb-2">No Conversation Selected</h3>
+                              <p className="text-gray-600">Select a {conversationType === "citizens" ? "citizen" : "technician"} to start messaging</p>
+                            </div>
+                          </Card>
+                        )}
                       </div>
-                      <p className="text-gray-700 mt-1">{escalation.escalationReason}</p>
-                      <Badge variant="destructive" className="mt-1 text-xs">
-                        {escalation.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setShowEscalateModal(false);
-                  setSelectedIssue(null);
-                  setEscalationReason("");
-                }}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleConfirmEscalation}
-                disabled={!escalationReason.trim() || escalateMutation.isPending}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                <AlertCircle className="h-4 w-4 mr-2" />
-                {escalateMutation.isPending ? "Escalating..." : "Escalate to Tech Manager"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Resource Management */}
-      <section className="py-8 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">Resource Management</h3>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Team Status */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Users className="mr-2 h-5 w-5" />
-                  Team Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {issuesLoading ? (
-                  <div className="text-center py-4">
-                    <p className="text-gray-600">Loading teams...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                          <Users className="h-5 w-5 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">Electrical Team A</p>
-                          <p className="text-sm text-gray-600">Currently: Ward 5 - Main Street</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge className="bg-green-100 text-green-800">Available</Badge>
-                        <p className="text-xs text-gray-500 mt-1">Updated 2 hours ago</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                          <Users className="h-5 w-5 text-yellow-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">Water & Sanitation Team B</p>
-                          <p className="text-sm text-gray-600">Currently: Ward 3 - Pump Station</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge className="bg-yellow-100 text-yellow-800">On Job</Badge>
-                        <p className="text-xs text-gray-500 mt-1">Updated 30 min ago</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Users className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">Roads & Public Works Team</p>
-                          <p className="text-sm text-gray-600">Currently: Ward 7 - Highway Maintenance</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge className="bg-green-100 text-green-800">Available</Badge>
-                        <p className="text-xs text-gray-500 mt-1">Updated 1 hour ago</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Equipment Tracking */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Truck className="mr-2 h-5 w-5" />
-                  Equipment Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Truck className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">Water Tanker #03</p>
-                        <p className="text-sm text-gray-600">Sector 2 - Route A</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <Badge className="bg-green-100 text-green-800">Active</Badge>
-                      <p className="text-xs text-gray-500 mt-1">GPS: 5 min ago</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <Wrench className="h-5 w-5 text-yellow-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">Service Van #12</p>
-                        <p className="text-sm text-gray-600">Ward 7 - Electrical Team</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <Badge className="bg-yellow-100 text-yellow-800">In Service</Badge>
-                      <p className="text-xs text-gray-500 mt-1">GPS: 2 min ago</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                        <TriangleAlert className="h-5 w-5 text-red-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">Emergency Vehicle #01</p>
-                        <p className="text-sm text-gray-600">Municipal Garage</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <Badge className="bg-red-100 text-red-800">Maintenance</Badge>
-                      <p className="text-xs text-gray-500 mt-1">Updated: 1 hour ago</p>
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Notes Modal */}
-      <Dialog open={showNotesModal} onOpenChange={setShowNotesModal}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Issue Notes - {selectedIssue?.title}</DialogTitle>
-            <DialogDescription>
-              View and add notes for this issue
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* Existing notes */}
-            <div className="max-h-60 overflow-y-auto space-y-2">
-              {notesLoading ? (
-                <p className="text-gray-500 text-center py-4">Loading notes...</p>
-              ) : !Array.isArray(issueNotes) || issueNotes.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No notes yet</p>
-              ) : (
-                issueNotes.map((note) => (
-                  <div key={note.id} className="p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-sm text-gray-900">{note.createdBy}</span>
-                      <span className="text-xs text-gray-500">
-                        {new Date(note.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-700">{note.note}</p>
-                  </div>
-                ))
               )}
-            </div>
-            
-            {/* Add new note */}
-            <div className="space-y-2">
-              <Label htmlFor="new-note">Add Note</Label>
-              <Textarea
-                id="new-note"
-                placeholder="Enter your note about this issue..."
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNotesModal(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleAddNote}
-              disabled={!newNote.trim() || addNoteMutation.isPending}
-            >
-              <StickyNote className="h-4 w-4 mr-2" />
-              {addNoteMutation.isPending ? "Adding..." : "Add Note"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Escalate Modal */}
-      <Dialog open={showEscalateModal} onOpenChange={setShowEscalateModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Escalate Issue - {selectedIssue?.title}</DialogTitle>
-            <DialogDescription>
-              Escalate this issue to the Technical Manager. This will mark it as URGENT priority.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="escalation-reason">Reason for Escalation</Label>
-              <Textarea
-                id="escalation-reason"
-                placeholder="Explain why this issue needs immediate attention..."
-                value={escalationReason}
-                onChange={(e) => setEscalationReason(e.target.value)}
-                rows={4}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEscalateModal(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleConfirmEscalation}
-              disabled={!escalationReason.trim() || escalateMutation.isPending}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              <AlertCircle className="h-4 w-4 mr-2" />
-              {escalateMutation.isPending ? "Escalating..." : "Escalate to Tech Manager"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Issue Details Modal */}
-      {selectedIssue && (
-        <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader className="pb-4">
-              <DialogTitle className="text-lg font-semibold truncate">{selectedIssue.title}</DialogTitle>
-              <DialogDescription className="flex items-center gap-2 text-sm">
-                <span>RefNo: {selectedIssue.referenceNumber}</span>
-                <span>•</span>
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {selectedIssue.location}
-                </span>
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Category</Label>
-                  <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded capitalize">{selectedIssue.category.replace("_", " & ")}</p>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Priority</Label>
+              {/* Issue Management Section */}
+              {activeSection === "issues" && (
+                <div className="space-y-6">
                   <div>
-                    <Badge variant="outline" className={getPriorityColor(selectedIssue.priority)}>
-                      {selectedIssue.priority}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Status</Label>
-                  <div>
-                    <Badge variant="outline" className={getStatusColor(selectedIssue.status)}>
-                      {selectedIssue.status.replace("_", " ")}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Created Date</Label>
-                  <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                    {new Date(selectedIssue.createdAt).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Description</Label>
-                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                  <p className="text-sm leading-relaxed">{selectedIssue.description}</p>
-                </div>
-              </div>
-
-              {selectedIssue.photos && selectedIssue.photos.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Photos</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {selectedIssue.photos.map((photo, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={photo}
-                          alt={`Issue photo ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-90"
-                          onClick={() => window.open(photo, '_blank')}
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Issue Management</h2>
+                    
+                    {/* Filters */}
+                    <div className="flex flex-wrap gap-4 mb-6">
+                      <div className="flex-1 min-w-64">
+                        <Input
+                          placeholder="Search issues..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full"
                         />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all duration-200 flex items-center justify-center">
-                          <span className="text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            Click to view full size
-                          </span>
-                        </div>
                       </div>
-                    ))}
+                      <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger className="w-40">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="open">Open</SelectItem>
+                          <SelectItem value="assigned">Assigned</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="resolved">Resolved</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={filterPriority} onValueChange={setFilterPriority}>
+                        <SelectTrigger className="w-40">
+                          <SelectValue placeholder="Priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Priority</SelectItem>
+                          <SelectItem value="critical">Critical</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="low">Low</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Issues Table */}
+                    <Card>
+                      <CardHeader>
+                        <div className="flex justify-between items-center">
+                          <CardTitle>Issues ({filteredIssues.length})</CardTitle>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleSelectAll}
+                            >
+                              {selectedIssues.size === filteredIssues.length ? 'Deselect All' : 'Select All'}
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              disabled={selectedIssues.size === 0}
+                              onClick={handleExportSelected}
+                            >
+                              <FileDown className="w-4 h-4 mr-2" />
+                              Export ({selectedIssues.size})
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-12">
+                                  <Checkbox
+                                    checked={selectedIssues.size === filteredIssues.length}
+                                    onCheckedChange={handleSelectAll}
+                                  />
+                                </TableHead>
+                                <TableHead>Issue</TableHead>
+                                <TableHead>Category</TableHead>
+                                <TableHead>Priority</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Assigned To</TableHead>
+                                <TableHead>Created</TableHead>
+                                <TableHead>Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {filteredIssues.map((issue: Issue) => (
+                                <TableRow key={issue.id}>
+                                  <TableCell>
+                                    <Checkbox
+                                      checked={selectedIssues.has(issue.id)}
+                                      onCheckedChange={(checked) => handleSelectIssue(issue.id, checked as boolean)}
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <div>
+                                      <div className="font-medium">{issue.title}</div>
+                                      <div className="text-xs text-blue-600 font-mono mb-1">
+                                        {issue.referenceNumber || `REF${issue.id}`}
+                                      </div>
+                                      <div className="text-sm text-gray-600 truncate max-w-xs">
+                                        {issue.description}
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <span className="capitalize">{issue.category.replace('_', ' ')}</span>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge className={getPriorityColor(issue.priority)}>
+                                      {issue.priority}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge className={getStatusColor(issue.status)}>
+                                      {issue.status.replace('_', ' ')}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    {getTechnicianName(issue.assignedTo)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {formatRelativeTime(issue.createdAt as Date)}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleViewIssue(issue)}
+                                    >
+                                      View
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
               )}
 
-              {selectedIssue.assignedTo && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Assigned To</Label>
-                  <p className="text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 p-2 rounded border border-blue-200 dark:border-blue-800">
-                    {selectedIssue.assignedTo}
-                  </p>
+              {/* Team Coordination Section */}
+              {activeSection === "teams" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Team Coordination</h2>
+                    
+                    <Card>
+                      <CardHeader>
+                        <div className="flex justify-between items-center">
+                          <CardTitle>Active Teams</CardTitle>
+                          <Button onClick={() => setShowCreateTeam(true)}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Create Team
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {teamsArray.length > 0 ? (
+                            teamsArray.map((team: Team) => (
+                              <div key={team.id} className="p-4 border rounded-lg">
+                                <h4 className="font-medium">{team.name}</h4>
+                                <p className="text-sm text-gray-600">
+                                  {team.members?.length || 0} members
+                                </p>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-8">
+                              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                              <h3 className="text-lg font-medium text-gray-900 mb-2">No Teams Created</h3>
+                              <p className="text-gray-600">Create teams to coordinate technician groups</p>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               )}
-            </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDetailsModal(false)}>
-                Close
-              </Button>
-              <Button onClick={() => handleViewNotes(selectedIssue)}>
-                <StickyNote className="h-4 w-4 mr-2" />
-                View Notes
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
 
-      {/* Export Report Modal */}
-      <Dialog open={showExportModal} onOpenChange={setShowExportModal}>
-        <DialogContent className="sm:max-w-[425px]">
+              {/* Live Tracking Section */}
+              {activeSection === "tracking" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Live Tracking</h2>
+                    
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Technician Location Tracking</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <TechnicianLocationTracker />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              )}
+
+              {/* Performance Analytics Section */}
+              {activeSection === "analytics" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Performance Analytics</h2>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Response Times</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex justify-between">
+                              <span>Average Response:</span>
+                              <span className="font-medium">{stats.avgResponseTime}h</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Target Response:</span>
+                              <span className="font-medium">2.0h</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Performance:</span>
+                              <span className="font-medium text-green-600">Good</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Call Centre Metrics</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex justify-between">
+                              <span>Issues Handled Today:</span>
+                              <span className="font-medium">{stats.inProgressIssues + stats.resolvedIssues}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Resolution Rate:</span>
+                              <span className="font-medium">78%</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Active Technicians:</span>
+                              <span className="font-medium">{stats.activeTechnicians}</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Centre Settings Section */}
+              {activeSection === "settings" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Centre Settings</h2>
+                    
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Call Centre Configuration</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="p-4 border rounded-lg">
+                            <h4 className="font-medium mb-2">Priority Settings</h4>
+                            <p className="text-sm text-gray-600">Configure priority levels and escalation rules</p>
+                          </div>
+                          <div className="p-4 border rounded-lg">
+                            <h4 className="font-medium mb-2">Notification Preferences</h4>
+                            <p className="text-sm text-gray-600">Manage alert settings and communication channels</p>
+                          </div>
+                          <div className="p-4 border rounded-lg">
+                            <h4 className="font-medium mb-2">Team Management</h4>
+                            <p className="text-sm text-gray-600">Configure team structures and assignments</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </main>
+      </div>
+
+      {/* Create Team Dialog */}
+      <Dialog open={showCreateTeam} onOpenChange={setShowCreateTeam}>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Export Issues Report</DialogTitle>
-            <DialogDescription>
-              Choose how you would like to receive the issues report.
-            </DialogDescription>
+            <h2 className="text-lg font-semibold">Create New Team</h2>
+            <p className="text-sm text-gray-600">Set up a new coordination team for technicians</p>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            {/* Export Scope Selection */}
-            <div className="space-y-4">
-              <Label htmlFor="export-scope">What to Export</Label>
-              <Select value={exportScope} onValueChange={setExportScope}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select export scope" />
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="team-name" className="text-right">
+                Team Name
+              </label>
+              <Input
+                id="team-name"
+                placeholder="Enter team name"
+                className="col-span-3"
+                value={teamName}
+                onChange={(e) => setTeamName(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="team-department" className="text-right">
+                Department
+              </label>
+              <Select>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="current">
-                    Currently Displayed Issues ({filteredIssues.length} items)
-                  </SelectItem>
-                  <SelectItem value="all">
-                    All Issues ({issues.length} items)
-                  </SelectItem>
-                  <SelectItem value="selected">
-                    Selected Tickets ({selectedTickets.size} items)
-                  </SelectItem>
+                  <SelectItem value="electrical">Electrical Team</SelectItem>
+                  <SelectItem value="water">Water & Sanitation Team</SelectItem>
+                  <SelectItem value="roads">Roads & Public Works Team</SelectItem>
+                  <SelectItem value="waste">Waste Management Team</SelectItem>
+                  <SelectItem value="emergency">Emergency Response Team</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Show info about selected scope */}
-            {exportScope === "selected" && selectedTickets.size === 0 && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-                <p className="text-sm text-yellow-800">
-                  No tickets selected. Please select tickets from the table to export them.
-                </p>
-              </div>
-            )}
-            
-            <div className="space-y-4">
-              <Label htmlFor="export-method">Delivery Method</Label>
-              <Select value={exportMethod} onValueChange={setExportMethod}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select delivery method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="email">Send via Email</SelectItem>
-                  <SelectItem value="download">Download Directly</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <label htmlFor="team-description" className="text-right pt-2">
+                Description
+              </label>
+              <Textarea
+                id="team-description"
+                placeholder="Team responsibilities and coverage area"
+                className="col-span-3"
+                rows={3}
+              />
             </div>
-            
-            {exportMethod === "email" && (
-              <div className="space-y-2">
-                <Label htmlFor="export-email">Email Address</Label>
-                <Input
-                  id="export-email"
-                  type="email"
-                  placeholder="Enter email address"
-                  value={exportEmail}
-                  onChange={(e) => setExportEmail(e.target.value)}
-                />
-              </div>
-            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowExportModal(false)}>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setShowCreateTeam(false)}>
               Cancel
             </Button>
-            <Button onClick={handleExportSubmit}>
-              {exportMethod === "email" ? "Send Report" : "Download Report"}
+            <Button className="bg-indigo-600 hover:bg-indigo-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Create Team
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
-      {/* Citizen Issue Reporting Modal */}
-      <Dialog open={showCitizenReportForm} onOpenChange={setShowCitizenReportForm}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      {/* Create Issue Dialog */}
+      <Dialog open={showCreateIssue} onOpenChange={setShowCreateIssue}>
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Report Issue for Citizen</DialogTitle>
-            <DialogDescription>
-              Capture issue details on behalf of a citizen who called or cannot use the app
-            </DialogDescription>
+            <h2 className="text-lg font-semibold">Report Issue for Citizen</h2>
+            <p className="text-sm text-gray-600">Create an issue report on behalf of a citizen who called or needs assistance</p>
           </DialogHeader>
-          
-          <div className="space-y-6">
-            {/* Caller Information */}
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-blue-900 mb-3">Caller Information</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="caller-name">Caller Name *</Label>
-                  <Input
-                    id="caller-name"
-                    placeholder="Full name of caller"
-                    value={citizenReportData.callerName}
-                    onChange={(e) => setCitizenReportData(prev => ({ ...prev, callerName: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="caller-phone">Phone Number *</Label>
-                  <Input
-                    id="caller-phone"
-                    placeholder="Contact phone number"
-                    value={citizenReportData.callerPhone}
-                    onChange={(e) => setCitizenReportData(prev => ({ ...prev, callerPhone: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="caller-email">Email (Optional)</Label>
-                  <Input
-                    id="caller-email"
-                    type="email"
-                    placeholder="Email address (if provided)"
-                    value={citizenReportData.callerEmail}
-                    onChange={(e) => setCitizenReportData(prev => ({ ...prev, callerEmail: e.target.value }))}
-                  />
-                </div>
-              </div>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="citizen-name" className="text-right">
+                Citizen Name
+              </label>
+              <Input
+                id="citizen-name"
+                placeholder="Enter citizen's name"
+                className="col-span-3"
+              />
             </div>
-
-            {/* Issue Details */}
-            <div className="space-y-4">
-              <h4 className="font-semibold text-gray-900">Issue Details</h4>
-              
-              <div className="space-y-2">
-                <Label htmlFor="issue-title">Issue Title *</Label>
-                <Input
-                  id="issue-title"
-                  placeholder="Brief description of the issue"
-                  value={citizenReportData.title}
-                  onChange={(e) => setCitizenReportData(prev => ({ ...prev, title: e.target.value }))}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="issue-description">Detailed Description *</Label>
-                <Textarea
-                  id="issue-description"
-                  placeholder="Provide detailed information about the issue as described by the caller"
-                  value={citizenReportData.description}
-                  onChange={(e) => setCitizenReportData(prev => ({ ...prev, description: e.target.value }))}
-                  rows={4}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="issue-category">Category *</Label>
-                  <Select
-                    value={citizenReportData.category}
-                    onValueChange={(value) => setCitizenReportData(prev => ({ ...prev, category: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="water_sanitation">Water & Sanitation</SelectItem>
-                      <SelectItem value="electricity">Electricity</SelectItem>
-                      <SelectItem value="roads_transport">Roads & Transport</SelectItem>
-                      <SelectItem value="waste_management">Waste Management</SelectItem>
-                      <SelectItem value="housing">Housing</SelectItem>
-                      <SelectItem value="safety_security">Safety & Security</SelectItem>
-                      <SelectItem value="parks_recreation">Parks & Recreation</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="issue-priority">Priority Level</Label>
-                  <Select
-                    value={citizenReportData.priority}
-                    onValueChange={(value) => setCitizenReportData(prev => ({ ...prev, priority: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Set priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="issue-location">Location *</Label>
-                <Input
-                  id="issue-location"
-                  placeholder="Street address or location description"
-                  value={citizenReportData.location}
-                  onChange={(e) => setCitizenReportData(prev => ({ ...prev, location: e.target.value }))}
-                  required
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="urgent-issue"
-                  checked={citizenReportData.urgent}
-                  onCheckedChange={(checked) => setCitizenReportData(prev => ({ ...prev, urgent: !!checked }))}
-                />
-                <Label htmlFor="urgent-issue" className="text-sm">
-                  Mark as urgent (requires immediate attention)
-                </Label>
-              </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="citizen-phone" className="text-right">
+                Phone Number
+              </label>
+              <Input
+                id="citizen-phone"
+                placeholder="Enter phone number"
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="issue-title" className="text-right">
+                Issue Title
+              </label>
+              <Input
+                id="issue-title"
+                placeholder="Brief description of the issue"
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="issue-category" className="text-right">
+                Category
+              </label>
+              <Select>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="water">Water & Sanitation</SelectItem>
+                  <SelectItem value="electricity">Electricity</SelectItem>
+                  <SelectItem value="roads">Roads & Transport</SelectItem>
+                  <SelectItem value="waste">Waste Management</SelectItem>
+                  <SelectItem value="safety">Safety & Security</SelectItem>
+                  <SelectItem value="housing">Housing</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="issue-priority" className="text-right">
+                Priority
+              </label>
+              <Select>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="issue-location" className="text-right">
+                Location
+              </label>
+              <Input
+                id="issue-location"
+                placeholder="Address or location description"
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <label htmlFor="issue-description" className="text-right pt-2">
+                Description
+              </label>
+              <Textarea
+                id="issue-description"
+                placeholder="Detailed description of the issue as reported by citizen"
+                className="col-span-3"
+                rows={4}
+              />
             </div>
           </div>
-
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setShowCitizenReportForm(false);
-                setCitizenReportData({
-                  callerName: "",
-                  callerPhone: "",
-                  callerEmail: "",
-                  title: "",
-                  description: "",
-                  category: "",
-                  location: "",
-                  priority: "medium",
-                  urgent: false
-                });
-              }}
-            >
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setShowCreateIssue(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={() => {
-                if (!citizenReportData.callerName || !citizenReportData.callerPhone || !citizenReportData.title || 
-                    !citizenReportData.description || !citizenReportData.category || !citizenReportData.location) {
-                  toast({
-                    title: "Missing Information",
-                    description: "Please fill in all required fields",
-                    variant: "destructive"
-                  });
-                  return;
-                }
-                submitCitizenReportMutation.mutate(citizenReportData);
-              }}
-              disabled={submitCitizenReportMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {submitCitizenReportMutation.isPending ? "Submitting..." : "Submit Report"}
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <Send className="w-4 h-4 mr-2" />
+              Submit Report
             </Button>
-          </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Issue Details Dialog */}
+      <Dialog open={showIssueDetails} onOpenChange={setShowIssueDetails}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <h2 className="text-lg font-semibold">Issue Details</h2>
+            <p className="text-sm text-gray-600">
+              {selectedIssueForView?.referenceNumber || `REF${selectedIssueForView?.id}`}
+            </p>
+          </DialogHeader>
+          {selectedIssueForView && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Title</Label>
+                  <p className="text-sm text-gray-700 mt-1">{selectedIssueForView.title}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Category</Label>
+                  <p className="text-sm text-gray-700 mt-1 capitalize">
+                    {selectedIssueForView.category.replace('_', ' ')}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Priority</Label>
+                  <div className="mt-1">
+                    <Badge className={getPriorityColor(selectedIssueForView.priority)}>
+                      {selectedIssueForView.priority}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Status</Label>
+                  <div className="mt-1">
+                    <Badge className={getStatusColor(selectedIssueForView.status)}>
+                      {selectedIssueForView.status.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Location</Label>
+                <p className="text-sm text-gray-700 mt-1">
+                  {selectedIssueForView.location || 'Location not specified'}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Description</Label>
+                <p className="text-sm text-gray-700 mt-1">{selectedIssueForView.description}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Assigned To</Label>
+                  <p className="text-sm text-gray-700 mt-1">
+                    {getTechnicianName(selectedIssueForView.assignedTo)}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Created</Label>
+                  <p className="text-sm text-gray-700 mt-1">
+                    {formatRelativeTime(selectedIssueForView.createdAt as Date)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setShowIssueDetails(false)}>
+              Close
+            </Button>
+            <Button className="bg-indigo-600 hover:bg-indigo-700">
+              <StickyNote className="w-4 h-4 mr-2" />
+              Add Notes
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
