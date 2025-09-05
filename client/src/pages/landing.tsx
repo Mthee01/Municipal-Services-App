@@ -81,7 +81,9 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
     payments: "Payments",
     vouchers: "Vouchers",
     settings: "Settings",
-    logout: "Logout"
+    logout: "Logout",
+    welcomeMessage: "Welcome to Smart Munic - Your Digital Gateway to Better Municipal Services",
+    yourVoiceMatters: "Your voice matters."
   };
 
   const loginForm = useForm<LoginFormData>({
@@ -280,155 +282,128 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative overflow-hidden">
-      {/* Background geometric patterns */}
+    <div className="min-h-screen bg-white relative">
+      {/* Subtle background pattern */}
       <div className="absolute inset-0 z-0">
-        {/* Animated geometric shapes */}
-        <div className="absolute top-20 left-10 w-64 h-64 bg-gradient-to-br from-blue-400/40 to-purple-400/40 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-green-400/40 to-blue-400/40 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
-        <div className="absolute -bottom-32 left-20 w-80 h-80 bg-gradient-to-br from-purple-400/40 to-pink-400/40 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
-        <div className="absolute top-60 left-1/2 w-96 h-96 bg-gradient-to-br from-orange-400/30 to-red-400/30 rounded-full mix-blend-multiply filter blur-2xl animate-pulse delay-3000"></div>
-        <div className="absolute bottom-40 right-10 w-60 h-60 bg-gradient-to-br from-cyan-400/35 to-teal-400/35 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-4000"></div>
-        
-        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-green-50/30"></div>
         <div 
-          className="absolute inset-0 opacity-0"
+          className="absolute inset-0 opacity-5"
           style={{
-            backgroundImage: `
-              linear-gradient(90deg, rgba(34,197,94,0.6) 1px, transparent 1px),
-              linear-gradient(rgba(34,197,94,0.6) 1px, transparent 1px)
-            `,
-            backgroundSize: '50px 50px'
-          }}
-        />
-        
-        {/* Additional decorative patterns */}
-        <div 
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `
-              radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
-              radial-gradient(circle at 75% 75%, rgba(34, 197, 94, 0.3) 0%, transparent 50%),
-              radial-gradient(circle at 50% 10%, rgba(168, 85, 247, 0.2) 0%, transparent 50%)
-            `
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234A90E2' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
           }}
         />
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-50" style={{ backgroundColor: 'hsl(51, 100%, 50%)' }}>
+      <nav className="relative z-50 bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center space-x-4">
               {/* MTN Logo */}
-              <div className="w-16 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-white to-gray-50 shadow-lg border-2 border-mtn-blue/20 p-1 hover:shadow-xl transition-all duration-300">
+              <div className="w-14 h-10 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-200">
                 <img 
-                  src="/attached_assets/image_1755271254719.png" 
+                  src="/attached_assets/image_1757027498755.png" 
                   alt="MTN Logo"
-                  className="w-full h-full object-contain rounded-md hover:scale-105 transition-transform duration-300"
+                  className="w-full h-full object-cover"
                   onError={(e) => {
                     console.error('Logo failed to load:', e);
-                    // Fallback to text if image fails
                     (e.target as HTMLImageElement).style.display = 'none';
                     (e.target as HTMLImageElement).nextElementSibling!.textContent = 'MTN';
                   }}
                 />
                 <div className="hidden text-xs font-bold text-center">MTN</div>
               </div>
-              <div className="flex flex-col">
-                <h1 className="text-xl font-bold leading-tight text-transparent bg-clip-text bg-gradient-to-r from-gray-800 to-mtn-blue">
+              <div className="flex flex-col justify-center">
+                <h1 className="text-2xl font-bold text-gray-900 leading-tight">
                   Smart Munic
                 </h1>
-                <p className="text-xs text-gray-700 -mt-0.5 font-medium">Citizen Engagement Platform</p>
+                <p className="text-sm text-gray-600 font-medium -mt-1">Municipal Services Platform</p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="flex space-x-6">
-                <button 
-                  onClick={() => {
-                    const loginSection = document.querySelector('.auth-section');
-                    loginSection?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="text-black hover:opacity-80 transition-colors font-medium"
-                >
-                  Login
-                </button>
-              </div>
+            <div className="flex items-center space-x-6">
+              <button 
+                onClick={() => {
+                  const loginSection = document.querySelector('.auth-section');
+                  loginSection?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+              >
+                Sign In
+              </button>
             </div>
-          </div>
-          
-        </div>
-        
-        {/* Running Welcome Message - Full Width */}
-        <div className="border-t py-2 overflow-hidden" style={{ backgroundColor: 'hsl(196, 100%, 85%)', borderColor: 'hsl(196, 100%, 75%)' }}>
-          <div className="animate-marquee whitespace-nowrap">
-            <span className="font-medium text-sm" style={{ color: 'hsl(196, 100%, 25%)' }}>
-              {t.welcomeMessage} • {t.welcomeMessage} • {t.welcomeMessage} • {t.welcomeMessage} • {t.welcomeMessage} • {t.welcomeMessage}
-            </span>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <div className="relative z-20 pt-16 pb-20" style={{ background: 'linear-gradient(135deg, hsl(51, 100%, 92%) 0%, hsl(196, 100%, 92%) 100%)' }}>
+      <div className="relative z-20 pt-20 pb-32 bg-gradient-to-br from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Column - Hero Content */}
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-                  <span className="text-black">Transform Your</span>
+            <div className="space-y-10">
+              <div className="space-y-6">
+                <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
+                  <span className="text-gray-900">Better</span>
                   <br />
-                  <span 
-                    className="bg-gradient-to-r bg-clip-text text-transparent"
-                    style={{
-                      backgroundImage: 'linear-gradient(135deg, hsl(51, 100%, 50%) 0%, hsl(196, 100%, 31%) 100%)'
-                    }}
-                  >
-                    Municipality
+                  <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+                    Municipal
                   </span>
+                  <br />
+                  <span className="text-gray-900">Services</span>
                 </h1>
-                <p className="text-xl text-black leading-relaxed max-w-lg">
-                  {t.yourVoiceMatters} Connect directly with your local government, 
-                  report issues, track progress, and build stronger communities together.
+                <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
+                  Connect with your local government, report issues instantly, 
+                  track progress in real-time, and build stronger communities together.
                 </p>
               </div>
 
+              {/* CTA Button */}
+              <div className="flex justify-start">
+                <button 
+                  onClick={() => {
+                    const featuresSection = document.querySelector('.features-section');
+                    featuresSection?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl"
+                >
+                  Learn More
+                </button>
+              </div>
+
               {/* Quick stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 pt-8">
                 {stats.map((stat, index) => (
                   <div key={index} className="text-center">
-                    <div className="text-2xl font-bold text-black">{stat.number}</div>
-                    <div className="text-sm text-black font-medium">{stat.label}</div>
+                    <div className="text-3xl font-bold text-gray-900">{stat.number}</div>
+                    <div className="text-sm text-gray-600 font-medium">{stat.label}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Right Column - Auth Forms (Top Right) */}
+            {/* Right Column - Auth Forms */}
             <div className="relative auth-section">
-              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-2xl" style={{ backgroundImage: 'linear-gradient(135deg, hsl(51, 100%, 50%, 0.2) 0%, hsl(196, 100%, 31%, 0.2) 100%)' }}></div>
-              <Card className="relative z-10 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-2xl">
-                <CardHeader className="text-center space-y-2">
-                  <CardTitle className="text-2xl font-bold text-black">
-                    {activeTab === "login" ? t.login : t.createAccount}
+              <Card className="bg-white shadow-2xl border border-gray-100">
+                <CardHeader className="text-center space-y-3 pb-6">
+                  <CardTitle className="text-3xl font-bold text-gray-900">
+                    {activeTab === "login" ? "Welcome Back" : "Join Us"}
                   </CardTitle>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 text-lg">
                     {activeTab === "login" 
-                      ? "Access your municipal dashboard" 
-                      : "Join your community platform"
+                      ? "Sign in to access your dashboard" 
+                      : "Create your account to get started"
                     }
                   </p>
                 </CardHeader>
-                <CardContent>
-                  <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-2 bg-gray-100">
-                      <TabsTrigger value="login" className="text-sm font-medium">
-                        {t.login}
+                <CardContent className="pt-0">
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+                    <TabsList className="grid w-full grid-cols-2 bg-gray-50 p-1 rounded-xl">
+                      <TabsTrigger value="login" className="rounded-lg font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                        Sign In
                       </TabsTrigger>
-                      <TabsTrigger value="register" className="text-sm font-medium">
-                        {t.register}
+                      <TabsTrigger value="register" className="rounded-lg font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                        Sign Up
                       </TabsTrigger>
                     </TabsList>
 
@@ -504,40 +479,33 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
 
                           <Button
                             type="submit"
-                            style={{
-                              background: 'linear-gradient(to right, hsl(51, 100%, 50%), hsl(196, 100%, 31%))',
-                              color: 'black',
-                              border: 'none'
-                            }}
-                            className="w-full font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                             disabled={loginMutation.isPending}
                           >
                             {loginMutation.isPending ? (
                               <>
-                                <div className="animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full mr-2" />
+                                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
                                 Signing In...
                               </>
                             ) : (
-                              t.login
+                              "Sign In"
                             )}
                           </Button>
 
-                          <div className="mt-4 space-y-2 text-center">
+                          <div className="mt-6 space-y-3 text-center">
                             <div className="flex justify-center space-x-4 text-sm">
                               <button
                                 type="button"
                                 onClick={() => setShowForgotPassword(true)}
-                                style={{ color: 'hsl(196, 100%, 31%)' }}
-                                className="hover:opacity-80 hover:underline transition-colors"
+                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                               >
                                 Forgot Password?
                               </button>
-                              <span className="text-gray-400">|</span>
+                              <span className="text-gray-300">•</span>
                               <button
                                 type="button"
                                 onClick={() => setShowForgotUsername(true)}
-                                style={{ color: 'hsl(196, 100%, 31%)' }}
-                                className="hover:opacity-80 hover:underline transition-colors"
+                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                               >
                                 Forgot Username?
                               </button>
@@ -667,21 +635,16 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
 
                           <Button
                             type="submit"
-                            style={{
-                              background: 'linear-gradient(to right, hsl(51, 100%, 50%), hsl(196, 100%, 31%))',
-                              color: 'black',
-                              border: 'none'
-                            }}
-                            className="w-full font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                             disabled={registerMutation.isPending}
                           >
                             {registerMutation.isPending ? (
                               <>
-                                <div className="animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full mr-2" />
+                                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
                                 Creating Account...
                               </>
                             ) : (
-                              t.createAccount
+                              "Create Account"
                             )}
                           </Button>
                         </form>
@@ -696,40 +659,31 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       </div>
 
       {/* Features Section */}
-      <div className="bg-white py-16 relative z-20">
-        {/* Subtle background pattern for features section */}
-        <div 
-          className="absolute inset-0 z-0 opacity-3 pointer-events-none"
-          style={{
-            backgroundImage: `
-              linear-gradient(90deg, rgba(34,197,94,0.05) 1px, transparent 1px),
-              linear-gradient(rgba(34,197,94,0.05) 1px, transparent 1px)
-            `,
-            backgroundSize: '25px 25px'
-          }}
-        />
+      <div className="features-section bg-gray-50 py-24 relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4" style={{ color: 'hsl(220, 85%, 15%)' }}>
-              Empowering Citizens Through Technology
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-6 text-gray-900">
+              Everything You Need in One Platform
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Our platform bridges the gap between citizens and municipal services, 
-              creating transparency, accountability, and efficient service delivery.
+            <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+              Our comprehensive municipal services platform connects citizens with their local government, 
+              making civic engagement simple, transparent, and effective.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    {feature.icon}
-                    <h3 className="text-lg font-semibold" style={{ color: 'hsl(220, 85%, 15%)' }}>
+              <Card key={index} className="bg-white border border-gray-200 hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <CardContent className="p-8">
+                  <div className="mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-green-100 rounded-2xl flex items-center justify-center mb-4">
+                      {feature.icon}
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">
                       {feature.title}
                     </h3>
                   </div>
-                  <p className="text-gray-600">{feature.description}</p>
+                  <p className="text-gray-600 leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -738,22 +692,68 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-sa-green to-green-600 py-16">
+      <div className="bg-gradient-to-r from-blue-600 to-green-600 py-20">
         <div className="max-w-4xl mx-auto text-center px-4">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Ready to Make a Difference?
+          <h2 className="text-4xl font-bold text-white mb-6">
+            Ready to Transform Your Community?
           </h2>
-          <p className="text-xl text-black mb-8">
-            Join thousands of citizens already using our platform to improve their communities
+          <p className="text-xl text-white/90 mb-10 leading-relaxed">
+            Join thousands of citizens who are already using our platform to create positive change in their communities. 
+            Start making a difference today.
           </p>
+          <div className="flex justify-center">
+            <button 
+              onClick={() => {
+                const featuresSection = document.querySelector('.features-section');
+                featuresSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl"
+            >
+              Learn More
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
-        <div className="max-w-6xl mx-auto px-4 text-center text-gray-400">
-          <p>&copy; 2024 Municipal Service Delivery Platform. All rights reserved.</p>
-          <p className="mt-2">Developed by MTN - Empowering Local Government</p>
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div className="md:col-span-2">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">SM</span>
+                </div>
+                <h3 className="text-xl font-bold">Smart Munic</h3>
+              </div>
+              <p className="text-gray-400 mb-4 max-w-md">
+                Empowering citizens through digital transformation of municipal services. 
+                Building stronger, more connected communities across South Africa.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Platform</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li>Report Issues</li>
+                <li>Track Progress</li>
+                <li>Make Payments</li>
+                <li>Community Hub</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li>Help Center</li>
+                <li>Contact Us</li>
+                <li>Privacy Policy</li>
+                <li>Terms of Service</li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 Smart Munic Platform. All rights reserved.</p>
+            <p className="mt-2">Developed with MTN - Empowering Digital Communities</p>
+          </div>
         </div>
       </footer>
 
